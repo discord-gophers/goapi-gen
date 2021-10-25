@@ -44,7 +44,7 @@ type ThingWithID struct {
 	// Embedded struct due to allOf(#/components/schemas/Thing)
 	Thing `yaml:",inline"`
 	// Embedded fields due to inline allOf schema
-	Id int64 `json:"id"`
+	ID int64 `json:"id"`
 }
 
 // AddThingJSONBody defines parameters for AddThing.
@@ -293,7 +293,7 @@ type ClientWithResponsesInterface interface {
 type ListThingsResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
-	JSON200      *[]ThingWithID
+	JSON         *[]ThingWithID
 }
 
 // Status returns HTTPResponse.Status
@@ -315,7 +315,7 @@ func (r ListThingsResponse) StatusCode() int {
 type AddThingResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
-	JSON201      *[]ThingWithID
+	JSON         *[]ThingWithID
 }
 
 // Status returns HTTPResponse.Status
@@ -379,7 +379,7 @@ func ParseListThingsResponse(rsp *http.Response) (*ListThingsResponse, error) {
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
 			return nil, err
 		}
-		response.JSON200 = &dest
+		response.JSON = &dest
 
 	}
 
@@ -405,7 +405,7 @@ func ParseAddThingResponse(rsp *http.Response) (*AddThingResponse, error) {
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
 			return nil, err
 		}
-		response.JSON201 = &dest
+		response.JSON = &dest
 
 	}
 

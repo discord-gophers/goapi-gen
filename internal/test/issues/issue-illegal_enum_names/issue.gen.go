@@ -22,23 +22,23 @@ import (
 
 // Defines values for Bar.
 const (
+	Bar Bar = "1"
+
 	BarBar Bar = "Bar"
 
 	BarFoo Bar = "Foo"
 
-	BarFoo1 Bar = " Foo"
+	BarFoo1 Bar = "1Foo"
 
-	BarFoo2 Bar = " Foo "
+	BarFoo2 Bar = " Foo"
 
-	BarFoo3 Bar = "_Foo_"
+	BarFoo3 Bar = " Foo "
+
+	BarFoo4 Bar = "_Foo_"
 
 	BarFooBar Bar = "Foo Bar"
 
 	BarFooBar1 Bar = "Foo-Bar"
-
-	BarN1 Bar = "1"
-
-	BarN1Foo Bar = "1Foo"
 )
 
 // Bar defines model for Bar.
@@ -210,7 +210,7 @@ type ClientWithResponsesInterface interface {
 type GetFooResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
-	JSON200      *[]Bar
+	JSON         *[]Bar
 }
 
 // Status returns HTTPResponse.Status
@@ -257,7 +257,7 @@ func ParseGetFooResponse(rsp *http.Response) (*GetFooResponse, error) {
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
 			return nil, err
 		}
-		response.JSON200 = &dest
+		response.JSON = &dest
 
 	}
 

@@ -61,11 +61,11 @@ func TestPetStore(t *testing.T) {
 
 	t.Run("Find pet by ID", func(t *testing.T) {
 		pet := api.Pet{
-			Id: 100,
+			ID: 100,
 		}
 
-		store.Pets[pet.Id] = pet
-		rr := doGet(t, r, fmt.Sprintf("/pets/%d", pet.Id))
+		store.Pets[pet.ID] = pet
+		rr := doGet(t, r, fmt.Sprintf("/pets/%d", pet.ID))
 
 		var resultPet api.Pet
 		err = json.NewDecoder(rr.Body).Decode(&resultPet)
