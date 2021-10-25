@@ -1,17 +1,3 @@
-// Copyright 2019 DeepMap, Inc.
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-// http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
-
 package middleware
 
 import (
@@ -25,8 +11,7 @@ import (
 	"github.com/discord-gophers/goapi-gen/pkg/testutil"
 	"github.com/getkin/kin-openapi/openapi3"
 	"github.com/getkin/kin-openapi/openapi3filter"
-	"github.com/labstack/echo/v4"
-	echomiddleware "github.com/labstack/echo/v4/middleware"
+	"github.com/go-chi/chi/v5"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -107,23 +92,23 @@ components:
       bearerFormat: JWT
 `
 
-func doGet(t *testing.T, e *echo.Echo, rawURL string) *httptest.ResponseRecorder {
+func doGet(t *testing.T, mux *chi.Mux, rawURL string) *httptest.ResponseRecorder {
 	u, err := url.Parse(rawURL)
 	if err != nil {
 		t.Fatalf("Invalid url: %s", rawURL)
 	}
 
-	response := testutil.NewRequest().Get(u.RequestURI()).WithHost(u.Host).WithAcceptJson().GoWithHTTPHandler(t, e)
+	response := testutil.NewRequest().Get(u.RequestURI()).WithHost(u.Host).WithAcceptJson().GoWithHTTPHandler(t, mux)
 	return response.Recorder
 }
 
-func doPost(t *testing.T, e *echo.Echo, rawURL string, jsonBody interface{}) *httptest.ResponseRecorder {
+func doPost(t *testing.T, mux *chi.Mux, rawURL string, jsonBody interface{}) *httptest.ResponseRecorder {
 	u, err := url.Parse(rawURL)
 	if err != nil {
 		t.Fatalf("Invalid url: %s", rawURL)
 	}
 
-	response := testutil.NewRequest().Post(u.RequestURI()).WithHost(u.Host).WithJsonBody(jsonBody).GoWithHTTPHandler(t, e)
+	response := testutil.NewRequest().Post(u.RequestURI()).WithHost(u.Host).WithJsonBody(jsonBody).GoWithHTTPHandler(t, mux)
 	return response.Recorder
 }
 
@@ -131,55 +116,104 @@ func TestOapiRequestValidator(t *testing.T) {
 	swagger, err := openapi3.NewLoader().LoadFromData([]byte(testSchema))
 	require.NoError(t, err, "Error initializing swagger")
 
-	// Create a new echo router
-	e := echo.New()
+	r := chi.NewRouter()
+
+	// register middleware
+	r.Use(OapiRequestValidator(swagger))
+
+	// basic cases
+	testRequestValidatorBasicFunctions(t, r)
+}
+
+func TestOapiRequestValidatorWithOptions(t *testing.T) {
+	swagger, err := openapi3.NewLoader().LoadFromData([]byte(testSchema))
+	require.NoError(t, err, "Error initializing swagger")
+
+	r := chi.NewRouter()
 
 	// Set up an authenticator to check authenticated function. It will allow
 	// access to "someScope", but disallow others.
 	options := Options{
 		Options: openapi3filter.Options{
 			AuthenticationFunc: func(c context.Context, input *openapi3filter.AuthenticationInput) error {
-				// The echo context should be propagated into here.
-				eCtx := GetEchoContext(c)
-				assert.NotNil(t, eCtx)
-				// As should user data
-				assert.EqualValues(t, "hi!", GetUserData(c))
 
 				for _, s := range input.Scopes {
 					if s == "someScope" {
 						return nil
 					}
-					if s == "unauthorized" {
-						return echo.ErrUnauthorized
-					}
 				}
-				return errors.New("forbidden")
+				return errors.New("unauthorized")
 			},
 		},
-		UserData: "hi!",
 	}
 
-	// Install our OpenApi based request validator
-	e.Use(OapiRequestValidatorWithOptions(swagger, &options))
+	// register middleware
+	r.Use(OapiRequestValidatorWithOptions(swagger, &options))
+
+	// basic cases
+	testRequestValidatorBasicFunctions(t, r)
+
+	called := false
+
+	r.Get("/protected_resource", func(w http.ResponseWriter, r *http.Request) {
+		called = true
+		w.WriteHeader(http.StatusNoContent)
+	})
+
+	// Call a protected function to which we have access
+	{
+		rec := doGet(t, r, "http://deepmap.ai/protected_resource")
+		assert.Equal(t, http.StatusNoContent, rec.Code)
+		assert.True(t, called, "Handler should have been called")
+		called = false
+	}
+
+	r.Get("/protected_resource2", func(w http.ResponseWriter, r *http.Request) {
+		called = true
+		w.WriteHeader(http.StatusNoContent)
+	})
+	// Call a protected function to which we dont have access
+	{
+		rec := doGet(t, r, "http://deepmap.ai/protected_resource2")
+		assert.Equal(t, http.StatusUnauthorized, rec.Code)
+		assert.False(t, called, "Handler should not have been called")
+		called = false
+	}
+
+	r.Get("/protected_resource_401", func(w http.ResponseWriter, r *http.Request) {
+		called = true
+		w.WriteHeader(http.StatusNoContent)
+	})
+	// Call a protected function without credentials
+	{
+		rec := doGet(t, r, "http://deepmap.ai/protected_resource_401")
+		assert.Equal(t, http.StatusUnauthorized, rec.Code)
+		assert.False(t, called, "Handler should not have been called")
+		called = false
+	}
+
+}
+
+func testRequestValidatorBasicFunctions(t *testing.T, r *chi.Mux) {
 
 	called := false
 
 	// Install a request handler for /resource. We want to make sure it doesn't
 	// get called.
-	e.GET("/resource", func(c echo.Context) error {
+	r.Get("/resource", func(w http.ResponseWriter, r *http.Request) {
 		called = true
-		return nil
 	})
+
 	// Let's send the request to the wrong server, this should fail validation
 	{
-		rec := doGet(t, e, "http://not.deepmap.ai/resource")
+		rec := doGet(t, r, "http://not.deepmap.ai/resource")
 		assert.Equal(t, http.StatusBadRequest, rec.Code)
 		assert.False(t, called, "Handler should not have been called")
 	}
 
 	// Let's send a good request, it should pass
 	{
-		rec := doGet(t, e, "http://deepmap.ai/resource")
+		rec := doGet(t, r, "http://deepmap.ai/resource")
 		assert.Equal(t, http.StatusOK, rec.Code)
 		assert.True(t, called, "Handler should have been called")
 		called = false
@@ -187,7 +221,7 @@ func TestOapiRequestValidator(t *testing.T) {
 
 	// Send an out-of-spec parameter
 	{
-		rec := doGet(t, e, "http://deepmap.ai/resource?id=500")
+		rec := doGet(t, r, "http://deepmap.ai/resource?id=500")
 		assert.Equal(t, http.StatusBadRequest, rec.Code)
 		assert.False(t, called, "Handler should not have been called")
 		called = false
@@ -195,16 +229,16 @@ func TestOapiRequestValidator(t *testing.T) {
 
 	// Send a bad parameter type
 	{
-		rec := doGet(t, e, "http://deepmap.ai/resource?id=foo")
+		rec := doGet(t, r, "http://deepmap.ai/resource?id=foo")
 		assert.Equal(t, http.StatusBadRequest, rec.Code)
 		assert.False(t, called, "Handler should not have been called")
 		called = false
 	}
 
 	// Add a handler for the POST message
-	e.POST("/resource", func(c echo.Context) error {
+	r.Post("/resource", func(w http.ResponseWriter, r *http.Request) {
 		called = true
-		return c.NoContent(http.StatusNoContent)
+		w.WriteHeader(http.StatusNoContent)
 	})
 
 	called = false
@@ -215,7 +249,7 @@ func TestOapiRequestValidator(t *testing.T) {
 		}{
 			Name: "Marcin",
 		}
-		rec := doPost(t, e, "http://deepmap.ai/resource", body)
+		rec := doPost(t, r, "http://deepmap.ai/resource", body)
 		assert.Equal(t, http.StatusNoContent, rec.Code)
 		assert.True(t, called, "Handler should have been called")
 		called = false
@@ -228,61 +262,10 @@ func TestOapiRequestValidator(t *testing.T) {
 		}{
 			Name: 7,
 		}
-		rec := doPost(t, e, "http://deepmap.ai/resource", body)
+		rec := doPost(t, r, "http://deepmap.ai/resource", body)
 		assert.Equal(t, http.StatusBadRequest, rec.Code)
 		assert.False(t, called, "Handler should not have been called")
 		called = false
 	}
 
-	e.GET("/protected_resource", func(c echo.Context) error {
-		called = true
-		return c.NoContent(http.StatusNoContent)
-
-	})
-
-	// Call a protected function to which we have access
-	{
-		rec := doGet(t, e, "http://deepmap.ai/protected_resource")
-		assert.Equal(t, http.StatusNoContent, rec.Code)
-		assert.True(t, called, "Handler should have been called")
-		called = false
-	}
-
-	e.GET("/protected_resource2", func(c echo.Context) error {
-		called = true
-		return c.NoContent(http.StatusNoContent)
-	})
-	// Call a protected function to which we dont have access
-	{
-		rec := doGet(t, e, "http://deepmap.ai/protected_resource2")
-		assert.Equal(t, http.StatusForbidden, rec.Code)
-		assert.False(t, called, "Handler should not have been called")
-		called = false
-	}
-
-	e.GET("/protected_resource_401", func(c echo.Context) error {
-		called = true
-		return c.NoContent(http.StatusNoContent)
-	})
-	// Call a protected function without credentials
-	{
-		rec := doGet(t, e, "http://deepmap.ai/protected_resource_401")
-		assert.Equal(t, http.StatusUnauthorized, rec.Code)
-		assert.False(t, called, "Handler should not have been called")
-		called = false
-	}
-}
-
-func TestGetSkipperFromOptions(t *testing.T) {
-
-	options := new(Options)
-	assert.NotNil(t, getSkipperFromOptions(options))
-
-	options = &Options{}
-	assert.NotNil(t, getSkipperFromOptions(options))
-
-	options = &Options{
-		Skipper: echomiddleware.DefaultSkipper,
-	}
-	assert.NotNil(t, getSkipperFromOptions(options))
 }

@@ -22,7 +22,7 @@ import (
 
 	"github.com/discord-gophers/goapi-gen/pkg/runtime"
 	"github.com/getkin/kin-openapi/openapi3"
-	"github.com/labstack/echo/v4"
+	"github.com/go-chi/chi/v5"
 )
 
 const (
@@ -1129,190 +1129,315 @@ func ParseIssue9Response(rsp *http.Response) (*Issue9Response, error) {
 type ServerInterface interface {
 
 	// (GET /ensure-everything-is-referenced)
-	EnsureEverythingIsReferenced(ctx echo.Context) error
+	EnsureEverythingIsReferenced(w http.ResponseWriter, r *http.Request)
 
 	// (GET /issues/127)
-	Issue127(ctx echo.Context) error
+	Issue127(w http.ResponseWriter, r *http.Request)
 
 	// (GET /issues/185)
-	Issue185(ctx echo.Context) error
+	Issue185(w http.ResponseWriter, r *http.Request)
 
 	// (GET /issues/209/${str})
-	Issue209(ctx echo.Context, str StringInPath) error
+	Issue209(w http.ResponseWriter, r *http.Request, str StringInPath)
 
 	// (GET /issues/30/{fallthrough})
-	Issue30(ctx echo.Context, pFallthrough string) error
+	Issue30(w http.ResponseWriter, r *http.Request, pFallthrough string)
 
 	// (GET /issues/375)
-	GetIssues375(ctx echo.Context) error
+	GetIssues375(w http.ResponseWriter, r *http.Request)
 
 	// (GET /issues/41/{1param})
-	Issue41(ctx echo.Context, param StartsWithNumber) error
+	Issue41(w http.ResponseWriter, r *http.Request, param StartsWithNumber)
 
 	// (GET /issues/9)
-	Issue9(ctx echo.Context, params Issue9Params) error
+	Issue9(w http.ResponseWriter, r *http.Request, params Issue9Params)
 }
 
-// ServerInterfaceWrapper converts echo contexts to parameters.
+// ServerInterfaceWrapper converts contexts to parameters.
 type ServerInterfaceWrapper struct {
-	Handler ServerInterface
+	Handler            ServerInterface
+	HandlerMiddlewares []MiddlewareFunc
+	TaggedMiddlewares  map[string]MiddlewareFunc
+	ErrorHandlerFunc   func(w http.ResponseWriter, r *http.Request, err error)
 }
 
-// EnsureEverythingIsReferenced converts echo context to params.
-func (w *ServerInterfaceWrapper) EnsureEverythingIsReferenced(ctx echo.Context) error {
-	var err error
+type MiddlewareFunc func(http.HandlerFunc) http.HandlerFunc
 
-	ctx.Set(Access_tokenScopes, []string{""})
+// EnsureEverythingIsReferenced operation middleware
+func (siw *ServerInterfaceWrapper) EnsureEverythingIsReferenced(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
 
-	// Invoke the callback with all the unmarshalled arguments
-	err = w.Handler.EnsureEverythingIsReferenced(ctx)
-	return err
+	ctx = context.WithValue(ctx, Access-tokenScopes, []string{""})
+
+	var handler = func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.EnsureEverythingIsReferenced(w, r)
+	}
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler(w, r.WithContext(ctx))
 }
 
-// Issue127 converts echo context to params.
-func (w *ServerInterfaceWrapper) Issue127(ctx echo.Context) error {
-	var err error
+// Issue127 operation middleware
+func (siw *ServerInterfaceWrapper) Issue127(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
 
-	ctx.Set(Access_tokenScopes, []string{""})
+	ctx = context.WithValue(ctx, Access-tokenScopes, []string{""})
 
-	// Invoke the callback with all the unmarshalled arguments
-	err = w.Handler.Issue127(ctx)
-	return err
+	var handler = func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.Issue127(w, r)
+	}
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler(w, r.WithContext(ctx))
 }
 
-// Issue185 converts echo context to params.
-func (w *ServerInterfaceWrapper) Issue185(ctx echo.Context) error {
-	var err error
+// Issue185 operation middleware
+func (siw *ServerInterfaceWrapper) Issue185(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
 
-	ctx.Set(Access_tokenScopes, []string{""})
+	ctx = context.WithValue(ctx, Access-tokenScopes, []string{""})
 
-	// Invoke the callback with all the unmarshalled arguments
-	err = w.Handler.Issue185(ctx)
-	return err
+	var handler = func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.Issue185(w, r)
+	}
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler(w, r.WithContext(ctx))
 }
 
-// Issue209 converts echo context to params.
-func (w *ServerInterfaceWrapper) Issue209(ctx echo.Context) error {
+// Issue209 operation middleware
+func (siw *ServerInterfaceWrapper) Issue209(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+
 	var err error
+
 	// ------------- Path parameter "str" -------------
 	var str StringInPath
 
-	err = runtime.BindStyledParameterWithLocation("simple", false, "str", runtime.ParamLocationPath, ctx.Param("str"), &str)
+	err = runtime.BindStyledParameter("simple", false, "str", chi.URLParam(r, "str"), &str)
 	if err != nil {
-		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter str: %s", err))
+		err = fmt.Errorf("Invalid format for parameter str: %w", err)
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{err})
+		return
 	}
 
-	ctx.Set(Access_tokenScopes, []string{""})
+	ctx = context.WithValue(ctx, Access-tokenScopes, []string{""})
 
-	// Invoke the callback with all the unmarshalled arguments
-	err = w.Handler.Issue209(ctx, str)
-	return err
+	var handler = func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.Issue209(w, r, str)
+	}
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler(w, r.WithContext(ctx))
 }
 
-// Issue30 converts echo context to params.
-func (w *ServerInterfaceWrapper) Issue30(ctx echo.Context) error {
+// Issue30 operation middleware
+func (siw *ServerInterfaceWrapper) Issue30(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+
 	var err error
+
 	// ------------- Path parameter "fallthrough" -------------
 	var pFallthrough string
 
-	err = runtime.BindStyledParameterWithLocation("simple", false, "fallthrough", runtime.ParamLocationPath, ctx.Param("fallthrough"), &pFallthrough)
+	err = runtime.BindStyledParameter("simple", false, "fallthrough", chi.URLParam(r, "fallthrough"), &pFallthrough)
 	if err != nil {
-		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter fallthrough: %s", err))
+		err = fmt.Errorf("Invalid format for parameter fallthrough: %w", err)
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{err})
+		return
 	}
 
-	ctx.Set(Access_tokenScopes, []string{""})
+	ctx = context.WithValue(ctx, Access-tokenScopes, []string{""})
 
-	// Invoke the callback with all the unmarshalled arguments
-	err = w.Handler.Issue30(ctx, pFallthrough)
-	return err
+	var handler = func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.Issue30(w, r, pFallthrough)
+	}
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler(w, r.WithContext(ctx))
 }
 
-// GetIssues375 converts echo context to params.
-func (w *ServerInterfaceWrapper) GetIssues375(ctx echo.Context) error {
-	var err error
+// GetIssues375 operation middleware
+func (siw *ServerInterfaceWrapper) GetIssues375(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
 
-	ctx.Set(Access_tokenScopes, []string{""})
+	ctx = context.WithValue(ctx, Access-tokenScopes, []string{""})
 
-	// Invoke the callback with all the unmarshalled arguments
-	err = w.Handler.GetIssues375(ctx)
-	return err
+	var handler = func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.GetIssues375(w, r)
+	}
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler(w, r.WithContext(ctx))
 }
 
-// Issue41 converts echo context to params.
-func (w *ServerInterfaceWrapper) Issue41(ctx echo.Context) error {
+// Issue41 operation middleware
+func (siw *ServerInterfaceWrapper) Issue41(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+
 	var err error
+
 	// ------------- Path parameter "1param" -------------
 	var param StartsWithNumber
 
-	err = runtime.BindStyledParameterWithLocation("simple", false, "1param", runtime.ParamLocationPath, ctx.Param("1param"), &param)
+	err = runtime.BindStyledParameter("simple", false, "1param", chi.URLParam(r, "1param"), &param)
 	if err != nil {
-		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter 1param: %s", err))
+		err = fmt.Errorf("Invalid format for parameter 1param: %w", err)
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{err})
+		return
 	}
 
-	ctx.Set(Access_tokenScopes, []string{""})
+	ctx = context.WithValue(ctx, Access-tokenScopes, []string{""})
 
-	// Invoke the callback with all the unmarshalled arguments
-	err = w.Handler.Issue41(ctx, param)
-	return err
+	var handler = func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.Issue41(w, r, param)
+	}
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler(w, r.WithContext(ctx))
 }
 
-// Issue9 converts echo context to params.
-func (w *ServerInterfaceWrapper) Issue9(ctx echo.Context) error {
+// Issue9 operation middleware
+func (siw *ServerInterfaceWrapper) Issue9(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+
 	var err error
 
-	ctx.Set(Access_tokenScopes, []string{""})
+	ctx = context.WithValue(ctx, Access-tokenScopes, []string{""})
 
 	// Parameter object where we will unmarshal all parameters from the context
 	var params Issue9Params
-	// ------------- Required query parameter "foo" -------------
 
-	err = runtime.BindQueryParameter("form", true, true, "foo", ctx.QueryParams(), &params.Foo)
-	if err != nil {
-		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter foo: %s", err))
+	// ------------- Required query parameter "foo" -------------
+	if paramValue := r.URL.Query().Get("foo"); paramValue != "" {
+
+	} else {
+		err := fmt.Errorf("Query argument foo is required, but not found")
+		siw.ErrorHandlerFunc(w, r, &RequiredParamError{err})
+		return
 	}
 
-	// Invoke the callback with all the unmarshalled arguments
-	err = w.Handler.Issue9(ctx, params)
-	return err
+	err = runtime.BindQueryParameter("form", true, true, "foo", r.URL.Query(), &params.Foo)
+	if err != nil {
+		err = fmt.Errorf("Invalid format for parameter foo: %w", err)
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{err})
+		return
+	}
+
+	var handler = func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.Issue9(w, r, params)
+	}
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler(w, r.WithContext(ctx))
 }
 
-// This is a simple interface which specifies echo.Route addition functions which
-// are present on both echo.Echo and echo.Group, since we want to allow using
-// either of them for path registration
-type EchoRouter interface {
-	CONNECT(path string, h echo.HandlerFunc, m ...echo.MiddlewareFunc) *echo.Route
-	DELETE(path string, h echo.HandlerFunc, m ...echo.MiddlewareFunc) *echo.Route
-	GET(path string, h echo.HandlerFunc, m ...echo.MiddlewareFunc) *echo.Route
-	HEAD(path string, h echo.HandlerFunc, m ...echo.MiddlewareFunc) *echo.Route
-	OPTIONS(path string, h echo.HandlerFunc, m ...echo.MiddlewareFunc) *echo.Route
-	PATCH(path string, h echo.HandlerFunc, m ...echo.MiddlewareFunc) *echo.Route
-	POST(path string, h echo.HandlerFunc, m ...echo.MiddlewareFunc) *echo.Route
-	PUT(path string, h echo.HandlerFunc, m ...echo.MiddlewareFunc) *echo.Route
-	TRACE(path string, h echo.HandlerFunc, m ...echo.MiddlewareFunc) *echo.Route
+type UnescapedCookieParamError struct {
+	error
+}
+type UnmarshalingParamError struct {
+	error
+}
+type RequiredParamError struct {
+	error
+}
+type RequiredHeaderError struct {
+	error
+}
+type InvalidParamFormatError struct {
+	error
+}
+type TooManyValuesForParamError struct {
+	error
 }
 
-// RegisterHandlers adds each server route to the EchoRouter.
-func RegisterHandlers(router EchoRouter, si ServerInterface) {
-	RegisterHandlersWithBaseURL(router, si, "")
+// Handler creates http.Handler with routing matching OpenAPI spec.
+func Handler(si ServerInterface) http.Handler {
+	return HandlerWithOptions(si, ChiServerOptions{})
 }
 
-// Registers handlers, and prepends BaseURL to the paths, so that the paths
-// can be served under a prefix.
-func RegisterHandlersWithBaseURL(router EchoRouter, si ServerInterface, baseURL string) {
+type ChiServerOptions struct {
+	BaseURL           string
+	BaseRouter        chi.Router
+	Middlewares       []MiddlewareFunc
+	TaggedMiddlewares map[string]MiddlewareFunc
+	ErrorHandlerFunc  func(w http.ResponseWriter, r *http.Request, err error)
+}
+
+// HandlerFromMux creates http.Handler with routing matching OpenAPI spec based on the provided mux.
+func HandlerFromMux(si ServerInterface, r chi.Router) http.Handler {
+	return HandlerWithOptions(si, ChiServerOptions{
+		BaseRouter: r,
+	})
+}
+
+func HandlerFromMuxWithBaseURL(si ServerInterface, r chi.Router, baseURL string) http.Handler {
+	return HandlerWithOptions(si, ChiServerOptions{
+		BaseURL:    baseURL,
+		BaseRouter: r,
+	})
+}
+
+// HandlerWithOptions creates http.Handler with additional options
+func HandlerWithOptions(si ServerInterface, options ChiServerOptions) http.Handler {
+	r := options.BaseRouter
+
+	if r == nil {
+		r = chi.NewRouter()
+	}
+
+	if options.ErrorHandlerFunc == nil {
+		options.ErrorHandlerFunc = func(w http.ResponseWriter, r *http.Request, err error) {
+			http.Error(w, err.Error(), http.StatusBadRequest)
+		}
+	}
+
+	if options.BaseURL == "" {
+		options.BaseURL = "/"
+	}
 
 	wrapper := ServerInterfaceWrapper{
-		Handler: si,
+		Handler:            si,
+		HandlerMiddlewares: options.Middlewares,
+		TaggedMiddlewares:  options.TaggedMiddlewares,
+		ErrorHandlerFunc:   options.ErrorHandlerFunc,
 	}
 
-	router.GET(baseURL+"/ensure-everything-is-referenced", wrapper.EnsureEverythingIsReferenced)
-	router.GET(baseURL+"/issues/127", wrapper.Issue127)
-	router.GET(baseURL+"/issues/185", wrapper.Issue185)
-	router.GET(baseURL+"/issues/209/$:str", wrapper.Issue209)
-	router.GET(baseURL+"/issues/30/:fallthrough", wrapper.Issue30)
-	router.GET(baseURL+"/issues/375", wrapper.GetIssues375)
-	router.GET(baseURL+"/issues/41/:1param", wrapper.Issue41)
-	router.GET(baseURL+"/issues/9", wrapper.Issue9)
-
+	r.Route(options.BaseURL, func(r chi.Router) {
+		r.Get("/ensure-everything-is-referenced", wrapper.EnsureEverythingIsReferenced)
+		r.Get("/issues/127", wrapper.Issue127)
+		r.Get("/issues/185", wrapper.Issue185)
+		r.Get("/issues/209/${str}", wrapper.Issue209)
+		r.Get("/issues/30/{fallthrough}", wrapper.Issue30)
+		r.Get("/issues/375", wrapper.GetIssues375)
+		r.Get("/issues/41/{1param}", wrapper.Issue41)
+		r.Get("/issues/9", wrapper.Issue9)
+	})
+	return r
 }
 
 // Base64 encoded, gzipped, json marshaled Swagger object

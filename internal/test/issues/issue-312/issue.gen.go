@@ -19,7 +19,7 @@ import (
 
 	"github.com/discord-gophers/goapi-gen/pkg/runtime"
 	"github.com/getkin/kin-openapi/openapi3"
-	"github.com/labstack/echo/v4"
+	"github.com/go-chi/chi/v5"
 )
 
 // Error defines model for Error.
@@ -427,73 +427,140 @@ func ParseValidatePetsResponse(rsp *http.Response) (*ValidatePetsResponse, error
 type ServerInterface interface {
 	// Get pet given identifier.
 	// (GET /pets/{petId})
-	GetPet(ctx echo.Context, petID string) error
+	GetPet(w http.ResponseWriter, r *http.Request, petID string)
 	// Validate pets
 	// (POST /pets:validate)
-	ValidatePets(ctx echo.Context) error
+	ValidatePets(w http.ResponseWriter, r *http.Request)
 }
 
-// ServerInterfaceWrapper converts echo contexts to parameters.
+// ServerInterfaceWrapper converts contexts to parameters.
 type ServerInterfaceWrapper struct {
-	Handler ServerInterface
+	Handler            ServerInterface
+	HandlerMiddlewares []MiddlewareFunc
+	TaggedMiddlewares  map[string]MiddlewareFunc
+	ErrorHandlerFunc   func(w http.ResponseWriter, r *http.Request, err error)
 }
 
-// GetPet converts echo context to params.
-func (w *ServerInterfaceWrapper) GetPet(ctx echo.Context) error {
+type MiddlewareFunc func(http.HandlerFunc) http.HandlerFunc
+
+// GetPet operation middleware
+func (siw *ServerInterfaceWrapper) GetPet(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+
 	var err error
+
 	// ------------- Path parameter "petId" -------------
 	var petID string
 
-	err = runtime.BindStyledParameterWithLocation("simple", false, "petId", runtime.ParamLocationPath, ctx.Param("petId"), &petID)
+	err = runtime.BindStyledParameter("simple", false, "petId", chi.URLParam(r, "petId"), &petID)
 	if err != nil {
-		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter petId: %s", err))
+		err = fmt.Errorf("Invalid format for parameter petId: %w", err)
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{err})
+		return
 	}
 
-	// Invoke the callback with all the unmarshalled arguments
-	err = w.Handler.GetPet(ctx, petID)
-	return err
+	var handler = func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.GetPet(w, r, petID)
+	}
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler(w, r.WithContext(ctx))
 }
 
-// ValidatePets converts echo context to params.
-func (w *ServerInterfaceWrapper) ValidatePets(ctx echo.Context) error {
-	var err error
+// ValidatePets operation middleware
+func (siw *ServerInterfaceWrapper) ValidatePets(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
 
-	// Invoke the callback with all the unmarshalled arguments
-	err = w.Handler.ValidatePets(ctx)
-	return err
+	var handler = func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.ValidatePets(w, r)
+	}
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler(w, r.WithContext(ctx))
 }
 
-// This is a simple interface which specifies echo.Route addition functions which
-// are present on both echo.Echo and echo.Group, since we want to allow using
-// either of them for path registration
-type EchoRouter interface {
-	CONNECT(path string, h echo.HandlerFunc, m ...echo.MiddlewareFunc) *echo.Route
-	DELETE(path string, h echo.HandlerFunc, m ...echo.MiddlewareFunc) *echo.Route
-	GET(path string, h echo.HandlerFunc, m ...echo.MiddlewareFunc) *echo.Route
-	HEAD(path string, h echo.HandlerFunc, m ...echo.MiddlewareFunc) *echo.Route
-	OPTIONS(path string, h echo.HandlerFunc, m ...echo.MiddlewareFunc) *echo.Route
-	PATCH(path string, h echo.HandlerFunc, m ...echo.MiddlewareFunc) *echo.Route
-	POST(path string, h echo.HandlerFunc, m ...echo.MiddlewareFunc) *echo.Route
-	PUT(path string, h echo.HandlerFunc, m ...echo.MiddlewareFunc) *echo.Route
-	TRACE(path string, h echo.HandlerFunc, m ...echo.MiddlewareFunc) *echo.Route
+type UnescapedCookieParamError struct {
+	error
+}
+type UnmarshalingParamError struct {
+	error
+}
+type RequiredParamError struct {
+	error
+}
+type RequiredHeaderError struct {
+	error
+}
+type InvalidParamFormatError struct {
+	error
+}
+type TooManyValuesForParamError struct {
+	error
 }
 
-// RegisterHandlers adds each server route to the EchoRouter.
-func RegisterHandlers(router EchoRouter, si ServerInterface) {
-	RegisterHandlersWithBaseURL(router, si, "")
+// Handler creates http.Handler with routing matching OpenAPI spec.
+func Handler(si ServerInterface) http.Handler {
+	return HandlerWithOptions(si, ChiServerOptions{})
 }
 
-// Registers handlers, and prepends BaseURL to the paths, so that the paths
-// can be served under a prefix.
-func RegisterHandlersWithBaseURL(router EchoRouter, si ServerInterface, baseURL string) {
+type ChiServerOptions struct {
+	BaseURL           string
+	BaseRouter        chi.Router
+	Middlewares       []MiddlewareFunc
+	TaggedMiddlewares map[string]MiddlewareFunc
+	ErrorHandlerFunc  func(w http.ResponseWriter, r *http.Request, err error)
+}
+
+// HandlerFromMux creates http.Handler with routing matching OpenAPI spec based on the provided mux.
+func HandlerFromMux(si ServerInterface, r chi.Router) http.Handler {
+	return HandlerWithOptions(si, ChiServerOptions{
+		BaseRouter: r,
+	})
+}
+
+func HandlerFromMuxWithBaseURL(si ServerInterface, r chi.Router, baseURL string) http.Handler {
+	return HandlerWithOptions(si, ChiServerOptions{
+		BaseURL:    baseURL,
+		BaseRouter: r,
+	})
+}
+
+// HandlerWithOptions creates http.Handler with additional options
+func HandlerWithOptions(si ServerInterface, options ChiServerOptions) http.Handler {
+	r := options.BaseRouter
+
+	if r == nil {
+		r = chi.NewRouter()
+	}
+
+	if options.ErrorHandlerFunc == nil {
+		options.ErrorHandlerFunc = func(w http.ResponseWriter, r *http.Request, err error) {
+			http.Error(w, err.Error(), http.StatusBadRequest)
+		}
+	}
+
+	if options.BaseURL == "" {
+		options.BaseURL = "/"
+	}
 
 	wrapper := ServerInterfaceWrapper{
-		Handler: si,
+		Handler:            si,
+		HandlerMiddlewares: options.Middlewares,
+		TaggedMiddlewares:  options.TaggedMiddlewares,
+		ErrorHandlerFunc:   options.ErrorHandlerFunc,
 	}
 
-	router.GET(baseURL+"/pets/:petId", wrapper.GetPet)
-	router.POST(baseURL+"/pets:validate", wrapper.ValidatePets)
-
+	r.Route(options.BaseURL, func(r chi.Router) {
+		r.Get("/pets/{petId}", wrapper.GetPet)
+		r.Post("/pets:validate", wrapper.ValidatePets)
+	})
+	return r
 }
 
 // Base64 encoded, gzipped, json marshaled Swagger object

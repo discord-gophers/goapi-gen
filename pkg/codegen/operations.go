@@ -680,14 +680,8 @@ func GenerateChiServer(t *template.Template, operations []OperationDefinition) (
 	return GenerateTemplates([]string{"chi-interface.tmpl", "chi-middleware.tmpl", "chi-handler.tmpl"}, t, operations)
 }
 
-// GenerateEchoServer This function generates all the go code for the ServerInterface as well as
-// all the wrapper functions around our handlers.
-func GenerateEchoServer(t *template.Template, operations []OperationDefinition) (string, error) {
-	return GenerateTemplates([]string{"echo-interface.tmpl", "echo-wrappers.tmpl", "echo-register.tmpl"}, t, operations)
-}
-
 // Uses the template engine to generate the function which registers our wrappers
-// as Echo path handlers.
+// as chi path handlers.
 func GenerateClient(t *template.Template, ops []OperationDefinition) (string, error) {
 	return GenerateTemplates([]string{"client.tmpl"}, t, ops)
 }

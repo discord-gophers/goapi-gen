@@ -19,7 +19,7 @@ import (
 
 	"github.com/discord-gophers/goapi-gen/pkg/runtime"
 	"github.com/getkin/kin-openapi/openapi3"
-	"github.com/labstack/echo/v4"
+	"github.com/go-chi/chi/v5"
 )
 
 // Has additional properties of type int
@@ -1274,95 +1274,184 @@ func ParseBodyWithAddPropsResponse(rsp *http.Response) (*BodyWithAddPropsRespons
 type ServerInterface interface {
 
 	// (GET /ensure-everything-is-referenced)
-	EnsureEverythingIsReferenced(ctx echo.Context) error
+	EnsureEverythingIsReferenced(w http.ResponseWriter, r *http.Request)
 
 	// (GET /params_with_add_props)
-	ParamsWithAddProps(ctx echo.Context, params ParamsWithAddPropsParams) error
+	ParamsWithAddProps(w http.ResponseWriter, r *http.Request, params ParamsWithAddPropsParams)
 
 	// (POST /params_with_add_props)
-	BodyWithAddProps(ctx echo.Context) error
+	BodyWithAddProps(w http.ResponseWriter, r *http.Request)
 }
 
-// ServerInterfaceWrapper converts echo contexts to parameters.
+// ServerInterfaceWrapper converts contexts to parameters.
 type ServerInterfaceWrapper struct {
-	Handler ServerInterface
+	Handler            ServerInterface
+	HandlerMiddlewares []MiddlewareFunc
+	TaggedMiddlewares  map[string]MiddlewareFunc
+	ErrorHandlerFunc   func(w http.ResponseWriter, r *http.Request, err error)
 }
 
-// EnsureEverythingIsReferenced converts echo context to params.
-func (w *ServerInterfaceWrapper) EnsureEverythingIsReferenced(ctx echo.Context) error {
-	var err error
+type MiddlewareFunc func(http.HandlerFunc) http.HandlerFunc
 
-	// Invoke the callback with all the unmarshalled arguments
-	err = w.Handler.EnsureEverythingIsReferenced(ctx)
-	return err
+// EnsureEverythingIsReferenced operation middleware
+func (siw *ServerInterfaceWrapper) EnsureEverythingIsReferenced(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+
+	var handler = func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.EnsureEverythingIsReferenced(w, r)
+	}
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler(w, r.WithContext(ctx))
 }
 
-// ParamsWithAddProps converts echo context to params.
-func (w *ServerInterfaceWrapper) ParamsWithAddProps(ctx echo.Context) error {
+// ParamsWithAddProps operation middleware
+func (siw *ServerInterfaceWrapper) ParamsWithAddProps(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+
 	var err error
 
 	// Parameter object where we will unmarshal all parameters from the context
 	var params ParamsWithAddPropsParams
-	// ------------- Required query parameter "p1" -------------
 
-	err = runtime.BindQueryParameter("simple", true, true, "p1", ctx.QueryParams(), &params.P1)
+	// ------------- Required query parameter "p1" -------------
+	if paramValue := r.URL.Query().Get("p1"); paramValue != "" {
+
+	} else {
+		err := fmt.Errorf("Query argument p1 is required, but not found")
+		siw.ErrorHandlerFunc(w, r, &RequiredParamError{err})
+		return
+	}
+
+	err = runtime.BindQueryParameter("simple", true, true, "p1", r.URL.Query(), &params.P1)
 	if err != nil {
-		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter p1: %s", err))
+		err = fmt.Errorf("Invalid format for parameter p1: %w", err)
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{err})
+		return
 	}
 
 	// ------------- Required query parameter "p2" -------------
+	if paramValue := r.URL.Query().Get("p2"); paramValue != "" {
 
-	err = runtime.BindQueryParameter("form", true, true, "p2", ctx.QueryParams(), &params.P2)
-	if err != nil {
-		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter p2: %s", err))
+	} else {
+		err := fmt.Errorf("Query argument p2 is required, but not found")
+		siw.ErrorHandlerFunc(w, r, &RequiredParamError{err})
+		return
 	}
 
-	// Invoke the callback with all the unmarshalled arguments
-	err = w.Handler.ParamsWithAddProps(ctx, params)
-	return err
+	err = runtime.BindQueryParameter("form", true, true, "p2", r.URL.Query(), &params.P2)
+	if err != nil {
+		err = fmt.Errorf("Invalid format for parameter p2: %w", err)
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{err})
+		return
+	}
+
+	var handler = func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.ParamsWithAddProps(w, r, params)
+	}
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler(w, r.WithContext(ctx))
 }
 
-// BodyWithAddProps converts echo context to params.
-func (w *ServerInterfaceWrapper) BodyWithAddProps(ctx echo.Context) error {
-	var err error
+// BodyWithAddProps operation middleware
+func (siw *ServerInterfaceWrapper) BodyWithAddProps(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
 
-	// Invoke the callback with all the unmarshalled arguments
-	err = w.Handler.BodyWithAddProps(ctx)
-	return err
+	var handler = func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.BodyWithAddProps(w, r)
+	}
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler(w, r.WithContext(ctx))
 }
 
-// This is a simple interface which specifies echo.Route addition functions which
-// are present on both echo.Echo and echo.Group, since we want to allow using
-// either of them for path registration
-type EchoRouter interface {
-	CONNECT(path string, h echo.HandlerFunc, m ...echo.MiddlewareFunc) *echo.Route
-	DELETE(path string, h echo.HandlerFunc, m ...echo.MiddlewareFunc) *echo.Route
-	GET(path string, h echo.HandlerFunc, m ...echo.MiddlewareFunc) *echo.Route
-	HEAD(path string, h echo.HandlerFunc, m ...echo.MiddlewareFunc) *echo.Route
-	OPTIONS(path string, h echo.HandlerFunc, m ...echo.MiddlewareFunc) *echo.Route
-	PATCH(path string, h echo.HandlerFunc, m ...echo.MiddlewareFunc) *echo.Route
-	POST(path string, h echo.HandlerFunc, m ...echo.MiddlewareFunc) *echo.Route
-	PUT(path string, h echo.HandlerFunc, m ...echo.MiddlewareFunc) *echo.Route
-	TRACE(path string, h echo.HandlerFunc, m ...echo.MiddlewareFunc) *echo.Route
+type UnescapedCookieParamError struct {
+	error
+}
+type UnmarshalingParamError struct {
+	error
+}
+type RequiredParamError struct {
+	error
+}
+type RequiredHeaderError struct {
+	error
+}
+type InvalidParamFormatError struct {
+	error
+}
+type TooManyValuesForParamError struct {
+	error
 }
 
-// RegisterHandlers adds each server route to the EchoRouter.
-func RegisterHandlers(router EchoRouter, si ServerInterface) {
-	RegisterHandlersWithBaseURL(router, si, "")
+// Handler creates http.Handler with routing matching OpenAPI spec.
+func Handler(si ServerInterface) http.Handler {
+	return HandlerWithOptions(si, ChiServerOptions{})
 }
 
-// Registers handlers, and prepends BaseURL to the paths, so that the paths
-// can be served under a prefix.
-func RegisterHandlersWithBaseURL(router EchoRouter, si ServerInterface, baseURL string) {
+type ChiServerOptions struct {
+	BaseURL           string
+	BaseRouter        chi.Router
+	Middlewares       []MiddlewareFunc
+	TaggedMiddlewares map[string]MiddlewareFunc
+	ErrorHandlerFunc  func(w http.ResponseWriter, r *http.Request, err error)
+}
+
+// HandlerFromMux creates http.Handler with routing matching OpenAPI spec based on the provided mux.
+func HandlerFromMux(si ServerInterface, r chi.Router) http.Handler {
+	return HandlerWithOptions(si, ChiServerOptions{
+		BaseRouter: r,
+	})
+}
+
+func HandlerFromMuxWithBaseURL(si ServerInterface, r chi.Router, baseURL string) http.Handler {
+	return HandlerWithOptions(si, ChiServerOptions{
+		BaseURL:    baseURL,
+		BaseRouter: r,
+	})
+}
+
+// HandlerWithOptions creates http.Handler with additional options
+func HandlerWithOptions(si ServerInterface, options ChiServerOptions) http.Handler {
+	r := options.BaseRouter
+
+	if r == nil {
+		r = chi.NewRouter()
+	}
+
+	if options.ErrorHandlerFunc == nil {
+		options.ErrorHandlerFunc = func(w http.ResponseWriter, r *http.Request, err error) {
+			http.Error(w, err.Error(), http.StatusBadRequest)
+		}
+	}
+
+	if options.BaseURL == "" {
+		options.BaseURL = "/"
+	}
 
 	wrapper := ServerInterfaceWrapper{
-		Handler: si,
+		Handler:            si,
+		HandlerMiddlewares: options.Middlewares,
+		TaggedMiddlewares:  options.TaggedMiddlewares,
+		ErrorHandlerFunc:   options.ErrorHandlerFunc,
 	}
 
-	router.GET(baseURL+"/ensure-everything-is-referenced", wrapper.EnsureEverythingIsReferenced)
-	router.GET(baseURL+"/params_with_add_props", wrapper.ParamsWithAddProps)
-	router.POST(baseURL+"/params_with_add_props", wrapper.BodyWithAddProps)
-
+	r.Route(options.BaseURL, func(r chi.Router) {
+		r.Get("/ensure-everything-is-referenced", wrapper.EnsureEverythingIsReferenced)
+		r.Get("/params_with_add_props", wrapper.ParamsWithAddProps)
+		r.Post("/params_with_add_props", wrapper.BodyWithAddProps)
+	})
+	return r
 }
 
 // Base64 encoded, gzipped, json marshaled Swagger object

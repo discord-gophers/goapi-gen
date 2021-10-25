@@ -31,19 +31,18 @@ import (
 
 // Options defines the optional code to generate.
 type Options struct {
-	GenerateChiServer  bool              // GenerateChiServer specifies whether to generate chi server boilerplate
-	GenerateEchoServer bool              // GenerateEchoServer specifies whether to generate echo server boilerplate
-	GenerateClient     bool              // GenerateClient specifies whether to generate client boilerplate
-	GenerateTypes      bool              // GenerateTypes specifies whether to generate type definitions
-	EmbedSpec          bool              // Whether to embed the swagger spec in the generated code
-	SkipFmt            bool              // Whether to skip go imports on the generated code
-	SkipPrune          bool              // Whether to skip pruning unused components on the generated code
-	AliasTypes         bool              // Whether to alias types if possible
-	IncludeTags        []string          // Only include operations that have one of these tags. Ignored when empty.
-	ExcludeTags        []string          // Exclude operations that have one of these tags. Ignored when empty.
-	UserTemplates      map[string]string // Override built-in templates from user-provided files
-	ImportMapping      map[string]string // ImportMapping specifies the golang package path for each external reference
-	ExcludeSchemas     []string          // Exclude from generation schemas with given names. Ignored when empty.
+	GenerateChiServer bool              // GenerateChiServer specifies whether to generate chi server boilerplate
+	GenerateClient    bool              // GenerateClient specifies whether to generate client boilerplate
+	GenerateTypes     bool              // GenerateTypes specifies whether to generate type definitions
+	EmbedSpec         bool              // Whether to embed the swagger spec in the generated code
+	SkipFmt           bool              // Whether to skip go imports on the generated code
+	SkipPrune         bool              // Whether to skip pruning unused components on the generated code
+	AliasTypes        bool              // Whether to alias types if possible
+	IncludeTags       []string          // Only include operations that have one of these tags. Ignored when empty.
+	ExcludeTags       []string          // Exclude operations that have one of these tags. Ignored when empty.
+	UserTemplates     map[string]string // Override built-in templates from user-provided files
+	ImportMapping     map[string]string // ImportMapping specifies the golang package path for each external reference
+	ExcludeSchemas    []string          // Exclude from generation schemas with given names. Ignored when empty.
 }
 
 // goImport represents a go package to be imported in the generated code
@@ -149,14 +148,6 @@ func Generate(swagger *openapi3.T, packageName string, opts Options) (string, er
 
 	}
 
-	var echoServerOut string
-	if opts.GenerateEchoServer {
-		echoServerOut, err = GenerateEchoServer(t, ops)
-		if err != nil {
-			return "", fmt.Errorf("error generating Go handlers for Paths: %w", err)
-		}
-	}
-
 	var chiServerOut string
 	if opts.GenerateChiServer {
 		chiServerOut, err = GenerateChiServer(t, ops)
@@ -221,13 +212,6 @@ func Generate(swagger *openapi3.T, packageName string, opts Options) (string, er
 		_, err = w.WriteString(clientWithResponsesOut)
 		if err != nil {
 			return "", fmt.Errorf("error writing client: %w", err)
-		}
-	}
-
-	if opts.GenerateEchoServer {
-		_, err = w.WriteString(echoServerOut)
-		if err != nil {
-			return "", fmt.Errorf("error writing server path handlers: %w", err)
 		}
 	}
 

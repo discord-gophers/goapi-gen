@@ -54,10 +54,9 @@ func TestIssue(t *testing.T) {
 	require.NoError(t, err)
 
 	opts := codegen.Options{
-		GenerateClient:     true,
-		GenerateEchoServer: true,
-		GenerateTypes:      true,
-		EmbedSpec:          true,
+		GenerateClient: true,
+		GenerateTypes:  true,
+		EmbedSpec:      true,
 	}
 
 	_, err = codegen.Generate(swagger, "issue_52", opts)

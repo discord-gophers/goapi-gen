@@ -13,10 +13,9 @@ func TestLineComments(t *testing.T) {
 	require.NoError(t, err)
 
 	opts := codegen.Options{
-		GenerateClient:     true,
-		GenerateEchoServer: true,
-		GenerateTypes:      true,
-		EmbedSpec:          true,
+		GenerateClient: true,
+		GenerateTypes:  true,
+		EmbedSpec:      true,
 	}
 
 	code, err := codegen.Generate(swagger, "grab_import_names", opts)

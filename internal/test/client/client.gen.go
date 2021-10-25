@@ -18,7 +18,7 @@ import (
 	"strings"
 
 	"github.com/getkin/kin-openapi/openapi3"
-	"github.com/labstack/echo/v4"
+	"github.com/go-chi/chi/v5"
 )
 
 const (
@@ -878,135 +878,227 @@ func ParseGetJSONWithTrailingSlashResponse(rsp *http.Response) (*GetJSONWithTrai
 type ServerInterface interface {
 
 	// (POST /with_both_bodies)
-	PostBoth(ctx echo.Context) error
+	PostBoth(w http.ResponseWriter, r *http.Request)
 
 	// (GET /with_both_responses)
-	GetBoth(ctx echo.Context) error
+	GetBoth(w http.ResponseWriter, r *http.Request)
 
 	// (POST /with_json_body)
-	PostJSON(ctx echo.Context) error
+	PostJSON(w http.ResponseWriter, r *http.Request)
 
 	// (GET /with_json_response)
-	GetJSON(ctx echo.Context) error
+	GetJSON(w http.ResponseWriter, r *http.Request)
 
 	// (POST /with_other_body)
-	PostOther(ctx echo.Context) error
+	PostOther(w http.ResponseWriter, r *http.Request)
 
 	// (GET /with_other_response)
-	GetOther(ctx echo.Context) error
+	GetOther(w http.ResponseWriter, r *http.Request)
 
 	// (GET /with_trailing_slash/)
-	GetJSONWithTrailingSlash(ctx echo.Context) error
+	GetJSONWithTrailingSlash(w http.ResponseWriter, r *http.Request)
 }
 
-// ServerInterfaceWrapper converts echo contexts to parameters.
+// ServerInterfaceWrapper converts contexts to parameters.
 type ServerInterfaceWrapper struct {
-	Handler ServerInterface
+	Handler            ServerInterface
+	HandlerMiddlewares []MiddlewareFunc
+	TaggedMiddlewares  map[string]MiddlewareFunc
+	ErrorHandlerFunc   func(w http.ResponseWriter, r *http.Request, err error)
 }
 
-// PostBoth converts echo context to params.
-func (w *ServerInterfaceWrapper) PostBoth(ctx echo.Context) error {
-	var err error
+type MiddlewareFunc func(http.HandlerFunc) http.HandlerFunc
 
-	// Invoke the callback with all the unmarshalled arguments
-	err = w.Handler.PostBoth(ctx)
-	return err
-}
+// PostBoth operation middleware
+func (siw *ServerInterfaceWrapper) PostBoth(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
 
-// GetBoth converts echo context to params.
-func (w *ServerInterfaceWrapper) GetBoth(ctx echo.Context) error {
-	var err error
-
-	// Invoke the callback with all the unmarshalled arguments
-	err = w.Handler.GetBoth(ctx)
-	return err
-}
-
-// PostJSON converts echo context to params.
-func (w *ServerInterfaceWrapper) PostJSON(ctx echo.Context) error {
-	var err error
-
-	// Invoke the callback with all the unmarshalled arguments
-	err = w.Handler.PostJSON(ctx)
-	return err
-}
-
-// GetJSON converts echo context to params.
-func (w *ServerInterfaceWrapper) GetJSON(ctx echo.Context) error {
-	var err error
-
-	ctx.Set(OpenIdScopes, []string{"json.read", "json.admin"})
-
-	// Invoke the callback with all the unmarshalled arguments
-	err = w.Handler.GetJSON(ctx)
-	return err
-}
-
-// PostOther converts echo context to params.
-func (w *ServerInterfaceWrapper) PostOther(ctx echo.Context) error {
-	var err error
-
-	// Invoke the callback with all the unmarshalled arguments
-	err = w.Handler.PostOther(ctx)
-	return err
-}
-
-// GetOther converts echo context to params.
-func (w *ServerInterfaceWrapper) GetOther(ctx echo.Context) error {
-	var err error
-
-	// Invoke the callback with all the unmarshalled arguments
-	err = w.Handler.GetOther(ctx)
-	return err
-}
-
-// GetJSONWithTrailingSlash converts echo context to params.
-func (w *ServerInterfaceWrapper) GetJSONWithTrailingSlash(ctx echo.Context) error {
-	var err error
-
-	ctx.Set(OpenIdScopes, []string{"json.read", "json.admin"})
-
-	// Invoke the callback with all the unmarshalled arguments
-	err = w.Handler.GetJSONWithTrailingSlash(ctx)
-	return err
-}
-
-// This is a simple interface which specifies echo.Route addition functions which
-// are present on both echo.Echo and echo.Group, since we want to allow using
-// either of them for path registration
-type EchoRouter interface {
-	CONNECT(path string, h echo.HandlerFunc, m ...echo.MiddlewareFunc) *echo.Route
-	DELETE(path string, h echo.HandlerFunc, m ...echo.MiddlewareFunc) *echo.Route
-	GET(path string, h echo.HandlerFunc, m ...echo.MiddlewareFunc) *echo.Route
-	HEAD(path string, h echo.HandlerFunc, m ...echo.MiddlewareFunc) *echo.Route
-	OPTIONS(path string, h echo.HandlerFunc, m ...echo.MiddlewareFunc) *echo.Route
-	PATCH(path string, h echo.HandlerFunc, m ...echo.MiddlewareFunc) *echo.Route
-	POST(path string, h echo.HandlerFunc, m ...echo.MiddlewareFunc) *echo.Route
-	PUT(path string, h echo.HandlerFunc, m ...echo.MiddlewareFunc) *echo.Route
-	TRACE(path string, h echo.HandlerFunc, m ...echo.MiddlewareFunc) *echo.Route
-}
-
-// RegisterHandlers adds each server route to the EchoRouter.
-func RegisterHandlers(router EchoRouter, si ServerInterface) {
-	RegisterHandlersWithBaseURL(router, si, "")
-}
-
-// Registers handlers, and prepends BaseURL to the paths, so that the paths
-// can be served under a prefix.
-func RegisterHandlersWithBaseURL(router EchoRouter, si ServerInterface, baseURL string) {
-
-	wrapper := ServerInterfaceWrapper{
-		Handler: si,
+	var handler = func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.PostBoth(w, r)
 	}
 
-	router.POST(baseURL+"/with_both_bodies", wrapper.PostBoth)
-	router.GET(baseURL+"/with_both_responses", wrapper.GetBoth)
-	router.POST(baseURL+"/with_json_body", wrapper.PostJSON)
-	router.GET(baseURL+"/with_json_response", wrapper.GetJSON)
-	router.POST(baseURL+"/with_other_body", wrapper.PostOther)
-	router.GET(baseURL+"/with_other_response", wrapper.GetOther)
-	router.GET(baseURL+"/with_trailing_slash/", wrapper.GetJSONWithTrailingSlash)
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
 
+	handler(w, r.WithContext(ctx))
+}
+
+// GetBoth operation middleware
+func (siw *ServerInterfaceWrapper) GetBoth(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+
+	var handler = func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.GetBoth(w, r)
+	}
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler(w, r.WithContext(ctx))
+}
+
+// PostJSON operation middleware
+func (siw *ServerInterfaceWrapper) PostJSON(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+
+	var handler = func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.PostJSON(w, r)
+	}
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler(w, r.WithContext(ctx))
+}
+
+// GetJSON operation middleware
+func (siw *ServerInterfaceWrapper) GetJSON(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+
+	ctx = context.WithValue(ctx, OpenIdScopes, []string{"json.read", "json.admin"})
+
+	var handler = func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.GetJSON(w, r)
+	}
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler(w, r.WithContext(ctx))
+}
+
+// PostOther operation middleware
+func (siw *ServerInterfaceWrapper) PostOther(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+
+	var handler = func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.PostOther(w, r)
+	}
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler(w, r.WithContext(ctx))
+}
+
+// GetOther operation middleware
+func (siw *ServerInterfaceWrapper) GetOther(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+
+	var handler = func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.GetOther(w, r)
+	}
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler(w, r.WithContext(ctx))
+}
+
+// GetJSONWithTrailingSlash operation middleware
+func (siw *ServerInterfaceWrapper) GetJSONWithTrailingSlash(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+
+	ctx = context.WithValue(ctx, OpenIdScopes, []string{"json.read", "json.admin"})
+
+	var handler = func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.GetJSONWithTrailingSlash(w, r)
+	}
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler(w, r.WithContext(ctx))
+}
+
+type UnescapedCookieParamError struct {
+	error
+}
+type UnmarshalingParamError struct {
+	error
+}
+type RequiredParamError struct {
+	error
+}
+type RequiredHeaderError struct {
+	error
+}
+type InvalidParamFormatError struct {
+	error
+}
+type TooManyValuesForParamError struct {
+	error
+}
+
+// Handler creates http.Handler with routing matching OpenAPI spec.
+func Handler(si ServerInterface) http.Handler {
+	return HandlerWithOptions(si, ChiServerOptions{})
+}
+
+type ChiServerOptions struct {
+	BaseURL           string
+	BaseRouter        chi.Router
+	Middlewares       []MiddlewareFunc
+	TaggedMiddlewares map[string]MiddlewareFunc
+	ErrorHandlerFunc  func(w http.ResponseWriter, r *http.Request, err error)
+}
+
+// HandlerFromMux creates http.Handler with routing matching OpenAPI spec based on the provided mux.
+func HandlerFromMux(si ServerInterface, r chi.Router) http.Handler {
+	return HandlerWithOptions(si, ChiServerOptions{
+		BaseRouter: r,
+	})
+}
+
+func HandlerFromMuxWithBaseURL(si ServerInterface, r chi.Router, baseURL string) http.Handler {
+	return HandlerWithOptions(si, ChiServerOptions{
+		BaseURL:    baseURL,
+		BaseRouter: r,
+	})
+}
+
+// HandlerWithOptions creates http.Handler with additional options
+func HandlerWithOptions(si ServerInterface, options ChiServerOptions) http.Handler {
+	r := options.BaseRouter
+
+	if r == nil {
+		r = chi.NewRouter()
+	}
+
+	if options.ErrorHandlerFunc == nil {
+		options.ErrorHandlerFunc = func(w http.ResponseWriter, r *http.Request, err error) {
+			http.Error(w, err.Error(), http.StatusBadRequest)
+		}
+	}
+
+	if options.BaseURL == "" {
+		options.BaseURL = "/"
+	}
+
+	wrapper := ServerInterfaceWrapper{
+		Handler:            si,
+		HandlerMiddlewares: options.Middlewares,
+		TaggedMiddlewares:  options.TaggedMiddlewares,
+		ErrorHandlerFunc:   options.ErrorHandlerFunc,
+	}
+
+	r.Route(options.BaseURL, func(r chi.Router) {
+		r.Post("/with_both_bodies", wrapper.PostBoth)
+		r.Get("/with_both_responses", wrapper.GetBoth)
+		r.Post("/with_json_body", wrapper.PostJSON)
+		r.Get("/with_json_response", wrapper.GetJSON)
+		r.Post("/with_other_body", wrapper.PostOther)
+		r.Get("/with_other_response", wrapper.GetOther)
+		r.Get("/with_trailing_slash/", wrapper.GetJSONWithTrailingSlash)
+	})
+	return r
 }
 
 // Base64 encoded, gzipped, json marshaled Swagger object
