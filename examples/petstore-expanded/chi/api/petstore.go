@@ -1,4 +1,4 @@
-//go:generate go run github.com/discord-gophers/goapi-gen/cmd/oapi-codegen --package=api --generate types,chi-server,spec -o petstore.gen.go ../../petstore-expanded.yaml
+//go:generate go run github.com/discord-gophers/goapi-gen/cmd/goapi-gen --package=api --generate types,chi-server,spec -o petstore.gen.go ../../petstore-expanded.yaml
 
 package api
 
