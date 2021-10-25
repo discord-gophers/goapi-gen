@@ -137,8 +137,8 @@ info:
   version: 1.0.0
 
 servers:
-- url: https://test.oapi-codegen.com/v2
-- url: http://test.oapi-codegen.com/v2
+- url: https://test.goapi-gen.com/v2
+- url: http://test.goapi-gen.com/v2
 
 paths:
   /test:
@@ -304,8 +304,8 @@ info:
   version: 1.0.0
 
 servers:
-- url: https://test.oapi-codegen.com/v2
-- url: http://test.oapi-codegen.com/v2
+- url: https://test.goapi-gen.com/v2
+- url: http://test.goapi-gen.com/v2
 
 paths:
   /cat:

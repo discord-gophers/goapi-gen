@@ -35,7 +35,7 @@ into objects which match the OpenAPI 3.0 definition. The code generator in this
 directory does a lot of that for you. You would run it like so:
 
     go get github.com/discord-gophers/goapi-gen/cmd/goapi-gen
-    oapi-codegen petstore-expanded.yaml  > petstore.gen.go
+    goapi-gen petstore-expanded.yaml  > petstore.gen.go
 
 Let's go through that `petstore.gen.go` file to show you everything which was
 generated.
@@ -292,7 +292,7 @@ A Client object which implements the above interface is also generated:
 // Client which conforms to the OpenAPI3 specification for this service.
 type Client struct {
     // The endpoint of the server conforming to this interface, with scheme,
-    // https://api.deepmap.com for example.
+    // https://api.example.com for example.
     Server string
 
     // HTTP client with any customized settings, such as certificate chains.
@@ -428,13 +428,13 @@ which help you to use the various OpenAPI 3 Authentication mechanism.
 
 ## Extensions
 
-`oapi-codegen` supports the following extended properties:
+`goapi-gen` supports the following extended properties:
 
 - `x-go-type`: specifies Go type name. It allows you to specify the type name for a schema, and
   will override any default value. This extended property isn't supported in all parts of
   OpenAPI, so please refer to the spec as to where it's allowed. Swagger validation tools will
   flag incorrect usage of this property.
-- `x-oapi-codegen-extra-tags`: adds extra Go field tags to the generated struct field. This is
+- `x-goapi-gen-extra-tags`: adds extra Go field tags to the generated struct field. This is
   useful for interfacing with tag based ORM or validation libraries. The extra tags that
   are added are in addition to the regular json tags that are generated. If you specify your
   own `json` tag, you will override the default one.
@@ -446,7 +446,7 @@ which help you to use the various OpenAPI 3 Authentication mechanism.
           properties:
             name:
               type: string
-              x-oapi-codegen-extra-tags:
+              x-goapi-gen-extra-tags:
                 tag1: value1
                 tag2: value2
     ```
@@ -456,7 +456,7 @@ which help you to use the various OpenAPI 3 Authentication mechanism.
   Name string `json:"name" tag1:"value1" tag2:"value2"`
   ```
 
-- `x-oapi-codegen-middlewares`: specifies a list of tagged middlewares. These can be specific
+- `x-goapi-gen-middlewares`: specifies a list of tagged middlewares. These can be specific
   middlewares that are operation-specific, as well as path-specific. This is very useful when you
   want to give a specific routes middleware, but not to all operations. The middleware are always
   called in the order of definition. If the tagged middleware is not defined, it will be silently
@@ -464,9 +464,9 @@ which help you to use the various OpenAPI 3 Authentication mechanism.
 
     ```yaml
     /pets:
-      x-oapi-codegen-middlewares: [validateJSON]
+      x-goapi-gen-middlewares: [validateJSON]
       get:
-        x-oapi-codegen-middlewares: [limit]
+        x-goapi-gen-middlewares: [limit]
     ```
   In the example above, the following middleware calls will be added to your handler:
 
@@ -483,9 +483,9 @@ which help you to use the various OpenAPI 3 Authentication mechanism.
   ```
 
 
-## Using `oapi-codegen`
+## Using `goapi-gen`
 
-The default options for `oapi-codegen` will generate everything; client, server,
+The default options for `goapi-gen` will generate everything; client, server,
 type definitions and embedded swagger spec, but you can generate subsets of
 those via the `-generate` flag. It defaults to `types,client,server,spec`, but
 you can specify any combination of those.
@@ -508,10 +508,10 @@ you can specify any combination of those.
  Go include paths. Please see below.
 
 So, for example, if you would like to produce only the server code, you could
-run `oapi-codegen -generate types,server`. You could generate `types` and
+run `goapi-gen -generate types,server`. You could generate `types` and
 `server` into separate files, but both are required for the server code.
 
-`oapi-codegen` can filter paths base on their tags in the openapi definition.
+`goapi-gen` can filter paths base on their tags in the openapi definition.
 Use either `-include-tags` or `-exclude-tags` followed by a comma-separated list
 of tags. For instance, to generate a server that serves all paths except those
 tagged with `auth` or `admin`, use the argument, `-exclude-tags="auth,admin"`.
@@ -519,7 +519,7 @@ To generate a server that only handles `admin` paths, use the argument
 `-include-tags="admin"`. When neither of these arguments is present, all paths
 are generated.
 
-`oapi-codegen` can filter schemas based on the option `--exclude-schemas`, which is
+`goapi-gen` can filter schemas based on the option `--exclude-schemas`, which is
 a comma separated list of schema names. For instance, `--exclude-schemas=Pet,NewPet`
 will exclude from generation schemas `Pet` and `NewPet`. This allow to have a
 in the same package a manually defined structure or interface and refer to it
@@ -543,7 +543,7 @@ import-mapping:
   ./packageB/spec.yaml: github.com/discord-gophers/goapi-gen/internal/test/externalref/packageB
 ```
 
-Have a look at [`cmd/oapi-codegen/oapi-codegen.go`](https://github.com/discord-gophers/goapi-gen/blob/master/cmd/oapi-codegen/oapi-codegen.go#L48)
+Have a look at [`cmd/goapi-gen/goapi-gen.go`](https://github.com/discord-gophers/goapi-gen/blob/master/cmd/goapi-gen/goapi-gen.go#L48)
 to see all the fields on the configuration structure.
 
 ### Import Mappings
@@ -557,15 +557,15 @@ An external reference looks like this:
     $ref: ./some_spec.yaml#/components/schemas/Type
 
 We assume that you have already generated the boilerplate code for `./some_spec.yaml`
-using `oapi-codegen`, and you have a package which contains the generated code,
-let's call it `github.com/deepmap/some-package`. You need to tell `oapi-codegen` that
+using `goapi-gen`, and you have a package which contains the generated code,
+let's call it `github.com/discord-gophers/some-package`. You need to tell `goapi-gen` that
 `some_spec.yaml` corresponds to this package, and you would do it by specifying
 this command line argument:
 
-    -import-mapping=./some_spec.yaml:github.com/deepmap/some-package
+    -import-mapping=./some_spec.yaml:github.com/discord-gophers/some-package
 
 This tells us that in order to resolve references generated from `some_spec.yaml` we
-need to import `github.com/deepmap/some-package`. You may specify multiple mappings
+need to import `github.com/discord-gophers/some-package`. You may specify multiple mappings
 by comma separating them in the form `key1:value1,key2:value2`.
 
 ## What's missing or incomplete
@@ -620,7 +620,7 @@ on-the-fly at run time. Example:
     $ ls -1 my-templates/
     client.tmpl
     typedef.tmpl
-    $ oapi-codegen \
+    $ goapi-gen \
         -templates my-templates/ \
         -generate types,client \
         petstore-expanded.yaml

@@ -181,8 +181,8 @@ info:
   version: 1.0.0
 
 servers:
-- url: https://test.oapi-codegen.com/v2
-- url: http://test.oapi-codegen.com/v2
+- url: https://test.goapi-gen.com/v2
+- url: http://test.goapi-gen.com/v2
 
 paths:
   /test/{name}:
@@ -305,7 +305,7 @@ components:
         dead_since:
           type: string
           format: date-time
-          x-oapi-codegen-extra-tags:
+          x-goapi-gen-extra-tags:
             tag1: value1
             tag2: value2
         cause:

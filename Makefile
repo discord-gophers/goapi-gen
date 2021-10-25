@@ -1,5 +1,5 @@
 help:
-	@echo "This is a helper makefile for oapi-codegen"
+	@echo "This is a helper makefile for goapi-gen"
 	@echo "Targets:"
 	@echo "    generate:    regenerate all generated files"
 	@echo "    test:        run all tests"
