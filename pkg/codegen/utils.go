@@ -241,21 +241,6 @@ func IsWholeDocumentReference(ref string) bool {
 }
 
 // This function converts a swagger style path URI with parameters to a
-// Echo compatible path URI. We need to replace all of Swagger parameters with
-// ":param". Valid input parameters are:
-//   {param}
-//   {param*}
-//   {.param}
-//   {.param*}
-//   {;param}
-//   {;param*}
-//   {?param}
-//   {?param*}
-func SwaggerUriToEchoUri(uri string) string {
-	return pathParamRE.ReplaceAllString(uri, ":$1")
-}
-
-// This function converts a swagger style path URI with parameters to a
 // Chi compatible path URI. We need to replace all of Swagger parameters with
 // "{param}". Valid input parameters are:
 //   {param}

@@ -812,7 +812,6 @@ import (
 	openapi_types "github.com/discord-gophers/goapi-gen/pkg/types"
 	"github.com/getkin/kin-openapi/openapi3"
 	"github.com/go-chi/chi/v5"
-	"github.com/labstack/echo/v4"
 	{{- range .ExternalImports}}
 	{{ . }}
 	{{- end}}
@@ -947,4 +946,3 @@ func Parse(t *template.Template) (*template.Template, error) {
 	}
 	return t, nil
 }
-
