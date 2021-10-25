@@ -19,8 +19,7 @@ design decisions in favor of simplicity, knowing that we can't generate strongly
 typed Go code for all possible OpenAPI Schemas.
 
 This repository is a hard fork of [deepmap/oapi-codegen](https://github.com/deepmap-oapi-codegen).
-This new version aims to bring breaking changes to the repository that are otherwise
-difficult to implement in the original repository, different design goals, and more
+This new version plans to diverge from the original repository with different design goals and more
 emphasis on `go-chi`.
 
 ## Overview
