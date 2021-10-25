@@ -27,7 +27,7 @@ type Pet struct {
 	NewPet `yaml:",inline"`
 	// Embedded fields due to inline allOf schema
 	// Unique id of the pet
-	Id int64 `json:"id"`
+	ID int64 `json:"id"`
 }
 
 // FindPetsParams defines parameters for FindPets.

@@ -88,11 +88,11 @@ func (p *PetStore) AddPet(w http.ResponseWriter, r *http.Request) {
 	var pet Pet
 	pet.Name = newPet.Name
 	pet.Tag = newPet.Tag
-	pet.Id = p.NextId
+	pet.ID = p.NextId
 	p.NextId = p.NextId + 1
 
 	// Insert into map
-	p.Pets[pet.Id] = pet
+	p.Pets[pet.ID] = pet
 
 	// Now, we have to return the NewPet
 	w.WriteHeader(http.StatusCreated)

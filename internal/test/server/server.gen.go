@@ -114,7 +114,7 @@ type CreateResource2Params struct {
 
 // UpdateResource3JSONBody defines parameters for UpdateResource3.
 type UpdateResource3JSONBody struct {
-	Id   *int    `json:"id,omitempty"`
+	ID   *int    `json:"id,omitempty"`
 	Name *string `json:"name,omitempty"`
 }
 

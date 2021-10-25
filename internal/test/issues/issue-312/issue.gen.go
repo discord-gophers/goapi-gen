@@ -123,7 +123,7 @@ func WithRequestEditorFn(fn RequestEditorFn) ClientOption {
 // The interface specification for the client above.
 type ClientInterface interface {
 	// GetPet request
-	GetPet(ctx context.Context, petId string, reqEditors ...RequestEditorFn) (*http.Response, error)
+	GetPet(ctx context.Context, petID string, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// ValidatePets request with any body
 	ValidatePetsWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
@@ -131,8 +131,8 @@ type ClientInterface interface {
 	ValidatePets(ctx context.Context, body ValidatePetsJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
 }
 
-func (c *Client) GetPet(ctx context.Context, petId string, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewGetPetRequest(c.Server, petId)
+func (c *Client) GetPet(ctx context.Context, petID string, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewGetPetRequest(c.Server, petID)
 	if err != nil {
 		return nil, err
 	}
@@ -168,12 +168,12 @@ func (c *Client) ValidatePets(ctx context.Context, body ValidatePetsJSONRequestB
 }
 
 // NewGetPetRequest generates requests for GetPet
-func NewGetPetRequest(server string, petId string) (*http.Request, error) {
+func NewGetPetRequest(server string, petID string) (*http.Request, error) {
 	var err error
 
 	var pathParam0 string
 
-	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "petId", runtime.ParamLocationPath, petId)
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "petId", runtime.ParamLocationPath, petID)
 	if err != nil {
 		return nil, err
 	}
@@ -285,7 +285,7 @@ func WithBaseURL(baseURL string) ClientOption {
 // ClientWithResponsesInterface is the interface specification for the client with responses above.
 type ClientWithResponsesInterface interface {
 	// GetPet request
-	GetPetWithResponse(ctx context.Context, petId string, reqEditors ...RequestEditorFn) (*GetPetResponse, error)
+	GetPetWithResponse(ctx context.Context, petID string, reqEditors ...RequestEditorFn) (*GetPetResponse, error)
 
 	// ValidatePets request with any body
 	ValidatePetsWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*ValidatePetsResponse, error)
@@ -296,7 +296,7 @@ type ClientWithResponsesInterface interface {
 type GetPetResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
-	JSON200      *Pet
+	JSON         *Pet
 }
 
 // Status returns HTTPResponse.Status
@@ -318,7 +318,7 @@ func (r GetPetResponse) StatusCode() int {
 type ValidatePetsResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
-	JSON200      *[]Pet
+	JSON         *[]Pet
 	JSONDefault  *Error
 }
 
@@ -339,8 +339,8 @@ func (r ValidatePetsResponse) StatusCode() int {
 }
 
 // GetPetWithResponse request returning *GetPetResponse
-func (c *ClientWithResponses) GetPetWithResponse(ctx context.Context, petId string, reqEditors ...RequestEditorFn) (*GetPetResponse, error) {
-	rsp, err := c.GetPet(ctx, petId, reqEditors...)
+func (c *ClientWithResponses) GetPetWithResponse(ctx context.Context, petID string, reqEditors ...RequestEditorFn) (*GetPetResponse, error) {
+	rsp, err := c.GetPet(ctx, petID, reqEditors...)
 	if err != nil {
 		return nil, err
 	}
@@ -383,7 +383,7 @@ func ParseGetPetResponse(rsp *http.Response) (*GetPetResponse, error) {
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
 			return nil, err
 		}
-		response.JSON200 = &dest
+		response.JSON = &dest
 
 	}
 
@@ -409,7 +409,7 @@ func ParseValidatePetsResponse(rsp *http.Response) (*ValidatePetsResponse, error
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
 			return nil, err
 		}
-		response.JSON200 = &dest
+		response.JSON = &dest
 
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
 		var dest Error
@@ -427,7 +427,7 @@ func ParseValidatePetsResponse(rsp *http.Response) (*ValidatePetsResponse, error
 type ServerInterface interface {
 	// Get pet given identifier.
 	// (GET /pets/{petId})
-	GetPet(ctx echo.Context, petId string) error
+	GetPet(ctx echo.Context, petID string) error
 	// Validate pets
 	// (POST /pets:validate)
 	ValidatePets(ctx echo.Context) error
@@ -442,15 +442,15 @@ type ServerInterfaceWrapper struct {
 func (w *ServerInterfaceWrapper) GetPet(ctx echo.Context) error {
 	var err error
 	// ------------- Path parameter "petId" -------------
-	var petId string
+	var petID string
 
-	err = runtime.BindStyledParameterWithLocation("simple", false, "petId", runtime.ParamLocationPath, ctx.Param("petId"), &petId)
+	err = runtime.BindStyledParameterWithLocation("simple", false, "petId", runtime.ParamLocationPath, ctx.Param("petId"), &petID)
 	if err != nil {
 		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter petId: %s", err))
 	}
 
 	// Invoke the callback with all the unmarshalled arguments
-	err = w.Handler.GetPet(ctx, petId)
+	err = w.Handler.GetPet(ctx, petID)
 	return err
 }
 

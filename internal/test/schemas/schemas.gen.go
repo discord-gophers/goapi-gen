@@ -37,7 +37,7 @@ const (
 )
 
 // This schema name starts with a number
-type N5StartsWithNumber map[string]interface{}
+type StartsWithNumber map[string]interface{}
 
 // AnyType1 defines model for AnyType1.
 type AnyType1 interface{}
@@ -183,7 +183,7 @@ type ClientInterface interface {
 	GetIssues375(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// Issue41 request
-	Issue41(ctx context.Context, n1param N5StartsWithNumber, reqEditors ...RequestEditorFn) (*http.Response, error)
+	Issue41(ctx context.Context, param StartsWithNumber, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// Issue9 request with any body
 	Issue9WithBody(ctx context.Context, params *Issue9Params, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
@@ -275,8 +275,8 @@ func (c *Client) GetIssues375(ctx context.Context, reqEditors ...RequestEditorFn
 	return c.Client.Do(req)
 }
 
-func (c *Client) Issue41(ctx context.Context, n1param N5StartsWithNumber, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewIssue41Request(c.Server, n1param)
+func (c *Client) Issue41(ctx context.Context, param StartsWithNumber, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewIssue41Request(c.Server, param)
 	if err != nil {
 		return nil, err
 	}
@@ -501,12 +501,12 @@ func NewGetIssues375Request(server string) (*http.Request, error) {
 }
 
 // NewIssue41Request generates requests for Issue41
-func NewIssue41Request(server string, n1param N5StartsWithNumber) (*http.Request, error) {
+func NewIssue41Request(server string, param StartsWithNumber) (*http.Request, error) {
 	var err error
 
 	var pathParam0 string
 
-	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "1param", runtime.ParamLocationPath, n1param)
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "1param", runtime.ParamLocationPath, param)
 	if err != nil {
 		return nil, err
 	}
@@ -654,7 +654,7 @@ type ClientWithResponsesInterface interface {
 	GetIssues375WithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*GetIssues375Response, error)
 
 	// Issue41 request
-	Issue41WithResponse(ctx context.Context, n1param N5StartsWithNumber, reqEditors ...RequestEditorFn) (*Issue41Response, error)
+	Issue41WithResponse(ctx context.Context, param StartsWithNumber, reqEditors ...RequestEditorFn) (*Issue41Response, error)
 
 	// Issue9 request with any body
 	Issue9WithBodyWithResponse(ctx context.Context, params *Issue9Params, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*Issue9Response, error)
@@ -665,7 +665,7 @@ type ClientWithResponsesInterface interface {
 type EnsureEverythingIsReferencedResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
-	JSON200      *struct {
+	JSON         *struct {
 		AnyType1 *AnyType1 `json:"anyType1,omitempty"`
 
 		// AnyType2 represents any type.
@@ -695,9 +695,9 @@ func (r EnsureEverythingIsReferencedResponse) StatusCode() int {
 type Issue127Response struct {
 	Body         []byte
 	HTTPResponse *http.Response
-	JSON200      *GenericObject
-	XML200       *GenericObject
-	YAML200      *GenericObject
+	JSON         *GenericObject
+	XML          *GenericObject
+	YAML         *GenericObject
 	JSONDefault  *GenericObject
 }
 
@@ -783,7 +783,7 @@ func (r Issue30Response) StatusCode() int {
 type GetIssues375Response struct {
 	Body         []byte
 	HTTPResponse *http.Response
-	JSON200      *EnumInObjInArray
+	JSON         *EnumInObjInArray
 }
 
 // Status returns HTTPResponse.Status
@@ -907,8 +907,8 @@ func (c *ClientWithResponses) GetIssues375WithResponse(ctx context.Context, reqE
 }
 
 // Issue41WithResponse request returning *Issue41Response
-func (c *ClientWithResponses) Issue41WithResponse(ctx context.Context, n1param N5StartsWithNumber, reqEditors ...RequestEditorFn) (*Issue41Response, error) {
-	rsp, err := c.Issue41(ctx, n1param, reqEditors...)
+func (c *ClientWithResponses) Issue41WithResponse(ctx context.Context, param StartsWithNumber, reqEditors ...RequestEditorFn) (*Issue41Response, error) {
+	rsp, err := c.Issue41(ctx, param, reqEditors...)
 	if err != nil {
 		return nil, err
 	}
@@ -959,7 +959,7 @@ func ParseEnsureEverythingIsReferencedResponse(rsp *http.Response) (*EnsureEvery
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
 			return nil, err
 		}
-		response.JSON200 = &dest
+		response.JSON = &dest
 
 	}
 
@@ -985,7 +985,7 @@ func ParseIssue127Response(rsp *http.Response) (*Issue127Response, error) {
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
 			return nil, err
 		}
-		response.JSON200 = &dest
+		response.JSON = &dest
 
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
 		var dest GenericObject
@@ -999,14 +999,14 @@ func ParseIssue127Response(rsp *http.Response) (*Issue127Response, error) {
 		if err := xml.Unmarshal(bodyBytes, &dest); err != nil {
 			return nil, err
 		}
-		response.XML200 = &dest
+		response.XML = &dest
 
 	case strings.Contains(rsp.Header.Get("Content-Type"), "yaml") && rsp.StatusCode == 200:
 		var dest GenericObject
 		if err := yaml.Unmarshal(bodyBytes, &dest); err != nil {
 			return nil, err
 		}
-		response.YAML200 = &dest
+		response.YAML = &dest
 
 	case rsp.StatusCode == 200:
 	// Content-type (text/markdown) unsupported
@@ -1086,7 +1086,7 @@ func ParseGetIssues375Response(rsp *http.Response) (*GetIssues375Response, error
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
 			return nil, err
 		}
-		response.JSON200 = &dest
+		response.JSON = &dest
 
 	}
 
@@ -1147,7 +1147,7 @@ type ServerInterface interface {
 	GetIssues375(ctx echo.Context) error
 
 	// (GET /issues/41/{1param})
-	Issue41(ctx echo.Context, n1param N5StartsWithNumber) error
+	Issue41(ctx echo.Context, param StartsWithNumber) error
 
 	// (GET /issues/9)
 	Issue9(ctx echo.Context, params Issue9Params) error
@@ -1242,9 +1242,9 @@ func (w *ServerInterfaceWrapper) GetIssues375(ctx echo.Context) error {
 func (w *ServerInterfaceWrapper) Issue41(ctx echo.Context) error {
 	var err error
 	// ------------- Path parameter "1param" -------------
-	var n1param N5StartsWithNumber
+	var param StartsWithNumber
 
-	err = runtime.BindStyledParameterWithLocation("simple", false, "1param", runtime.ParamLocationPath, ctx.Param("1param"), &n1param)
+	err = runtime.BindStyledParameterWithLocation("simple", false, "1param", runtime.ParamLocationPath, ctx.Param("1param"), &param)
 	if err != nil {
 		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter 1param: %s", err))
 	}
@@ -1252,7 +1252,7 @@ func (w *ServerInterfaceWrapper) Issue41(ctx echo.Context) error {
 	ctx.Set(Access_tokenScopes, []string{""})
 
 	// Invoke the callback with all the unmarshalled arguments
-	err = w.Handler.Issue41(ctx, n1param)
+	err = w.Handler.Issue41(ctx, param)
 	return err
 }
 

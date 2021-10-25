@@ -42,7 +42,7 @@ type Pet struct {
 	NewPet `yaml:",inline"`
 	// Embedded fields due to inline allOf schema
 	// Unique id of the pet
-	Id int64 `json:"id"`
+	ID int64 `json:"id"`
 }
 
 // FindPetsParams defines parameters for FindPets.
@@ -70,10 +70,10 @@ type ServerInterface interface {
 	AddPet(w http.ResponseWriter, r *http.Request)
 	// Deletes a pet by ID
 	// (DELETE /pets/{id})
-	DeletePet(w http.ResponseWriter, r *http.Request, id int64)
+	DeletePet(w http.ResponseWriter, r *http.Request, iD int64)
 	// Returns a pet by ID
 	// (GET /pets/{id})
-	FindPetByID(w http.ResponseWriter, r *http.Request, id int64)
+	FindPetByID(w http.ResponseWriter, r *http.Request, iD int64)
 }
 
 // ServerInterfaceWrapper converts contexts to parameters.
@@ -152,9 +152,9 @@ func (siw *ServerInterfaceWrapper) DeletePet(w http.ResponseWriter, r *http.Requ
 	var err error
 
 	// ------------- Path parameter "id" -------------
-	var id int64
+	var iD int64
 
-	err = runtime.BindStyledParameter("simple", false, "id", chi.URLParam(r, "id"), &id)
+	err = runtime.BindStyledParameter("simple", false, "id", chi.URLParam(r, "id"), &iD)
 	if err != nil {
 		err = fmt.Errorf("Invalid format for parameter id: %w", err)
 		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{err})
@@ -179,9 +179,9 @@ func (siw *ServerInterfaceWrapper) FindPetByID(w http.ResponseWriter, r *http.Re
 	var err error
 
 	// ------------- Path parameter "id" -------------
-	var id int64
+	var iD int64
 
-	err = runtime.BindStyledParameter("simple", false, "id", chi.URLParam(r, "id"), &id)
+	err = runtime.BindStyledParameter("simple", false, "id", chi.URLParam(r, "id"), &iD)
 	if err != nil {
 		err = fmt.Errorf("Invalid format for parameter id: %w", err)
 		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{err})
