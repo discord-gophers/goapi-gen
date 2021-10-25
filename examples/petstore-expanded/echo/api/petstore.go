@@ -97,11 +97,11 @@ func (p *PetStore) AddPet(ctx echo.Context) error {
 	var pet Pet
 	pet.Name = newPet.Name
 	pet.Tag = newPet.Tag
-	pet.Id = p.NextId
+	pet.ID = p.NextId
 	p.NextId = p.NextId + 1
 
 	// Insert into map
-	p.Pets[pet.Id] = pet
+	p.Pets[pet.ID] = pet
 
 	// Now, we have to return the NewPet
 	err = ctx.JSON(http.StatusCreated, pet)

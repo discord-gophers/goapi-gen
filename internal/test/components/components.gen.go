@@ -24,7 +24,7 @@ import (
 
 // Has additional properties of type int
 type AdditionalPropertiesObject1 struct {
-	Id                   int            `json:"id"`
+	ID                   int            `json:"id"`
 	Name                 string         `json:"name"`
 	Optional             *string        `json:"optional,omitempty"`
 	AdditionalProperties map[string]int `json:"-"`
@@ -32,7 +32,7 @@ type AdditionalPropertiesObject1 struct {
 
 // Does not allow additional properties
 type AdditionalPropertiesObject2 struct {
-	Id   int    `json:"id"`
+	ID   int    `json:"id"`
 	Name string `json:"name"`
 }
 
@@ -60,8 +60,8 @@ type AdditionalPropertiesObject5 struct {
 	AdditionalProperties map[string]SchemaObject `json:"-"`
 }
 
-// ObjectWithJsonField defines model for ObjectWithJsonField.
-type ObjectWithJsonField struct {
+// ObjectWithJSONField defines model for ObjectWithJsonField.
+type ObjectWithJSONField struct {
 	Name   string          `json:"name"`
 	Value1 json.RawMessage `json:"value1"`
 	Value2 json.RawMessage `json:"value2,omitempty"`
@@ -387,7 +387,7 @@ func (a *AdditionalPropertiesObject1) UnmarshalJSON(b []byte) error {
 	}
 
 	if raw, found := object["id"]; found {
-		err = json.Unmarshal(raw, &a.Id)
+		err = json.Unmarshal(raw, &a.ID)
 		if err != nil {
 			return fmt.Errorf("error reading 'id': %w", err)
 		}
@@ -429,7 +429,7 @@ func (a AdditionalPropertiesObject1) MarshalJSON() ([]byte, error) {
 	var err error
 	object := make(map[string]json.RawMessage)
 
-	object["id"], err = json.Marshal(a.Id)
+	object["id"], err = json.Marshal(a.ID)
 	if err != nil {
 		return nil, fmt.Errorf("error marshaling 'id': %w", err)
 	}
@@ -1061,13 +1061,13 @@ type ClientWithResponsesInterface interface {
 type EnsureEverythingIsReferencedResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
-	JSON200      *struct {
+	JSON         *struct {
 		// Has additional properties with schema for dictionaries
 		Five *AdditionalPropertiesObject5 `json:"five,omitempty"`
 
 		// Has anonymous field which has additional properties
 		Four      *AdditionalPropertiesObject4 `json:"four,omitempty"`
-		JsonField *ObjectWithJsonField         `json:"jsonField,omitempty"`
+		JSONField *ObjectWithJSONField         `json:"jsonField,omitempty"`
 
 		// Has additional properties of type int
 		One *AdditionalPropertiesObject1 `json:"one,omitempty"`
@@ -1205,7 +1205,7 @@ func ParseEnsureEverythingIsReferencedResponse(rsp *http.Response) (*EnsureEvery
 
 			// Has anonymous field which has additional properties
 			Four      *AdditionalPropertiesObject4 `json:"four,omitempty"`
-			JsonField *ObjectWithJsonField         `json:"jsonField,omitempty"`
+			JSONField *ObjectWithJSONField         `json:"jsonField,omitempty"`
 
 			// Has additional properties of type int
 			One *AdditionalPropertiesObject1 `json:"one,omitempty"`
@@ -1219,7 +1219,7 @@ func ParseEnsureEverythingIsReferencedResponse(rsp *http.Response) (*EnsureEvery
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
 			return nil, err
 		}
-		response.JSON200 = &dest
+		response.JSON = &dest
 
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
 		var dest struct {

@@ -23,6 +23,7 @@ import (
 	"unicode"
 
 	"github.com/getkin/kin-openapi/openapi3"
+	"github.com/kenshaw/snaker"
 )
 
 var pathParamRE *regexp.Regexp
@@ -52,38 +53,10 @@ func LowercaseFirstCharacter(str string) string {
 	return string(runes)
 }
 
-// This function will convert query-arg style strings to CamelCase. We will
-// use `., -, +, :, ;, _, ~, ' ', (, ), {, }, [, ]` as valid delimiters for words.
-// So, "word.word-word+word:word;word_word~word word(word)word{word}[word]"
-// would be converted to WordWordWordWordWordWordWordWordWordWordWordWordWord
+// ToCamelCase converts a string to camel case
+// with proper Go initialisms.
 func ToCamelCase(str string) string {
-	separators := "-#@!$&=.+:;_~ (){}[]"
-	s := strings.Trim(str, " ")
-
-	n := ""
-	capNext := true
-	for _, v := range s {
-		if unicode.IsUpper(v) {
-			n += string(v)
-		}
-		if unicode.IsDigit(v) {
-			n += string(v)
-		}
-		if unicode.IsLower(v) {
-			if capNext {
-				n += strings.ToUpper(string(v))
-			} else {
-				n += string(v)
-			}
-		}
-
-		if strings.ContainsRune(separators, v) {
-			capNext = true
-		} else {
-			capNext = false
-		}
-	}
-	return n
+	return snaker.ForceCamelIdentifier(str)
 }
 
 // This function returns the keys of the given SchemaRef dictionary in sorted

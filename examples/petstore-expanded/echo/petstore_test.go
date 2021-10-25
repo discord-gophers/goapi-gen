@@ -77,7 +77,7 @@ func TestPetStore(t *testing.T) {
 	assert.Equal(t, *newPet.Tag, *resultPet.Tag)
 
 	// This is the Id of the pet we inserted.
-	petId := resultPet.Id
+	petId := resultPet.ID
 
 	// Test the getter function.
 	result = testutil.NewRequest().Get(fmt.Sprintf("/pets/%d", petId)).WithAcceptJson().Go(t, e)
@@ -107,7 +107,7 @@ func TestPetStore(t *testing.T) {
 	// sure that its fields match.
 	err = result.UnmarshalBodyToObject(&resultPet)
 	assert.NoError(t, err, "error unmarshaling response")
-	petId2 := resultPet.Id
+	petId2 := resultPet.ID
 
 	// Now, list all pets, we should have two
 	result = testutil.NewRequest().Get("/pets").WithAcceptJson().Go(t, e)
