@@ -84,7 +84,7 @@ type ServerInterfaceWrapper struct {
 	ErrorHandlerFunc   func(w http.ResponseWriter, r *http.Request, err error)
 }
 
-type MiddlewareFunc func(http.HandlerFunc) http.HandlerFunc
+type MiddlewareFunc func(http.Handler) http.Handler
 
 // FindPets operation middleware
 func (siw *ServerInterfaceWrapper) FindPets(w http.ResponseWriter, r *http.Request) {
@@ -119,12 +119,12 @@ func (siw *ServerInterfaceWrapper) FindPets(w http.ResponseWriter, r *http.Reque
 		return
 	}
 
-	var handler = func(w http.ResponseWriter, r *http.Request) {
+	var handler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.FindPets(w, r, params)
-	}
+	})
 
 	for _, middleware := range siw.HandlerMiddlewares {
-		handler = middleware(handler)
+		handler = middleware(handler).ServeHTTP
 	}
 
 	handler(w, r.WithContext(ctx))
@@ -134,12 +134,12 @@ func (siw *ServerInterfaceWrapper) FindPets(w http.ResponseWriter, r *http.Reque
 func (siw *ServerInterfaceWrapper) AddPet(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 
-	var handler = func(w http.ResponseWriter, r *http.Request) {
+	var handler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.AddPet(w, r)
-	}
+	})
 
 	for _, middleware := range siw.HandlerMiddlewares {
-		handler = middleware(handler)
+		handler = middleware(handler).ServeHTTP
 	}
 
 	handler(w, r.WithContext(ctx))
@@ -161,12 +161,12 @@ func (siw *ServerInterfaceWrapper) DeletePet(w http.ResponseWriter, r *http.Requ
 		return
 	}
 
-	var handler = func(w http.ResponseWriter, r *http.Request) {
+	var handler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.DeletePet(w, r, id)
-	}
+	})
 
 	for _, middleware := range siw.HandlerMiddlewares {
-		handler = middleware(handler)
+		handler = middleware(handler).ServeHTTP
 	}
 
 	handler(w, r.WithContext(ctx))
@@ -188,12 +188,12 @@ func (siw *ServerInterfaceWrapper) FindPetByID(w http.ResponseWriter, r *http.Re
 		return
 	}
 
-	var handler = func(w http.ResponseWriter, r *http.Request) {
+	var handler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.FindPetByID(w, r, id)
-	}
+	})
 
 	for _, middleware := range siw.HandlerMiddlewares {
-		handler = middleware(handler)
+		handler = middleware(handler).ServeHTTP
 	}
 
 	handler(w, r.WithContext(ctx))
@@ -264,10 +264,9 @@ func HandlerWithOptions(si ServerInterface, options ChiServerOptions) http.Handl
 	}
 
 	wrapper := ServerInterfaceWrapper{
-		Handler:            si,
-		HandlerMiddlewares: options.Middlewares,
-		TaggedMiddlewares:  options.TaggedMiddlewares,
-		ErrorHandlerFunc:   options.ErrorHandlerFunc,
+		Handler: si, HandlerMiddlewares: options.Middlewares,
+		TaggedMiddlewares: options.TaggedMiddlewares,
+		ErrorHandlerFunc:  options.ErrorHandlerFunc,
 	}
 
 	r.Route(options.BaseURL, func(r chi.Router) {
@@ -275,6 +274,7 @@ func HandlerWithOptions(si ServerInterface, options ChiServerOptions) http.Handl
 		r.Post("/pets", wrapper.AddPet)
 		r.Delete("/pets/{id}", wrapper.DeletePet)
 		r.Get("/pets/{id}", wrapper.FindPetByID)
+
 	})
 	return r
 }
