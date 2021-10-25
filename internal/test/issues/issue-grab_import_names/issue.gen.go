@@ -23,7 +23,7 @@ import (
 
 // GetFooParams defines parameters for GetFoo.
 type GetFooParams struct {
-	// base64. bytes. chi. context. echo. errors. fmt. gzip. http. io. ioutil. json. openapi3.
+	// base64. bytes. chi. context. errors. fmt. gzip. http. io. ioutil. json. openapi3.
 	Foo *string `json:"Foo,omitempty"`
 
 	// openapi_types. path. runtime. strings. time.Duration time.Time url. xml. yaml.
@@ -433,12 +433,12 @@ func HandlerWithOptions(si ServerInterface, options ChiServerOptions) http.Handl
 // Base64 encoded, gzipped, json marshaled Swagger object
 var swaggerSpec = []string{
 
-	"H4sIAAAAAAAC/3yRwWojMQyGX0XobJQhWfYwx2XZpffeSinORMm4jC1jaUrSMO9e7MkpNDUYIWF9/vXr",
-	"ioPELImTKfbXxWFIR8H+ihZsYuyRiNDhBxcNkrDHjjrqcHEomZPPAXvcUUdbdJi9jZWCm6M0xomthgPr",
-	"UEK2FbACJXPxtfJ0wB7/s/0TaYjiIxsXxf7lvnPvlX//IthfjJVgGAPBIMn4bAQ8jELApUhRgmM0gtNn",
-	"yASjWSYIUu9sYSJ4V0kEN/27qiZU/Mj+wAUdJh/r5KsiHUaOvjlyybWsVkI64bK4e3034lt9qATVDoIy",
-	"JwuRCdY+JWjp33kdf82eQ2SYy0RwjhPBxcfpoaw/vvwo69VhYc2SlNsytl1XQzMqtX34nKcwtO831Yta",
-	"e8xb3DcLXNr5CgAA//+IR/EuPgIAAA==",
+	"H4sIAAAAAAAC/3yRz2ojMQzGX0XobJQhWfYwx2XZpffeSinORMm4jP8gaUrSMO9e7MkpNDUYIWH9/OnT",
+	"FYccS06cTLG/Lg5DOmbsr2jBJsYeiQgdfrBoyAl77KijDheHuXDyJWCPO+poiw6Lt7FScHPMjXFiq+HA",
+	"OkgotgJWYC4svlaeDtjjf7Z/OTeE+MjGoti/3HfuvfLvXwT7i7ESDGMgGHIyPhsBi2RRgmM0gtNnKASj",
+	"WSEIud7ZwkTwrjkR3JTvqo5QwSP7Aws6TD7WmVctOowcffPiUmpZTUI64bK4e2U34lt9qATVCAKZk4XI",
+	"BGufErT077wOvmbPITLMMhGc40Rw8XF6KOuPlx9lvToU1pKTclvDtutqaBaltglfyhSG9v2melFrj3mL",
+	"+2Z1SztfAQAA//+K2H8dOAIAAA==",
 }
 
 // GetSwagger returns the content of the embedded swagger specification file
