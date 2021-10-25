@@ -20,7 +20,7 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/deepmap/oapi-codegen/pkg/types"
+	"github.com/discord-gophers/goapi-gen/pkg/types"
 )
 
 // This function takes a string, and attempts to assign it to the destination

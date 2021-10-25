@@ -18,6 +18,11 @@ This package tries to be too simple rather than too generic, so we've made some
 design decisions in favor of simplicity, knowing that we can't generate strongly
 typed Go code for all possible OpenAPI Schemas.
 
+This repository is a hard fork of [deepmap/oapi-codegen](https://github.com/deepmap-oapi-codegen).
+This new version aims to bring breaking changes to the repository that are otherwise
+difficult to implement in the original repository, different design goals, and more
+emphasis on `go-chi`.
+
 ## Overview
 
 We're going to use the OpenAPI example of the
@@ -29,7 +34,7 @@ write a lot of boilerplate code to perform all the marshalling and unmarshalling
 into objects which match the OpenAPI 3.0 definition. The code generator in this
 directory does a lot of that for you. You would run it like so:
 
-    go get github.com/deepmap/oapi-codegen/cmd/oapi-codegen
+    go get github.com/discord-gophers/goapi-gen/cmd/oapi-codegen
     oapi-codegen petstore-expanded.yaml  > petstore.gen.go
 
 Let's go through that `petstore.gen.go` file to show you everything which was
@@ -376,7 +381,7 @@ which help you to use the various OpenAPI 3 Authentication mechanism.
 
 ```
     import (
-        "github.com/deepmap/oapi-codegen/pkg/securityprovider"
+        "github.com/discord-gophers/goapi-gen/pkg/securityprovider"
     )
 
     func CreateSampleProviders() error {
@@ -523,7 +528,7 @@ in the openapi spec.
 Since `go generate` commands must be a single line, all the options above can make
 them pretty unwieldy, so you can specify all of the options in a configuration
 file via the `--config` option. Please see the test under
-[`/internal/test/externalref/`](https://github.com/deepmap/oapi-codegen/blob/master/internal/test/externalref/externalref.cfg.yaml)
+[`/internal/test/externalref/`](https://github.com/discord-gophers/goapi-gen/blob/master/internal/test/externalref/externalref.cfg.yaml)
 for an example. The structure of the file is as follows:
 
 ```yaml
@@ -534,11 +539,11 @@ generate:
   - types
   - skip-prune
 import-mapping:
-  ./packageA/spec.yaml: github.com/deepmap/oapi-codegen/internal/test/externalref/packageA
-  ./packageB/spec.yaml: github.com/deepmap/oapi-codegen/internal/test/externalref/packageB
+  ./packageA/spec.yaml: github.com/discord-gophers/goapi-gen/internal/test/externalref/packageA
+  ./packageB/spec.yaml: github.com/discord-gophers/goapi-gen/internal/test/externalref/packageB
 ```
 
-Have a look at [`cmd/oapi-codegen/oapi-codegen.go`](https://github.com/deepmap/oapi-codegen/blob/master/cmd/oapi-codegen/oapi-codegen.go#L48)
+Have a look at [`cmd/oapi-codegen/oapi-codegen.go`](https://github.com/discord-gophers/goapi-gen/blob/master/cmd/oapi-codegen/oapi-codegen.go#L48)
 to see all the fields on the configuration structure.
 
 ### Import Mappings
