@@ -208,7 +208,7 @@ type OperationDefinition struct {
 	Summary             string                  // Summary string from Swagger, used to generate a comment
 	Method              string                  // GET, POST, DELETE, etc.
 	Path                string                  // The Swagger path for the operation, like /resource/{id}
-	Middlewares         []string                // Sent as part of x-oapi-codegen-middlewares.
+	Middlewares         []string                // Sent as part of x-goapi-gen-middlewares.
 	Spec                *openapi3.Operation
 }
 

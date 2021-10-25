@@ -29,8 +29,8 @@ import (
 	echomiddleware "github.com/labstack/echo/v4/middleware"
 )
 
-const EchoContextKey = "oapi-codegen/echo-context"
-const UserDataKey = "oapi-codegen/user-data"
+const EchoContextKey = "goapi-gen/echo-context"
+const UserDataKey = "goapi-gen/user-data"
 
 // This is an Echo middleware function which validates incoming HTTP requests
 // to make sure that they conform to the given OAPI 3.0 specification. When

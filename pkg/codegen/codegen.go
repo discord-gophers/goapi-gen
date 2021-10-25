@@ -26,7 +26,7 @@ import (
 	"github.com/getkin/kin-openapi/openapi3"
 	"golang.org/x/tools/imports"
 
-	"github.com/deepmap/oapi-codegen/pkg/codegen/templates"
+	"github.com/discord-gophers/goapi-gen/pkg/codegen/templates"
 )
 
 // Options defines the optional code to generate.
@@ -112,12 +112,12 @@ func Generate(swagger *openapi3.T, packageName string, opts Options) (string, er
 
 	// This creates the golang templates text package
 	TemplateFunctions["opts"] = func() Options { return opts }
-	t := template.New("oapi-codegen").Funcs(TemplateFunctions)
+	t := template.New("goapi-gen").Funcs(TemplateFunctions)
 	// This parses all of our own template files into the template object
 	// above
 	t, err := templates.Parse(t)
 	if err != nil {
-		return "", fmt.Errorf("error parsing oapi-codegen templates: %w", err)
+		return "", fmt.Errorf("error parsing goapi-gen templates: %w", err)
 	}
 
 	// Override built-in templates with user-provided versions

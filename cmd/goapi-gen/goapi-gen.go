@@ -25,8 +25,8 @@ import (
 
 	"gopkg.in/yaml.v2"
 
-	"github.com/deepmap/oapi-codegen/pkg/codegen"
-	"github.com/deepmap/oapi-codegen/pkg/util"
+	"github.com/discord-gophers/goapi-gen/pkg/codegen"
+	"github.com/discord-gophers/goapi-gen/pkg/util"
 )
 
 func errExit(format string, args ...interface{}) {
@@ -45,7 +45,7 @@ var (
 	flagExcludeSchemas string
 	flagConfigFile     string
 	flagAliasTypes     bool
-	flagPrintVersion bool
+	flagPrintVersion   bool
 )
 
 type configuration struct {
@@ -70,7 +70,7 @@ func main() {
 	flag.StringVar(&flagTemplatesDir, "templates", "", "Path to directory containing user templates")
 	flag.StringVar(&flagImportMapping, "import-mapping", "", "A dict from the external reference to golang package path")
 	flag.StringVar(&flagExcludeSchemas, "exclude-schemas", "", "A comma separated list of schemas which must be excluded from generation")
-	flag.StringVar(&flagConfigFile, "config", "", "a YAML config file that controls oapi-codegen behavior")
+	flag.StringVar(&flagConfigFile, "config", "", "a YAML config file that controls goapi-gen behavior")
 	flag.BoolVar(&flagAliasTypes, "alias-types", false, "Alias type declarations of possible")
 	flag.BoolVar(&flagPrintVersion, "version", false, "when specified, print version and exit")
 	flag.Parse()
@@ -81,7 +81,7 @@ func main() {
 			fmt.Fprintln(os.Stderr, "error reading build info")
 			os.Exit(1)
 		}
-		fmt.Println(bi.Main.Path + "/cmd/oapi-codegen")
+		fmt.Println(bi.Main.Path + "/cmd/goapi-gen")
 		fmt.Println(bi.Main.Version)
 		return
 	}
