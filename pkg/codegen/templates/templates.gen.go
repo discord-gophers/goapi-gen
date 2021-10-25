@@ -102,53 +102,54 @@ func HandlerFromMuxWithBaseURL(si ServerInterface, r chi.Router, baseURL string)
 
 // HandlerWithOptions creates http.Handler with additional options
 func HandlerWithOptions(si ServerInterface, options ChiServerOptions) http.Handler {
-r := options.BaseRouter
+    r := options.BaseRouter
 
-if r == nil {
-r = chi.NewRouter()
-}
-
-if options.ErrorHandlerFunc == nil {
-    options.ErrorHandlerFunc = func(w http.ResponseWriter, r *http.Request, err error) {
-        http.Error(w, err.Error(), http.StatusBadRequest)
+    if r == nil {
+        r = chi.NewRouter()
     }
-}
 
-if options.BaseURL == "" {
-options.BaseURL = "/"
-}
+    if options.ErrorHandlerFunc == nil {
+        options.ErrorHandlerFunc = func(w http.ResponseWriter, r *http.Request, err error) {
+            http.Error(w, err.Error(), http.StatusBadRequest)
+        }
+    }
 
-{{if .}}wrapper := ServerInterfaceWrapper{
-Handler: si,
-HandlerMiddlewares: options.Middlewares,
-TaggedMiddlewares: options.TaggedMiddlewares,
-ErrorHandlerFunc: options.ErrorHandlerFunc,
-}
-{{end}}
-r.Route(options.BaseURL, func(r chi.Router) {
-{{range . -}}
-r.{{.Method | lower | title }}("{{.Path | swaggerUriToChiUri}}", wrapper.{{.OperationId}})
-{{end}}})
-return r
+    if options.BaseURL == "" {
+        options.BaseURL = "/"
+    }
+
+    {{if .}}wrapper := ServerInterfaceWrapper{
+        Handler: si, HandlerMiddlewares:
+        options.Middlewares,
+        TaggedMiddlewares: options.TaggedMiddlewares,
+        ErrorHandlerFunc: options.ErrorHandlerFunc,
+    }
+    {{ end }}
+    r.Route(options.BaseURL, func(r chi.Router) {
+    {{range . -}}
+        r.{{.Method | lower | title }}("{{.Path | swaggerUriToChiUri}}", wrapper.{{.OperationId}})
+    {{ end }}
+    })
+    return r
 }
 `,
 	"chi-interface.tmpl": `// ServerInterface represents all server handlers.
 type ServerInterface interface {
-{{range .}}{{.SummaryAsComment }}
-// ({{.Method}} {{.Path}})
-{{.OperationId}}(w http.ResponseWriter, r *http.Request{{genParamArgs .PathParams}}{{if .RequiresParamObject}}, params {{.OperationId}}Params{{end}})
-{{end}}
+  {{range .}}{{.SummaryAsComment }}
+  // ({{.Method}} {{.Path}})
+  {{.OperationId}}(w http.ResponseWriter, r *http.Request{{genParamArgs .PathParams}}{{if .RequiresParamObject}}, params {{.OperationId}}Params{{end}})
+  {{end}}
 }
 `,
 	"chi-middleware.tmpl": `// ServerInterfaceWrapper converts contexts to parameters.
 type ServerInterfaceWrapper struct {
-    Handler ServerInterface
-    HandlerMiddlewares []MiddlewareFunc
+  Handler ServerInterface
+  HandlerMiddlewares []MiddlewareFunc
 	TaggedMiddlewares map[string]MiddlewareFunc
-    ErrorHandlerFunc func(w http.ResponseWriter, r *http.Request, err error)
+  ErrorHandlerFunc func(w http.ResponseWriter, r *http.Request, err error)
 }
 
-type MiddlewareFunc func(http.HandlerFunc) http.HandlerFunc
+type MiddlewareFunc func(http.Handler) http.Handler
 
 {{range .}}{{$opid := .OperationId}}
 
@@ -322,12 +323,12 @@ func (siw *ServerInterfaceWrapper) {{$opid}}(w http.ResponseWriter, r *http.Requ
     {{end}}
   {{end}}
 
-  var handler = func(w http.ResponseWriter, r *http.Request) {
+  var handler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
     siw.Handler.{{.OperationId}}(w, r{{genParamNames .PathParams}}{{if .RequiresParamObject}}, params{{end}})
-  }
+  })
 
   for _, middleware := range siw.HandlerMiddlewares {
-    handler = middleware(handler)
+    handler = middleware(handler).ServeHTTP
   }
 
   {{ with .Middlewares -}}
@@ -335,7 +336,7 @@ func (siw *ServerInterfaceWrapper) {{$opid}}(w http.ResponseWriter, r *http.Requ
   if siw.TaggedMiddlewares != nil {
 	  {{- range . }}
 		  if middleware, ok := siw.TaggedMiddlewares[{{printf "%q" .}}]; ok {
-		  handler = middleware(handler)
+		  handler = middleware(handler).ServeHTTP
 		}
 	  {{- end }}
   }
