@@ -231,19 +231,19 @@ func TestIsGoTypeReference(t *testing.T) {
 
 func TestSwaggerUriToChiUri(t *testing.T) {
 	assert.Equal(t, "/path", SwaggerUriToChiUri("/path"))
-	assert.Equal(t, "/path/:arg", SwaggerUriToChiUri("/path/{arg}"))
-	assert.Equal(t, "/path/:arg1/:arg2", SwaggerUriToChiUri("/path/{arg1}/{arg2}"))
-	assert.Equal(t, "/path/:arg1/:arg2/foo", SwaggerUriToChiUri("/path/{arg1}/{arg2}/foo"))
+	assert.Equal(t, "/path/{arg}", SwaggerUriToChiUri("/path/{arg}"))
+	assert.Equal(t, "/path/{arg1}/{arg2}", SwaggerUriToChiUri("/path/{arg1}/{arg2}"))
+	assert.Equal(t, "/path/{arg1}/{arg2}/foo", SwaggerUriToChiUri("/path/{arg1}/{arg2}/foo"))
 
 	// Make sure all the exploded and alternate formats match too
-	assert.Equal(t, "/path/:arg/foo", SwaggerUriToChiUri("/path/{arg}/foo"))
-	assert.Equal(t, "/path/:arg/foo", SwaggerUriToChiUri("/path/{arg*}/foo"))
-	assert.Equal(t, "/path/:arg/foo", SwaggerUriToChiUri("/path/{.arg}/foo"))
-	assert.Equal(t, "/path/:arg/foo", SwaggerUriToChiUri("/path/{.arg*}/foo"))
-	assert.Equal(t, "/path/:arg/foo", SwaggerUriToChiUri("/path/{;arg}/foo"))
-	assert.Equal(t, "/path/:arg/foo", SwaggerUriToChiUri("/path/{;arg*}/foo"))
-	assert.Equal(t, "/path/:arg/foo", SwaggerUriToChiUri("/path/{?arg}/foo"))
-	assert.Equal(t, "/path/:arg/foo", SwaggerUriToChiUri("/path/{?arg*}/foo"))
+	assert.Equal(t, "/path/{arg}/foo", SwaggerUriToChiUri("/path/{arg}/foo"))
+	assert.Equal(t, "/path/{arg}/foo", SwaggerUriToChiUri("/path/{arg*}/foo"))
+	assert.Equal(t, "/path/{arg}/foo", SwaggerUriToChiUri("/path/{.arg}/foo"))
+	assert.Equal(t, "/path/{arg}/foo", SwaggerUriToChiUri("/path/{.arg*}/foo"))
+	assert.Equal(t, "/path/{arg}/foo", SwaggerUriToChiUri("/path/{;arg}/foo"))
+	assert.Equal(t, "/path/{arg}/foo", SwaggerUriToChiUri("/path/{?arg*}/foo"))
+	assert.Equal(t, "/path/{arg}/foo", SwaggerUriToChiUri("/path/{;arg*}/foo"))
+	assert.Equal(t, "/path/{arg}/foo", SwaggerUriToChiUri("/path/{?arg}/foo"))
 }
 
 func TestOrderedParamsFromUri(t *testing.T) {

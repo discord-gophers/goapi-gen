@@ -19,9 +19,10 @@ func TestExamplePetStoreCodeGeneration(t *testing.T) {
 	// Input vars for code generation:
 	packageName := "api"
 	opts := Options{
-		GenerateClient: true,
-		GenerateTypes:  true,
-		EmbedSpec:      true,
+		GenerateChiServer: true,
+		GenerateClient:    true,
+		GenerateTypes:     true,
+		EmbedSpec:         true,
 	}
 
 	// Get a spec from the example PetStore definition:

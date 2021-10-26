@@ -25,7 +25,7 @@ func TestFilterOperationsByTag(t *testing.T) {
 		code, err := Generate(swagger, packageName, opts)
 		assert.NoError(t, err)
 		assert.NotEmpty(t, code)
-		assert.NotContains(t, code, `"/test/:name"`)
+		assert.NotContains(t, code, `"/test/%s"`)
 		assert.Contains(t, code, `"/cat"`)
 	})
 
@@ -45,7 +45,7 @@ func TestFilterOperationsByTag(t *testing.T) {
 		code, err := Generate(swagger, packageName, opts)
 		assert.NoError(t, err)
 		assert.NotEmpty(t, code)
-		assert.Contains(t, code, `"/test/:name"`)
+		assert.Contains(t, code, `"/test/%s"`)
 		assert.NotContains(t, code, `"/cat"`)
 	})
 }
