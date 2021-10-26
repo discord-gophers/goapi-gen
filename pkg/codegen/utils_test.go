@@ -229,21 +229,21 @@ func TestIsGoTypeReference(t *testing.T) {
 	assert.Equal(t, false, IsGoTypeReference("http://deepmap.com/doc.json"))
 }
 
-func TestSwaggerUriToEchoUri(t *testing.T) {
-	assert.Equal(t, "/path", SwaggerUriToEchoUri("/path"))
-	assert.Equal(t, "/path/:arg", SwaggerUriToEchoUri("/path/{arg}"))
-	assert.Equal(t, "/path/:arg1/:arg2", SwaggerUriToEchoUri("/path/{arg1}/{arg2}"))
-	assert.Equal(t, "/path/:arg1/:arg2/foo", SwaggerUriToEchoUri("/path/{arg1}/{arg2}/foo"))
+func TestSwaggerUriToChiUri(t *testing.T) {
+	assert.Equal(t, "/path", SwaggerUriToChiUri("/path"))
+	assert.Equal(t, "/path/{arg}", SwaggerUriToChiUri("/path/{arg}"))
+	assert.Equal(t, "/path/{arg1}/{arg2}", SwaggerUriToChiUri("/path/{arg1}/{arg2}"))
+	assert.Equal(t, "/path/{arg1}/{arg2}/foo", SwaggerUriToChiUri("/path/{arg1}/{arg2}/foo"))
 
 	// Make sure all the exploded and alternate formats match too
-	assert.Equal(t, "/path/:arg/foo", SwaggerUriToEchoUri("/path/{arg}/foo"))
-	assert.Equal(t, "/path/:arg/foo", SwaggerUriToEchoUri("/path/{arg*}/foo"))
-	assert.Equal(t, "/path/:arg/foo", SwaggerUriToEchoUri("/path/{.arg}/foo"))
-	assert.Equal(t, "/path/:arg/foo", SwaggerUriToEchoUri("/path/{.arg*}/foo"))
-	assert.Equal(t, "/path/:arg/foo", SwaggerUriToEchoUri("/path/{;arg}/foo"))
-	assert.Equal(t, "/path/:arg/foo", SwaggerUriToEchoUri("/path/{;arg*}/foo"))
-	assert.Equal(t, "/path/:arg/foo", SwaggerUriToEchoUri("/path/{?arg}/foo"))
-	assert.Equal(t, "/path/:arg/foo", SwaggerUriToEchoUri("/path/{?arg*}/foo"))
+	assert.Equal(t, "/path/{arg}/foo", SwaggerUriToChiUri("/path/{arg}/foo"))
+	assert.Equal(t, "/path/{arg}/foo", SwaggerUriToChiUri("/path/{arg*}/foo"))
+	assert.Equal(t, "/path/{arg}/foo", SwaggerUriToChiUri("/path/{.arg}/foo"))
+	assert.Equal(t, "/path/{arg}/foo", SwaggerUriToChiUri("/path/{.arg*}/foo"))
+	assert.Equal(t, "/path/{arg}/foo", SwaggerUriToChiUri("/path/{;arg}/foo"))
+	assert.Equal(t, "/path/{arg}/foo", SwaggerUriToChiUri("/path/{?arg*}/foo"))
+	assert.Equal(t, "/path/{arg}/foo", SwaggerUriToChiUri("/path/{;arg*}/foo"))
+	assert.Equal(t, "/path/{arg}/foo", SwaggerUriToChiUri("/path/{?arg}/foo"))
 }
 
 func TestOrderedParamsFromUri(t *testing.T) {

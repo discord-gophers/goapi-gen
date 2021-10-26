@@ -63,7 +63,7 @@ func main() {
 
 	flag.StringVar(&flagPackageName, "package", "", "The package name for generated code")
 	flag.StringVar(&flagGenerate, "generate", "types,client,server,spec",
-		`Comma-separated list of code to generate; valid options: "types", "client", "chi-server", "server", "spec", "skip-fmt", "skip-prune"`)
+		`Comma-separated list of code to generate; valid options: "types", "client", "server", "spec", "skip-fmt", "skip-prune"`)
 	flag.StringVar(&flagOutputFile, "o", "", "Where to output generated code, stdout is default")
 	flag.StringVar(&flagIncludeTags, "include-tags", "", "Only include operations with the given tags. Comma-separated list of tags.")
 	flag.StringVar(&flagExcludeTags, "exclude-tags", "", "Exclude operations that are tagged with the given tags. Comma-separated list of tags.")
@@ -110,10 +110,8 @@ func main() {
 		switch g {
 		case "client":
 			opts.GenerateClient = true
-		case "chi-server":
-			opts.GenerateChiServer = true
 		case "server":
-			opts.GenerateEchoServer = true
+			opts.GenerateChiServer = true
 		case "types":
 			opts.GenerateTypes = true
 		case "spec":
@@ -132,10 +130,6 @@ func main() {
 	opts.IncludeTags = cfg.IncludeTags
 	opts.ExcludeTags = cfg.ExcludeTags
 	opts.ExcludeSchemas = cfg.ExcludeSchemas
-
-	if opts.GenerateEchoServer && opts.GenerateChiServer {
-		errExit("can not specify both server and chi-server targets simultaneously")
-	}
 
 	swagger, err := util.LoadSwagger(flag.Arg(0))
 	if err != nil {

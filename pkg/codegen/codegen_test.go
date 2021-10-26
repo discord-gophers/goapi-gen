@@ -8,7 +8,7 @@ import (
 	"testing"
 
 	examplePetstoreClient "github.com/discord-gophers/goapi-gen/examples/petstore-expanded"
-	examplePetstore "github.com/discord-gophers/goapi-gen/examples/petstore-expanded/echo/api"
+	examplePetstore "github.com/discord-gophers/goapi-gen/examples/petstore-expanded/chi/api"
 	"github.com/getkin/kin-openapi/openapi3"
 	"github.com/golangci/lint-1"
 	"github.com/stretchr/testify/assert"
@@ -19,10 +19,10 @@ func TestExamplePetStoreCodeGeneration(t *testing.T) {
 	// Input vars for code generation:
 	packageName := "api"
 	opts := Options{
-		GenerateClient:     true,
-		GenerateEchoServer: true,
-		GenerateTypes:      true,
-		EmbedSpec:          true,
+		GenerateChiServer: true,
+		GenerateClient:    true,
+		GenerateTypes:     true,
+		EmbedSpec:         true,
 	}
 
 	// Get a spec from the example PetStore definition:
@@ -115,10 +115,9 @@ func TestExampleOpenAPICodeGeneration(t *testing.T) {
 	// Input vars for code generation:
 	packageName := "testswagger"
 	opts := Options{
-		GenerateClient:     true,
-		GenerateEchoServer: true,
-		GenerateTypes:      true,
-		EmbedSpec:          true,
+		GenerateClient: true,
+		GenerateTypes:  true,
+		EmbedSpec:      true,
 	}
 
 	// Get a spec from the test definition in this file:

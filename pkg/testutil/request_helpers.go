@@ -20,8 +20,8 @@ package testutil
 //   var body RequestBody
 //   var response ResponseBody
 //   t is *testing.T, from a unit test
-//   e is *echo.Echo
-//   response := NewRequest().Post("/path").WithJsonBody(body).Go(t, e)
+//   h is http.Handler
+//   response := NewRequest().Post("/path").WithJsonBody(body).GoWithHTTPHandler(t, h)
 //   err := response.UnmarshalBodyToObject(&response)
 import (
 	"bytes"
@@ -32,8 +32,6 @@ import (
 	"net/http/httptest"
 	"strings"
 	"testing"
-
-	"github.com/labstack/echo/v4"
 )
 
 func NewRequest() *RequestBuilder {
@@ -168,12 +166,6 @@ func (r *RequestBuilder) GoWithHTTPHandler(t *testing.T, handler http.Handler) *
 	return &CompletedRequest{
 		Recorder: rec,
 	}
-}
-
-// Go performs the request, it takes a pointer to a testing context
-// to print messages, and a pointer to an echo context for request handling.
-func (r *RequestBuilder) Go(t *testing.T, e *echo.Echo) *CompletedRequest {
-	return r.GoWithHTTPHandler(t, e)
 }
 
 // This is the result of calling Go() on the request builder. We're wrapping the

@@ -12,7 +12,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/discord-gophers/goapi-gen/examples/petstore-expanded/chi/api"
-	middleware "github.com/discord-gophers/goapi-gen/pkg/chi-middleware"
+	"github.com/discord-gophers/goapi-gen/pkg/middleware"
 	"github.com/discord-gophers/goapi-gen/pkg/testutil"
 )
 

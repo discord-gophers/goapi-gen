@@ -11,11 +11,10 @@ func TestFilterOperationsByTag(t *testing.T) {
 	packageName := "testswagger"
 	t.Run("include tags", func(t *testing.T) {
 		opts := Options{
-			GenerateClient:     true,
-			GenerateEchoServer: true,
-			GenerateTypes:      true,
-			EmbedSpec:          true,
-			IncludeTags:        []string{"hippo", "giraffe", "cat"},
+			GenerateClient: true,
+			GenerateTypes:  true,
+			EmbedSpec:      true,
+			IncludeTags:    []string{"hippo", "giraffe", "cat"},
 		}
 
 		// Get a spec from the test definition in this file:
@@ -26,17 +25,16 @@ func TestFilterOperationsByTag(t *testing.T) {
 		code, err := Generate(swagger, packageName, opts)
 		assert.NoError(t, err)
 		assert.NotEmpty(t, code)
-		assert.NotContains(t, code, `"/test/:name"`)
+		assert.NotContains(t, code, `"/test/%s"`)
 		assert.Contains(t, code, `"/cat"`)
 	})
 
 	t.Run("exclude tags", func(t *testing.T) {
 		opts := Options{
-			GenerateClient:     true,
-			GenerateEchoServer: true,
-			GenerateTypes:      true,
-			EmbedSpec:          true,
-			ExcludeTags:        []string{"hippo", "giraffe", "cat"},
+			GenerateClient: true,
+			GenerateTypes:  true,
+			EmbedSpec:      true,
+			ExcludeTags:    []string{"hippo", "giraffe", "cat"},
 		}
 
 		// Get a spec from the test definition in this file:
@@ -47,7 +45,7 @@ func TestFilterOperationsByTag(t *testing.T) {
 		code, err := Generate(swagger, packageName, opts)
 		assert.NoError(t, err)
 		assert.NotEmpty(t, code)
-		assert.Contains(t, code, `"/test/:name"`)
+		assert.Contains(t, code, `"/test/%s"`)
 		assert.NotContains(t, code, `"/cat"`)
 	})
 }

@@ -14,7 +14,7 @@ import (
 	"github.com/go-chi/chi/v5"
 
 	api "github.com/discord-gophers/goapi-gen/examples/petstore-expanded/chi/api"
-	middleware "github.com/discord-gophers/goapi-gen/pkg/chi-middleware"
+	"github.com/discord-gophers/goapi-gen/pkg/middleware"
 )
 
 func main() {
