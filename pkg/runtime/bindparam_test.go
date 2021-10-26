@@ -325,6 +325,49 @@ func TestBindQueryParameter(t *testing.T) {
 		assert.Equal(t, expectedDeepObject, actual)
 	})
 
+	t.Run("deeperObject", func(t *testing.T) {
+		dst := &struct {
+			ID      int  `json:"Id"`
+			IsAdmin bool `json:"IsAdmin"`
+			Object  struct {
+				FirstName string `json:"firstName"`
+				Role      string `json:"role"`
+			} `json:"Object"`
+		}{}
+
+		want := &struct {
+			ID      int  `json:"Id"`
+			IsAdmin bool `json:"IsAdmin"`
+			Object  struct {
+				FirstName string `json:"firstName"`
+				Role      string `json:"role"`
+			} `json:"Object"`
+		}{
+			ID:      12345,
+			IsAdmin: true,
+			Object: struct {
+				FirstName string `json:"firstName"`
+				Role      string `json:"role"`
+			}{
+				FirstName: "Alex",
+				Role:      "admin",
+			},
+		}
+
+		params := url.Values{
+			"deepObj[Id]":                {"12345"},
+			"deepObj[IsAdmin]":           {"true"},
+			"deepObj[Object][firstName]": {"Alex"},
+			"deepObj[Object][role]":      {"admin"},
+		}
+
+		if err := BindQueryParameter("deepObject", true, true, "deepObj", params, &dst); err != nil {
+			t.Error(err)
+		}
+
+		assert.Equal(t, want, dst)
+	})
+
 	t.Run("form", func(t *testing.T) {
 		expected := &MockBinder{Time: time.Date(2020, 1, 1, 0, 0, 0, 0, time.UTC)}
 		birthday := &MockBinder{}
