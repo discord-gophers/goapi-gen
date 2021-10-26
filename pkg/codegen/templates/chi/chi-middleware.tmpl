@@ -1,12 +1,12 @@
 // ServerInterfaceWrapper converts contexts to parameters.
 type ServerInterfaceWrapper struct {
-    Handler ServerInterface
-    HandlerMiddlewares []MiddlewareFunc
+  Handler ServerInterface
+  HandlerMiddlewares []MiddlewareFunc
 	TaggedMiddlewares map[string]MiddlewareFunc
-    ErrorHandlerFunc func(w http.ResponseWriter, r *http.Request, err error)
+  ErrorHandlerFunc func(w http.ResponseWriter, r *http.Request, err error)
 }
 
-type MiddlewareFunc func(http.HandlerFunc) http.HandlerFunc
+type MiddlewareFunc func(http.Handler) http.Handler
 
 {{range .}}{{$opid := .OperationId}}
 
@@ -130,9 +130,7 @@ func (siw *ServerInterfaceWrapper) {{$opid}}(w http.ResponseWriter, r *http.Requ
     {{end}}
 
     {{range .CookieParams}}
-      var cookie *http.Cookie
-
-      if cookie, err = r.Cookie("{{.ParamName}}"); err == nil {
+      if cookie, err := r.Cookie("{{.ParamName}}"); err == nil {
 
       {{- if .IsPassThrough}}
         params.{{.GoName}} = {{if not .Required}}&{{end}}cookie.Value
@@ -180,12 +178,12 @@ func (siw *ServerInterfaceWrapper) {{$opid}}(w http.ResponseWriter, r *http.Requ
     {{end}}
   {{end}}
 
-  var handler = func(w http.ResponseWriter, r *http.Request) {
+  var handler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
     siw.Handler.{{.OperationId}}(w, r{{genParamNames .PathParams}}{{if .RequiresParamObject}}, params{{end}})
-  }
+  })
 
   for _, middleware := range siw.HandlerMiddlewares {
-    handler = middleware(handler)
+    handler = middleware(handler).ServeHTTP
   }
 
   {{ with .Middlewares -}}
@@ -193,7 +191,7 @@ func (siw *ServerInterfaceWrapper) {{$opid}}(w http.ResponseWriter, r *http.Requ
   if siw.TaggedMiddlewares != nil {
 	  {{- range . }}
 		  if middleware, ok := siw.TaggedMiddlewares[{{printf "%q" .}}]; ok {
-		  handler = middleware(handler)
+		  handler = middleware(handler).ServeHTTP
 		}
 	  {{- end }}
   }

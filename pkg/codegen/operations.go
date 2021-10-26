@@ -17,6 +17,7 @@ import (
 	"bufio"
 	"bytes"
 	"fmt"
+	"github.com/kenshaw/snaker"
 	"strings"
 	"text/template"
 	"unicode"
@@ -108,7 +109,7 @@ func (pd *ParameterDefinition) Explode() bool {
 }
 
 func (pd ParameterDefinition) GoVariableName() string {
-	name := LowercaseFirstCharacter(pd.GoName())
+	name := snaker.ForceLowerCamelIdentifier(pd.GoName())
 	if IsGoKeyword(name) {
 		name = "p" + UppercaseFirstCharacter(name)
 	}

@@ -1,0 +1,46 @@
+name: Test Code Generation
+
+on: [push, pull_request]
+
+jobs:
+  Test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Install Go
+        uses: actions/setup-go@v2
+        with:
+          go-version: 1.17.x
+
+      - name: Setup cache
+        uses: actions/cache@v2
+        with:
+          path: |
+            ~/go/pkg/mod
+            ~/.cache/go-build
+          key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
+          restore-keys: |
+            ${{ runner.os }}-go-
+
+      - name: go get
+        run: go get -v ./...
+
+      - name: go test
+        run: go test -race -coverprofile=coverage.out -covermode=atomic -v ./...
+
+      - name: go test with coverage
+        run: go tool cover -func coverage.out
+
+      - name: go generate templates
+        run: go generate ./pkg/codegen/templates
+
+      - name: go generate all
+        run: go generate ./...
+
+      - name: go mod tidy
+        run: go mod tidy
+
+      - name: test template diff
+        run: git --no-pager diff && [[ 0 -eq $(git status --porcelain | wc -l) ]]

@@ -1061,7 +1061,7 @@ type ClientWithResponsesInterface interface {
 type EnsureEverythingIsReferencedResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
-	JSON         *struct {
+	JSON200      *struct {
 		// Has additional properties with schema for dictionaries
 		Five *AdditionalPropertiesObject5 `json:"five,omitempty"`
 
@@ -1219,7 +1219,7 @@ func ParseEnsureEverythingIsReferencedResponse(rsp *http.Response) (*EnsureEvery
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
 			return nil, err
 		}
-		response.JSON = &dest
+		response.JSON200 = &dest
 
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
 		var dest struct {
@@ -1291,18 +1291,18 @@ type ServerInterfaceWrapper struct {
 	ErrorHandlerFunc   func(w http.ResponseWriter, r *http.Request, err error)
 }
 
-type MiddlewareFunc func(http.HandlerFunc) http.HandlerFunc
+type MiddlewareFunc func(http.Handler) http.Handler
 
 // EnsureEverythingIsReferenced operation middleware
 func (siw *ServerInterfaceWrapper) EnsureEverythingIsReferenced(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 
-	var handler = func(w http.ResponseWriter, r *http.Request) {
+	var handler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.EnsureEverythingIsReferenced(w, r)
-	}
+	})
 
 	for _, middleware := range siw.HandlerMiddlewares {
-		handler = middleware(handler)
+		handler = middleware(handler).ServeHTTP
 	}
 
 	handler(w, r.WithContext(ctx))
@@ -1349,12 +1349,12 @@ func (siw *ServerInterfaceWrapper) ParamsWithAddProps(w http.ResponseWriter, r *
 		return
 	}
 
-	var handler = func(w http.ResponseWriter, r *http.Request) {
+	var handler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.ParamsWithAddProps(w, r, params)
-	}
+	})
 
 	for _, middleware := range siw.HandlerMiddlewares {
-		handler = middleware(handler)
+		handler = middleware(handler).ServeHTTP
 	}
 
 	handler(w, r.WithContext(ctx))
@@ -1364,12 +1364,12 @@ func (siw *ServerInterfaceWrapper) ParamsWithAddProps(w http.ResponseWriter, r *
 func (siw *ServerInterfaceWrapper) BodyWithAddProps(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 
-	var handler = func(w http.ResponseWriter, r *http.Request) {
+	var handler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.BodyWithAddProps(w, r)
-	}
+	})
 
 	for _, middleware := range siw.HandlerMiddlewares {
-		handler = middleware(handler)
+		handler = middleware(handler).ServeHTTP
 	}
 
 	handler(w, r.WithContext(ctx))
@@ -1440,16 +1440,16 @@ func HandlerWithOptions(si ServerInterface, options ChiServerOptions) http.Handl
 	}
 
 	wrapper := ServerInterfaceWrapper{
-		Handler:            si,
-		HandlerMiddlewares: options.Middlewares,
-		TaggedMiddlewares:  options.TaggedMiddlewares,
-		ErrorHandlerFunc:   options.ErrorHandlerFunc,
+		Handler: si, HandlerMiddlewares: options.Middlewares,
+		TaggedMiddlewares: options.TaggedMiddlewares,
+		ErrorHandlerFunc:  options.ErrorHandlerFunc,
 	}
 
 	r.Route(options.BaseURL, func(r chi.Router) {
 		r.Get("/ensure-everything-is-referenced", wrapper.EnsureEverythingIsReferenced)
 		r.Get("/params_with_add_props", wrapper.ParamsWithAddProps)
 		r.Post("/params_with_add_props", wrapper.BodyWithAddProps)
+
 	})
 	return r
 }

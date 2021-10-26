@@ -2,15 +2,15 @@ module github.com/discord-gophers/goapi-gen
 
 require (
 	github.com/cyberdelia/templates v0.0.0-20141128023046-ca7fffd4298c
-	github.com/getkin/kin-openapi v0.61.0
-	github.com/go-chi/chi/v5 v5.0.0
+	github.com/getkin/kin-openapi v0.80.0
+	github.com/go-chi/chi/v5 v5.0.4
 	github.com/golangci/lint-1 v0.0.0-20181222135242-d2cdd8c08219
 	github.com/kenshaw/snaker v0.1.6
 	github.com/labstack/echo/v4 v4.2.1
 	github.com/matryer/moq v0.0.0-20190312154309-6cfb0558e1bd
 	github.com/stretchr/testify v1.7.0
-	golang.org/x/tools v0.0.0-20210114065538-d78b04bdf963
-	gopkg.in/yaml.v2 v2.3.0
+	golang.org/x/tools v0.1.7
+	gopkg.in/yaml.v2 v2.4.0
 )
 
 require (
@@ -27,14 +27,14 @@ require (
 	github.com/pmezard/go-difflib v1.0.0 // indirect
 	github.com/valyala/bytebufferpool v1.0.0 // indirect
 	github.com/valyala/fasttemplate v1.2.1 // indirect
-	golang.org/x/crypto v0.0.0-20201221181555-eec23a3978ad // indirect
-	golang.org/x/mod v0.4.1 // indirect
-	golang.org/x/net v0.0.0-20210119194325-5f4716e94777 // indirect
-	golang.org/x/sys v0.0.0-20210124154548-22da62e12c0c // indirect
-	golang.org/x/text v0.3.5 // indirect
-	golang.org/x/time v0.0.0-20210220033141-f8bda1e9f3ba // indirect
+	golang.org/x/crypto v0.0.0-20210921155107-089bfa567519 // indirect
+	golang.org/x/mod v0.5.1 // indirect
+	golang.org/x/net v0.0.0-20211020060615-d418f374d309 // indirect
+	golang.org/x/sys v0.0.0-20211025201205-69cdffdb9359 // indirect
+	golang.org/x/text v0.3.7 // indirect
+	golang.org/x/time v0.0.0-20210723032227-1f47c861a9ac // indirect
 	golang.org/x/xerrors v0.0.0-20200804184101-5ec99f83aff1 // indirect
-	gopkg.in/yaml.v3 v3.0.0-20200313102051-9f266ea9e77c // indirect
+	gopkg.in/yaml.v3 v3.0.0-20200615113413-eeeca48fe776 // indirect
 )
 
 go 1.17

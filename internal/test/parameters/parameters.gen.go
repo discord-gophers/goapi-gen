@@ -58,7 +58,7 @@ type GetCookieParams struct {
 	Co *ComplexObject `json:"co,omitempty"`
 
 	// name starting with number
-	S *string `json:"1s,omitempty"`
+	N1s *string `json:"1s,omitempty"`
 }
 
 // GetHeaderParams defines parameters for GetHeader.
@@ -85,7 +85,7 @@ type GetHeaderParams struct {
 	XComplexObject *ComplexObject `json:"X-Complex-Object,omitempty"`
 
 	// name starting with number
-	StartingWithNumber *string `json:"1-Starting-With-Number,omitempty"`
+	N1StartingWithNumber *string `json:"1-Starting-With-Number,omitempty"`
 }
 
 // GetDeepObjectParams defines parameters for GetDeepObject.
@@ -121,7 +121,7 @@ type GetQueryFormParams struct {
 	Co *ComplexObject `json:"co,omitempty"`
 
 	// name starting with number
-	S *string `json:"1s,omitempty"`
+	N1s *string `json:"1s,omitempty"`
 }
 
 // RequestEditorFn  is the function signature for the RequestEditor callback function
@@ -219,16 +219,16 @@ type ClientInterface interface {
 	GetLabelNoExplodeObject(ctx context.Context, param Object, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// GetMatrixExplodeArray request
-	GetMatrixExplodeArray(ctx context.Context, iD []int32, reqEditors ...RequestEditorFn) (*http.Response, error)
+	GetMatrixExplodeArray(ctx context.Context, id []int32, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// GetMatrixExplodeObject request
-	GetMatrixExplodeObject(ctx context.Context, iD Object, reqEditors ...RequestEditorFn) (*http.Response, error)
+	GetMatrixExplodeObject(ctx context.Context, id Object, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// GetMatrixNoExplodeArray request
-	GetMatrixNoExplodeArray(ctx context.Context, iD []int32, reqEditors ...RequestEditorFn) (*http.Response, error)
+	GetMatrixNoExplodeArray(ctx context.Context, id []int32, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// GetMatrixNoExplodeObject request
-	GetMatrixNoExplodeObject(ctx context.Context, iD Object, reqEditors ...RequestEditorFn) (*http.Response, error)
+	GetMatrixNoExplodeObject(ctx context.Context, id Object, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// GetPassThrough request
 	GetPassThrough(ctx context.Context, param string, reqEditors ...RequestEditorFn) (*http.Response, error)
@@ -255,7 +255,7 @@ type ClientInterface interface {
 	GetSimplePrimitive(ctx context.Context, param int32, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// GetStartingWithNumber request
-	GetStartingWithNumber(ctx context.Context, param string, reqEditors ...RequestEditorFn) (*http.Response, error)
+	GetStartingWithNumber(ctx context.Context, n1param string, reqEditors ...RequestEditorFn) (*http.Response, error)
 }
 
 func (c *Client) GetContentObject(ctx context.Context, param ComplexObject, reqEditors ...RequestEditorFn) (*http.Response, error) {
@@ -342,8 +342,8 @@ func (c *Client) GetLabelNoExplodeObject(ctx context.Context, param Object, reqE
 	return c.Client.Do(req)
 }
 
-func (c *Client) GetMatrixExplodeArray(ctx context.Context, iD []int32, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewGetMatrixExplodeArrayRequest(c.Server, iD)
+func (c *Client) GetMatrixExplodeArray(ctx context.Context, id []int32, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewGetMatrixExplodeArrayRequest(c.Server, id)
 	if err != nil {
 		return nil, err
 	}
@@ -354,8 +354,8 @@ func (c *Client) GetMatrixExplodeArray(ctx context.Context, iD []int32, reqEdito
 	return c.Client.Do(req)
 }
 
-func (c *Client) GetMatrixExplodeObject(ctx context.Context, iD Object, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewGetMatrixExplodeObjectRequest(c.Server, iD)
+func (c *Client) GetMatrixExplodeObject(ctx context.Context, id Object, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewGetMatrixExplodeObjectRequest(c.Server, id)
 	if err != nil {
 		return nil, err
 	}
@@ -366,8 +366,8 @@ func (c *Client) GetMatrixExplodeObject(ctx context.Context, iD Object, reqEdito
 	return c.Client.Do(req)
 }
 
-func (c *Client) GetMatrixNoExplodeArray(ctx context.Context, iD []int32, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewGetMatrixNoExplodeArrayRequest(c.Server, iD)
+func (c *Client) GetMatrixNoExplodeArray(ctx context.Context, id []int32, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewGetMatrixNoExplodeArrayRequest(c.Server, id)
 	if err != nil {
 		return nil, err
 	}
@@ -378,8 +378,8 @@ func (c *Client) GetMatrixNoExplodeArray(ctx context.Context, iD []int32, reqEdi
 	return c.Client.Do(req)
 }
 
-func (c *Client) GetMatrixNoExplodeObject(ctx context.Context, iD Object, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewGetMatrixNoExplodeObjectRequest(c.Server, iD)
+func (c *Client) GetMatrixNoExplodeObject(ctx context.Context, id Object, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewGetMatrixNoExplodeObjectRequest(c.Server, id)
 	if err != nil {
 		return nil, err
 	}
@@ -486,8 +486,8 @@ func (c *Client) GetSimplePrimitive(ctx context.Context, param int32, reqEditors
 	return c.Client.Do(req)
 }
 
-func (c *Client) GetStartingWithNumber(ctx context.Context, param string, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewGetStartingWithNumberRequest(c.Server, param)
+func (c *Client) GetStartingWithNumber(ctx context.Context, n1param string, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewGetStartingWithNumberRequest(c.Server, n1param)
 	if err != nil {
 		return nil, err
 	}
@@ -665,10 +665,10 @@ func NewGetCookieRequest(server string, params *GetCookieParams) (*http.Request,
 		req.AddCookie(cookie6)
 	}
 
-	if params.S != nil {
+	if params.N1s != nil {
 		var cookieParam7 string
 
-		cookieParam7, err = runtime.StyleParamWithLocation("simple", true, "1s", runtime.ParamLocationCookie, *params.S)
+		cookieParam7, err = runtime.StyleParamWithLocation("simple", true, "1s", runtime.ParamLocationCookie, *params.N1s)
 		if err != nil {
 			return nil, err
 		}
@@ -786,10 +786,10 @@ func NewGetHeaderRequest(server string, params *GetHeaderParams) (*http.Request,
 		req.Header.Set("X-Complex-Object", headerParam6)
 	}
 
-	if params.StartingWithNumber != nil {
+	if params.N1StartingWithNumber != nil {
 		var headerParam7 string
 
-		headerParam7, err = runtime.StyleParamWithLocation("simple", false, "1-Starting-With-Number", runtime.ParamLocationHeader, *params.StartingWithNumber)
+		headerParam7, err = runtime.StyleParamWithLocation("simple", false, "1-Starting-With-Number", runtime.ParamLocationHeader, *params.N1StartingWithNumber)
 		if err != nil {
 			return nil, err
 		}
@@ -937,12 +937,12 @@ func NewGetLabelNoExplodeObjectRequest(server string, param Object) (*http.Reque
 }
 
 // NewGetMatrixExplodeArrayRequest generates requests for GetMatrixExplodeArray
-func NewGetMatrixExplodeArrayRequest(server string, iD []int32) (*http.Request, error) {
+func NewGetMatrixExplodeArrayRequest(server string, id []int32) (*http.Request, error) {
 	var err error
 
 	var pathParam0 string
 
-	pathParam0, err = runtime.StyleParamWithLocation("matrix", true, "id", runtime.ParamLocationPath, iD)
+	pathParam0, err = runtime.StyleParamWithLocation("matrix", true, "id", runtime.ParamLocationPath, id)
 	if err != nil {
 		return nil, err
 	}
@@ -971,12 +971,12 @@ func NewGetMatrixExplodeArrayRequest(server string, iD []int32) (*http.Request, 
 }
 
 // NewGetMatrixExplodeObjectRequest generates requests for GetMatrixExplodeObject
-func NewGetMatrixExplodeObjectRequest(server string, iD Object) (*http.Request, error) {
+func NewGetMatrixExplodeObjectRequest(server string, id Object) (*http.Request, error) {
 	var err error
 
 	var pathParam0 string
 
-	pathParam0, err = runtime.StyleParamWithLocation("matrix", true, "id", runtime.ParamLocationPath, iD)
+	pathParam0, err = runtime.StyleParamWithLocation("matrix", true, "id", runtime.ParamLocationPath, id)
 	if err != nil {
 		return nil, err
 	}
@@ -1005,12 +1005,12 @@ func NewGetMatrixExplodeObjectRequest(server string, iD Object) (*http.Request, 
 }
 
 // NewGetMatrixNoExplodeArrayRequest generates requests for GetMatrixNoExplodeArray
-func NewGetMatrixNoExplodeArrayRequest(server string, iD []int32) (*http.Request, error) {
+func NewGetMatrixNoExplodeArrayRequest(server string, id []int32) (*http.Request, error) {
 	var err error
 
 	var pathParam0 string
 
-	pathParam0, err = runtime.StyleParamWithLocation("matrix", false, "id", runtime.ParamLocationPath, iD)
+	pathParam0, err = runtime.StyleParamWithLocation("matrix", false, "id", runtime.ParamLocationPath, id)
 	if err != nil {
 		return nil, err
 	}
@@ -1039,12 +1039,12 @@ func NewGetMatrixNoExplodeArrayRequest(server string, iD []int32) (*http.Request
 }
 
 // NewGetMatrixNoExplodeObjectRequest generates requests for GetMatrixNoExplodeObject
-func NewGetMatrixNoExplodeObjectRequest(server string, iD Object) (*http.Request, error) {
+func NewGetMatrixNoExplodeObjectRequest(server string, id Object) (*http.Request, error) {
 	var err error
 
 	var pathParam0 string
 
-	pathParam0, err = runtime.StyleParamWithLocation("matrix", false, "id", runtime.ParamLocationPath, iD)
+	pathParam0, err = runtime.StyleParamWithLocation("matrix", false, "id", runtime.ParamLocationPath, id)
 	if err != nil {
 		return nil, err
 	}
@@ -1289,9 +1289,9 @@ func NewGetQueryFormRequest(server string, params *GetQueryFormParams) (*http.Re
 
 	}
 
-	if params.S != nil {
+	if params.N1s != nil {
 
-		if queryFrag, err := runtime.StyleParamWithLocation("form", true, "1s", runtime.ParamLocationQuery, *params.S); err != nil {
+		if queryFrag, err := runtime.StyleParamWithLocation("form", true, "1s", runtime.ParamLocationQuery, *params.N1s); err != nil {
 			return nil, err
 		} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
 			return nil, err
@@ -1486,12 +1486,12 @@ func NewGetSimplePrimitiveRequest(server string, param int32) (*http.Request, er
 }
 
 // NewGetStartingWithNumberRequest generates requests for GetStartingWithNumber
-func NewGetStartingWithNumberRequest(server string, param string) (*http.Request, error) {
+func NewGetStartingWithNumberRequest(server string, n1param string) (*http.Request, error) {
 	var err error
 
 	var pathParam0 string
 
-	pathParam0 = param
+	pathParam0 = n1param
 
 	serverURL, err := url.Parse(server)
 	if err != nil {
@@ -1581,16 +1581,16 @@ type ClientWithResponsesInterface interface {
 	GetLabelNoExplodeObjectWithResponse(ctx context.Context, param Object, reqEditors ...RequestEditorFn) (*GetLabelNoExplodeObjectResponse, error)
 
 	// GetMatrixExplodeArray request
-	GetMatrixExplodeArrayWithResponse(ctx context.Context, iD []int32, reqEditors ...RequestEditorFn) (*GetMatrixExplodeArrayResponse, error)
+	GetMatrixExplodeArrayWithResponse(ctx context.Context, id []int32, reqEditors ...RequestEditorFn) (*GetMatrixExplodeArrayResponse, error)
 
 	// GetMatrixExplodeObject request
-	GetMatrixExplodeObjectWithResponse(ctx context.Context, iD Object, reqEditors ...RequestEditorFn) (*GetMatrixExplodeObjectResponse, error)
+	GetMatrixExplodeObjectWithResponse(ctx context.Context, id Object, reqEditors ...RequestEditorFn) (*GetMatrixExplodeObjectResponse, error)
 
 	// GetMatrixNoExplodeArray request
-	GetMatrixNoExplodeArrayWithResponse(ctx context.Context, iD []int32, reqEditors ...RequestEditorFn) (*GetMatrixNoExplodeArrayResponse, error)
+	GetMatrixNoExplodeArrayWithResponse(ctx context.Context, id []int32, reqEditors ...RequestEditorFn) (*GetMatrixNoExplodeArrayResponse, error)
 
 	// GetMatrixNoExplodeObject request
-	GetMatrixNoExplodeObjectWithResponse(ctx context.Context, iD Object, reqEditors ...RequestEditorFn) (*GetMatrixNoExplodeObjectResponse, error)
+	GetMatrixNoExplodeObjectWithResponse(ctx context.Context, id Object, reqEditors ...RequestEditorFn) (*GetMatrixNoExplodeObjectResponse, error)
 
 	// GetPassThrough request
 	GetPassThroughWithResponse(ctx context.Context, param string, reqEditors ...RequestEditorFn) (*GetPassThroughResponse, error)
@@ -1617,7 +1617,7 @@ type ClientWithResponsesInterface interface {
 	GetSimplePrimitiveWithResponse(ctx context.Context, param int32, reqEditors ...RequestEditorFn) (*GetSimplePrimitiveResponse, error)
 
 	// GetStartingWithNumber request
-	GetStartingWithNumberWithResponse(ctx context.Context, param string, reqEditors ...RequestEditorFn) (*GetStartingWithNumberResponse, error)
+	GetStartingWithNumberWithResponse(ctx context.Context, n1param string, reqEditors ...RequestEditorFn) (*GetStartingWithNumberResponse, error)
 }
 
 type GetContentObjectResponse struct {
@@ -2104,8 +2104,8 @@ func (c *ClientWithResponses) GetLabelNoExplodeObjectWithResponse(ctx context.Co
 }
 
 // GetMatrixExplodeArrayWithResponse request returning *GetMatrixExplodeArrayResponse
-func (c *ClientWithResponses) GetMatrixExplodeArrayWithResponse(ctx context.Context, iD []int32, reqEditors ...RequestEditorFn) (*GetMatrixExplodeArrayResponse, error) {
-	rsp, err := c.GetMatrixExplodeArray(ctx, iD, reqEditors...)
+func (c *ClientWithResponses) GetMatrixExplodeArrayWithResponse(ctx context.Context, id []int32, reqEditors ...RequestEditorFn) (*GetMatrixExplodeArrayResponse, error) {
+	rsp, err := c.GetMatrixExplodeArray(ctx, id, reqEditors...)
 	if err != nil {
 		return nil, err
 	}
@@ -2113,8 +2113,8 @@ func (c *ClientWithResponses) GetMatrixExplodeArrayWithResponse(ctx context.Cont
 }
 
 // GetMatrixExplodeObjectWithResponse request returning *GetMatrixExplodeObjectResponse
-func (c *ClientWithResponses) GetMatrixExplodeObjectWithResponse(ctx context.Context, iD Object, reqEditors ...RequestEditorFn) (*GetMatrixExplodeObjectResponse, error) {
-	rsp, err := c.GetMatrixExplodeObject(ctx, iD, reqEditors...)
+func (c *ClientWithResponses) GetMatrixExplodeObjectWithResponse(ctx context.Context, id Object, reqEditors ...RequestEditorFn) (*GetMatrixExplodeObjectResponse, error) {
+	rsp, err := c.GetMatrixExplodeObject(ctx, id, reqEditors...)
 	if err != nil {
 		return nil, err
 	}
@@ -2122,8 +2122,8 @@ func (c *ClientWithResponses) GetMatrixExplodeObjectWithResponse(ctx context.Con
 }
 
 // GetMatrixNoExplodeArrayWithResponse request returning *GetMatrixNoExplodeArrayResponse
-func (c *ClientWithResponses) GetMatrixNoExplodeArrayWithResponse(ctx context.Context, iD []int32, reqEditors ...RequestEditorFn) (*GetMatrixNoExplodeArrayResponse, error) {
-	rsp, err := c.GetMatrixNoExplodeArray(ctx, iD, reqEditors...)
+func (c *ClientWithResponses) GetMatrixNoExplodeArrayWithResponse(ctx context.Context, id []int32, reqEditors ...RequestEditorFn) (*GetMatrixNoExplodeArrayResponse, error) {
+	rsp, err := c.GetMatrixNoExplodeArray(ctx, id, reqEditors...)
 	if err != nil {
 		return nil, err
 	}
@@ -2131,8 +2131,8 @@ func (c *ClientWithResponses) GetMatrixNoExplodeArrayWithResponse(ctx context.Co
 }
 
 // GetMatrixNoExplodeObjectWithResponse request returning *GetMatrixNoExplodeObjectResponse
-func (c *ClientWithResponses) GetMatrixNoExplodeObjectWithResponse(ctx context.Context, iD Object, reqEditors ...RequestEditorFn) (*GetMatrixNoExplodeObjectResponse, error) {
-	rsp, err := c.GetMatrixNoExplodeObject(ctx, iD, reqEditors...)
+func (c *ClientWithResponses) GetMatrixNoExplodeObjectWithResponse(ctx context.Context, id Object, reqEditors ...RequestEditorFn) (*GetMatrixNoExplodeObjectResponse, error) {
+	rsp, err := c.GetMatrixNoExplodeObject(ctx, id, reqEditors...)
 	if err != nil {
 		return nil, err
 	}
@@ -2212,8 +2212,8 @@ func (c *ClientWithResponses) GetSimplePrimitiveWithResponse(ctx context.Context
 }
 
 // GetStartingWithNumberWithResponse request returning *GetStartingWithNumberResponse
-func (c *ClientWithResponses) GetStartingWithNumberWithResponse(ctx context.Context, param string, reqEditors ...RequestEditorFn) (*GetStartingWithNumberResponse, error) {
-	rsp, err := c.GetStartingWithNumber(ctx, param, reqEditors...)
+func (c *ClientWithResponses) GetStartingWithNumberWithResponse(ctx context.Context, n1param string, reqEditors ...RequestEditorFn) (*GetStartingWithNumberResponse, error) {
+	rsp, err := c.GetStartingWithNumber(ctx, n1param, reqEditors...)
 	if err != nil {
 		return nil, err
 	}
@@ -2565,16 +2565,16 @@ type ServerInterface interface {
 	GetLabelNoExplodeObject(w http.ResponseWriter, r *http.Request, param Object)
 
 	// (GET /matrixExplodeArray/{.id*})
-	GetMatrixExplodeArray(w http.ResponseWriter, r *http.Request, iD []int32)
+	GetMatrixExplodeArray(w http.ResponseWriter, r *http.Request, id []int32)
 
 	// (GET /matrixExplodeObject/{.id*})
-	GetMatrixExplodeObject(w http.ResponseWriter, r *http.Request, iD Object)
+	GetMatrixExplodeObject(w http.ResponseWriter, r *http.Request, id Object)
 
 	// (GET /matrixNoExplodeArray/{.id})
-	GetMatrixNoExplodeArray(w http.ResponseWriter, r *http.Request, iD []int32)
+	GetMatrixNoExplodeArray(w http.ResponseWriter, r *http.Request, id []int32)
 
 	// (GET /matrixNoExplodeObject/{.id})
-	GetMatrixNoExplodeObject(w http.ResponseWriter, r *http.Request, iD Object)
+	GetMatrixNoExplodeObject(w http.ResponseWriter, r *http.Request, id Object)
 
 	// (GET /passThrough/{param})
 	GetPassThrough(w http.ResponseWriter, r *http.Request, param string)
@@ -2601,7 +2601,7 @@ type ServerInterface interface {
 	GetSimplePrimitive(w http.ResponseWriter, r *http.Request, param int32)
 
 	// (GET /startingWithNumber/{1param})
-	GetStartingWithNumber(w http.ResponseWriter, r *http.Request, param string)
+	GetStartingWithNumber(w http.ResponseWriter, r *http.Request, n1param string)
 }
 
 // ServerInterfaceWrapper converts contexts to parameters.
@@ -2612,7 +2612,7 @@ type ServerInterfaceWrapper struct {
 	ErrorHandlerFunc   func(w http.ResponseWriter, r *http.Request, err error)
 }
 
-type MiddlewareFunc func(http.HandlerFunc) http.HandlerFunc
+type MiddlewareFunc func(http.Handler) http.Handler
 
 // GetContentObject operation middleware
 func (siw *ServerInterfaceWrapper) GetContentObject(w http.ResponseWriter, r *http.Request) {
@@ -2630,12 +2630,12 @@ func (siw *ServerInterfaceWrapper) GetContentObject(w http.ResponseWriter, r *ht
 		return
 	}
 
-	var handler = func(w http.ResponseWriter, r *http.Request) {
+	var handler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.GetContentObject(w, r, param)
-	}
+	})
 
 	for _, middleware := range siw.HandlerMiddlewares {
-		handler = middleware(handler)
+		handler = middleware(handler).ServeHTTP
 	}
 
 	handler(w, r.WithContext(ctx))
@@ -2767,16 +2767,16 @@ func (siw *ServerInterfaceWrapper) GetCookie(w http.ResponseWriter, r *http.Requ
 			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{err})
 			return
 		}
-		params.S = &value
+		params.N1s = &value
 
 	}
 
-	var handler = func(w http.ResponseWriter, r *http.Request) {
+	var handler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.GetCookie(w, r, params)
-	}
+	})
 
 	for _, middleware := range siw.HandlerMiddlewares {
-		handler = middleware(handler)
+		handler = middleware(handler).ServeHTTP
 	}
 
 	handler(w, r.WithContext(ctx))
@@ -2942,7 +2942,7 @@ func (siw *ServerInterfaceWrapper) GetHeader(w http.ResponseWriter, r *http.Requ
 
 	// ------------- Optional header parameter "1-Starting-With-Number" -------------
 	if valueList, found := headers[http.CanonicalHeaderKey("1-Starting-With-Number")]; found {
-		var StartingWithNumber string
+		var N1StartingWithNumber string
 		n := len(valueList)
 		if n != 1 {
 			err := fmt.Errorf("Expected one value for 1-Starting-With-Number, got %d", n)
@@ -2950,23 +2950,23 @@ func (siw *ServerInterfaceWrapper) GetHeader(w http.ResponseWriter, r *http.Requ
 			return
 		}
 
-		err = runtime.BindStyledParameterWithLocation("simple", false, "1-Starting-With-Number", runtime.ParamLocationHeader, valueList[0], &StartingWithNumber)
+		err = runtime.BindStyledParameterWithLocation("simple", false, "1-Starting-With-Number", runtime.ParamLocationHeader, valueList[0], &N1StartingWithNumber)
 		if err != nil {
 			err = fmt.Errorf("Invalid format for parameter 1-Starting-With-Number: %w", err)
 			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{err})
 			return
 		}
 
-		params.StartingWithNumber = &StartingWithNumber
+		params.N1StartingWithNumber = &N1StartingWithNumber
 
 	}
 
-	var handler = func(w http.ResponseWriter, r *http.Request) {
+	var handler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.GetHeader(w, r, params)
-	}
+	})
 
 	for _, middleware := range siw.HandlerMiddlewares {
-		handler = middleware(handler)
+		handler = middleware(handler).ServeHTTP
 	}
 
 	handler(w, r.WithContext(ctx))
@@ -2988,12 +2988,12 @@ func (siw *ServerInterfaceWrapper) GetLabelExplodeArray(w http.ResponseWriter, r
 		return
 	}
 
-	var handler = func(w http.ResponseWriter, r *http.Request) {
+	var handler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.GetLabelExplodeArray(w, r, param)
-	}
+	})
 
 	for _, middleware := range siw.HandlerMiddlewares {
-		handler = middleware(handler)
+		handler = middleware(handler).ServeHTTP
 	}
 
 	handler(w, r.WithContext(ctx))
@@ -3015,12 +3015,12 @@ func (siw *ServerInterfaceWrapper) GetLabelExplodeObject(w http.ResponseWriter, 
 		return
 	}
 
-	var handler = func(w http.ResponseWriter, r *http.Request) {
+	var handler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.GetLabelExplodeObject(w, r, param)
-	}
+	})
 
 	for _, middleware := range siw.HandlerMiddlewares {
-		handler = middleware(handler)
+		handler = middleware(handler).ServeHTTP
 	}
 
 	handler(w, r.WithContext(ctx))
@@ -3042,12 +3042,12 @@ func (siw *ServerInterfaceWrapper) GetLabelNoExplodeArray(w http.ResponseWriter,
 		return
 	}
 
-	var handler = func(w http.ResponseWriter, r *http.Request) {
+	var handler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.GetLabelNoExplodeArray(w, r, param)
-	}
+	})
 
 	for _, middleware := range siw.HandlerMiddlewares {
-		handler = middleware(handler)
+		handler = middleware(handler).ServeHTTP
 	}
 
 	handler(w, r.WithContext(ctx))
@@ -3069,12 +3069,12 @@ func (siw *ServerInterfaceWrapper) GetLabelNoExplodeObject(w http.ResponseWriter
 		return
 	}
 
-	var handler = func(w http.ResponseWriter, r *http.Request) {
+	var handler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.GetLabelNoExplodeObject(w, r, param)
-	}
+	})
 
 	for _, middleware := range siw.HandlerMiddlewares {
-		handler = middleware(handler)
+		handler = middleware(handler).ServeHTTP
 	}
 
 	handler(w, r.WithContext(ctx))
@@ -3087,21 +3087,21 @@ func (siw *ServerInterfaceWrapper) GetMatrixExplodeArray(w http.ResponseWriter, 
 	var err error
 
 	// ------------- Path parameter "id" -------------
-	var iD []int32
+	var id []int32
 
-	err = runtime.BindStyledParameter("matrix", true, "id", chi.URLParam(r, "id"), &iD)
+	err = runtime.BindStyledParameter("matrix", true, "id", chi.URLParam(r, "id"), &id)
 	if err != nil {
 		err = fmt.Errorf("Invalid format for parameter id: %w", err)
 		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{err})
 		return
 	}
 
-	var handler = func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.GetMatrixExplodeArray(w, r, iD)
-	}
+	var handler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.GetMatrixExplodeArray(w, r, id)
+	})
 
 	for _, middleware := range siw.HandlerMiddlewares {
-		handler = middleware(handler)
+		handler = middleware(handler).ServeHTTP
 	}
 
 	handler(w, r.WithContext(ctx))
@@ -3114,21 +3114,21 @@ func (siw *ServerInterfaceWrapper) GetMatrixExplodeObject(w http.ResponseWriter,
 	var err error
 
 	// ------------- Path parameter "id" -------------
-	var iD Object
+	var id Object
 
-	err = runtime.BindStyledParameter("matrix", true, "id", chi.URLParam(r, "id"), &iD)
+	err = runtime.BindStyledParameter("matrix", true, "id", chi.URLParam(r, "id"), &id)
 	if err != nil {
 		err = fmt.Errorf("Invalid format for parameter id: %w", err)
 		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{err})
 		return
 	}
 
-	var handler = func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.GetMatrixExplodeObject(w, r, iD)
-	}
+	var handler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.GetMatrixExplodeObject(w, r, id)
+	})
 
 	for _, middleware := range siw.HandlerMiddlewares {
-		handler = middleware(handler)
+		handler = middleware(handler).ServeHTTP
 	}
 
 	handler(w, r.WithContext(ctx))
@@ -3141,21 +3141,21 @@ func (siw *ServerInterfaceWrapper) GetMatrixNoExplodeArray(w http.ResponseWriter
 	var err error
 
 	// ------------- Path parameter "id" -------------
-	var iD []int32
+	var id []int32
 
-	err = runtime.BindStyledParameter("matrix", false, "id", chi.URLParam(r, "id"), &iD)
+	err = runtime.BindStyledParameter("matrix", false, "id", chi.URLParam(r, "id"), &id)
 	if err != nil {
 		err = fmt.Errorf("Invalid format for parameter id: %w", err)
 		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{err})
 		return
 	}
 
-	var handler = func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.GetMatrixNoExplodeArray(w, r, iD)
-	}
+	var handler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.GetMatrixNoExplodeArray(w, r, id)
+	})
 
 	for _, middleware := range siw.HandlerMiddlewares {
-		handler = middleware(handler)
+		handler = middleware(handler).ServeHTTP
 	}
 
 	handler(w, r.WithContext(ctx))
@@ -3168,21 +3168,21 @@ func (siw *ServerInterfaceWrapper) GetMatrixNoExplodeObject(w http.ResponseWrite
 	var err error
 
 	// ------------- Path parameter "id" -------------
-	var iD Object
+	var id Object
 
-	err = runtime.BindStyledParameter("matrix", false, "id", chi.URLParam(r, "id"), &iD)
+	err = runtime.BindStyledParameter("matrix", false, "id", chi.URLParam(r, "id"), &id)
 	if err != nil {
 		err = fmt.Errorf("Invalid format for parameter id: %w", err)
 		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{err})
 		return
 	}
 
-	var handler = func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.GetMatrixNoExplodeObject(w, r, iD)
-	}
+	var handler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.GetMatrixNoExplodeObject(w, r, id)
+	})
 
 	for _, middleware := range siw.HandlerMiddlewares {
-		handler = middleware(handler)
+		handler = middleware(handler).ServeHTTP
 	}
 
 	handler(w, r.WithContext(ctx))
@@ -3199,12 +3199,12 @@ func (siw *ServerInterfaceWrapper) GetPassThrough(w http.ResponseWriter, r *http
 
 	param = chi.URLParam(r, "param")
 
-	var handler = func(w http.ResponseWriter, r *http.Request) {
+	var handler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.GetPassThrough(w, r, param)
-	}
+	})
 
 	for _, middleware := range siw.HandlerMiddlewares {
-		handler = middleware(handler)
+		handler = middleware(handler).ServeHTTP
 	}
 
 	handler(w, r.WithContext(ctx))
@@ -3235,12 +3235,12 @@ func (siw *ServerInterfaceWrapper) GetDeepObject(w http.ResponseWriter, r *http.
 		return
 	}
 
-	var handler = func(w http.ResponseWriter, r *http.Request) {
+	var handler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.GetDeepObject(w, r, params)
-	}
+	})
 
 	for _, middleware := range siw.HandlerMiddlewares {
-		handler = middleware(handler)
+		handler = middleware(handler).ServeHTTP
 	}
 
 	handler(w, r.WithContext(ctx))
@@ -3359,19 +3359,19 @@ func (siw *ServerInterfaceWrapper) GetQueryForm(w http.ResponseWriter, r *http.R
 
 	}
 
-	err = runtime.BindQueryParameter("form", true, false, "1s", r.URL.Query(), &params.S)
+	err = runtime.BindQueryParameter("form", true, false, "1s", r.URL.Query(), &params.N1s)
 	if err != nil {
 		err = fmt.Errorf("Invalid format for parameter 1s: %w", err)
 		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{err})
 		return
 	}
 
-	var handler = func(w http.ResponseWriter, r *http.Request) {
+	var handler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.GetQueryForm(w, r, params)
-	}
+	})
 
 	for _, middleware := range siw.HandlerMiddlewares {
-		handler = middleware(handler)
+		handler = middleware(handler).ServeHTTP
 	}
 
 	handler(w, r.WithContext(ctx))
@@ -3393,12 +3393,12 @@ func (siw *ServerInterfaceWrapper) GetSimpleExplodeArray(w http.ResponseWriter, 
 		return
 	}
 
-	var handler = func(w http.ResponseWriter, r *http.Request) {
+	var handler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.GetSimpleExplodeArray(w, r, param)
-	}
+	})
 
 	for _, middleware := range siw.HandlerMiddlewares {
-		handler = middleware(handler)
+		handler = middleware(handler).ServeHTTP
 	}
 
 	handler(w, r.WithContext(ctx))
@@ -3420,12 +3420,12 @@ func (siw *ServerInterfaceWrapper) GetSimpleExplodeObject(w http.ResponseWriter,
 		return
 	}
 
-	var handler = func(w http.ResponseWriter, r *http.Request) {
+	var handler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.GetSimpleExplodeObject(w, r, param)
-	}
+	})
 
 	for _, middleware := range siw.HandlerMiddlewares {
-		handler = middleware(handler)
+		handler = middleware(handler).ServeHTTP
 	}
 
 	handler(w, r.WithContext(ctx))
@@ -3447,12 +3447,12 @@ func (siw *ServerInterfaceWrapper) GetSimpleNoExplodeArray(w http.ResponseWriter
 		return
 	}
 
-	var handler = func(w http.ResponseWriter, r *http.Request) {
+	var handler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.GetSimpleNoExplodeArray(w, r, param)
-	}
+	})
 
 	for _, middleware := range siw.HandlerMiddlewares {
-		handler = middleware(handler)
+		handler = middleware(handler).ServeHTTP
 	}
 
 	handler(w, r.WithContext(ctx))
@@ -3474,12 +3474,12 @@ func (siw *ServerInterfaceWrapper) GetSimpleNoExplodeObject(w http.ResponseWrite
 		return
 	}
 
-	var handler = func(w http.ResponseWriter, r *http.Request) {
+	var handler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.GetSimpleNoExplodeObject(w, r, param)
-	}
+	})
 
 	for _, middleware := range siw.HandlerMiddlewares {
-		handler = middleware(handler)
+		handler = middleware(handler).ServeHTTP
 	}
 
 	handler(w, r.WithContext(ctx))
@@ -3501,12 +3501,12 @@ func (siw *ServerInterfaceWrapper) GetSimplePrimitive(w http.ResponseWriter, r *
 		return
 	}
 
-	var handler = func(w http.ResponseWriter, r *http.Request) {
+	var handler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.GetSimplePrimitive(w, r, param)
-	}
+	})
 
 	for _, middleware := range siw.HandlerMiddlewares {
-		handler = middleware(handler)
+		handler = middleware(handler).ServeHTTP
 	}
 
 	handler(w, r.WithContext(ctx))
@@ -3519,16 +3519,16 @@ func (siw *ServerInterfaceWrapper) GetStartingWithNumber(w http.ResponseWriter, 
 	var err error
 
 	// ------------- Path parameter "1param" -------------
-	var param string
+	var n1param string
 
-	param = chi.URLParam(r, "1param")
+	n1param = chi.URLParam(r, "1param")
 
-	var handler = func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.GetStartingWithNumber(w, r, param)
-	}
+	var handler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.GetStartingWithNumber(w, r, n1param)
+	})
 
 	for _, middleware := range siw.HandlerMiddlewares {
-		handler = middleware(handler)
+		handler = middleware(handler).ServeHTTP
 	}
 
 	handler(w, r.WithContext(ctx))
@@ -3599,10 +3599,9 @@ func HandlerWithOptions(si ServerInterface, options ChiServerOptions) http.Handl
 	}
 
 	wrapper := ServerInterfaceWrapper{
-		Handler:            si,
-		HandlerMiddlewares: options.Middlewares,
-		TaggedMiddlewares:  options.TaggedMiddlewares,
-		ErrorHandlerFunc:   options.ErrorHandlerFunc,
+		Handler: si, HandlerMiddlewares: options.Middlewares,
+		TaggedMiddlewares: options.TaggedMiddlewares,
+		ErrorHandlerFunc:  options.ErrorHandlerFunc,
 	}
 
 	r.Route(options.BaseURL, func(r chi.Router) {
@@ -3626,6 +3625,7 @@ func HandlerWithOptions(si ServerInterface, options ChiServerOptions) http.Handl
 		r.Get("/simpleNoExplodeObject/{param}", wrapper.GetSimpleNoExplodeObject)
 		r.Get("/simplePrimitive/{param}", wrapper.GetSimplePrimitive)
 		r.Get("/startingWithNumber/{1param}", wrapper.GetStartingWithNumber)
+
 	})
 	return r
 }

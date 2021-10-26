@@ -37,7 +37,7 @@ const (
 )
 
 // This schema name starts with a number
-type StartsWithNumber map[string]interface{}
+type N5startsWithNumber map[string]interface{}
 
 // AnyType1 defines model for AnyType1.
 type AnyType1 interface{}
@@ -183,7 +183,7 @@ type ClientInterface interface {
 	GetIssues375(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// Issue41 request
-	Issue41(ctx context.Context, param StartsWithNumber, reqEditors ...RequestEditorFn) (*http.Response, error)
+	Issue41(ctx context.Context, n1param N5startsWithNumber, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// Issue9 request with any body
 	Issue9WithBody(ctx context.Context, params *Issue9Params, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
@@ -275,8 +275,8 @@ func (c *Client) GetIssues375(ctx context.Context, reqEditors ...RequestEditorFn
 	return c.Client.Do(req)
 }
 
-func (c *Client) Issue41(ctx context.Context, param StartsWithNumber, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewIssue41Request(c.Server, param)
+func (c *Client) Issue41(ctx context.Context, n1param N5startsWithNumber, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewIssue41Request(c.Server, n1param)
 	if err != nil {
 		return nil, err
 	}
@@ -501,12 +501,12 @@ func NewGetIssues375Request(server string) (*http.Request, error) {
 }
 
 // NewIssue41Request generates requests for Issue41
-func NewIssue41Request(server string, param StartsWithNumber) (*http.Request, error) {
+func NewIssue41Request(server string, n1param N5startsWithNumber) (*http.Request, error) {
 	var err error
 
 	var pathParam0 string
 
-	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "1param", runtime.ParamLocationPath, param)
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "1param", runtime.ParamLocationPath, n1param)
 	if err != nil {
 		return nil, err
 	}
@@ -654,7 +654,7 @@ type ClientWithResponsesInterface interface {
 	GetIssues375WithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*GetIssues375Response, error)
 
 	// Issue41 request
-	Issue41WithResponse(ctx context.Context, param StartsWithNumber, reqEditors ...RequestEditorFn) (*Issue41Response, error)
+	Issue41WithResponse(ctx context.Context, n1param N5startsWithNumber, reqEditors ...RequestEditorFn) (*Issue41Response, error)
 
 	// Issue9 request with any body
 	Issue9WithBodyWithResponse(ctx context.Context, params *Issue9Params, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*Issue9Response, error)
@@ -665,7 +665,7 @@ type ClientWithResponsesInterface interface {
 type EnsureEverythingIsReferencedResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
-	JSON         *struct {
+	JSON200      *struct {
 		AnyType1 *AnyType1 `json:"anyType1,omitempty"`
 
 		// AnyType2 represents any type.
@@ -695,9 +695,9 @@ func (r EnsureEverythingIsReferencedResponse) StatusCode() int {
 type Issue127Response struct {
 	Body         []byte
 	HTTPResponse *http.Response
-	JSON         *GenericObject
-	XML          *GenericObject
-	YAML         *GenericObject
+	JSON200      *GenericObject
+	XML200       *GenericObject
+	YAML200      *GenericObject
 	JSONDefault  *GenericObject
 }
 
@@ -783,7 +783,7 @@ func (r Issue30Response) StatusCode() int {
 type GetIssues375Response struct {
 	Body         []byte
 	HTTPResponse *http.Response
-	JSON         *EnumInObjInArray
+	JSON200      *EnumInObjInArray
 }
 
 // Status returns HTTPResponse.Status
@@ -907,8 +907,8 @@ func (c *ClientWithResponses) GetIssues375WithResponse(ctx context.Context, reqE
 }
 
 // Issue41WithResponse request returning *Issue41Response
-func (c *ClientWithResponses) Issue41WithResponse(ctx context.Context, param StartsWithNumber, reqEditors ...RequestEditorFn) (*Issue41Response, error) {
-	rsp, err := c.Issue41(ctx, param, reqEditors...)
+func (c *ClientWithResponses) Issue41WithResponse(ctx context.Context, n1param N5startsWithNumber, reqEditors ...RequestEditorFn) (*Issue41Response, error) {
+	rsp, err := c.Issue41(ctx, n1param, reqEditors...)
 	if err != nil {
 		return nil, err
 	}
@@ -959,7 +959,7 @@ func ParseEnsureEverythingIsReferencedResponse(rsp *http.Response) (*EnsureEvery
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
 			return nil, err
 		}
-		response.JSON = &dest
+		response.JSON200 = &dest
 
 	}
 
@@ -985,7 +985,7 @@ func ParseIssue127Response(rsp *http.Response) (*Issue127Response, error) {
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
 			return nil, err
 		}
-		response.JSON = &dest
+		response.JSON200 = &dest
 
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
 		var dest GenericObject
@@ -999,14 +999,14 @@ func ParseIssue127Response(rsp *http.Response) (*Issue127Response, error) {
 		if err := xml.Unmarshal(bodyBytes, &dest); err != nil {
 			return nil, err
 		}
-		response.XML = &dest
+		response.XML200 = &dest
 
 	case strings.Contains(rsp.Header.Get("Content-Type"), "yaml") && rsp.StatusCode == 200:
 		var dest GenericObject
 		if err := yaml.Unmarshal(bodyBytes, &dest); err != nil {
 			return nil, err
 		}
-		response.YAML = &dest
+		response.YAML200 = &dest
 
 	case rsp.StatusCode == 200:
 	// Content-type (text/markdown) unsupported
@@ -1086,7 +1086,7 @@ func ParseGetIssues375Response(rsp *http.Response) (*GetIssues375Response, error
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
 			return nil, err
 		}
-		response.JSON = &dest
+		response.JSON200 = &dest
 
 	}
 
@@ -1147,7 +1147,7 @@ type ServerInterface interface {
 	GetIssues375(w http.ResponseWriter, r *http.Request)
 
 	// (GET /issues/41/{1param})
-	Issue41(w http.ResponseWriter, r *http.Request, param StartsWithNumber)
+	Issue41(w http.ResponseWriter, r *http.Request, n1param N5startsWithNumber)
 
 	// (GET /issues/9)
 	Issue9(w http.ResponseWriter, r *http.Request, params Issue9Params)
@@ -1161,7 +1161,7 @@ type ServerInterfaceWrapper struct {
 	ErrorHandlerFunc   func(w http.ResponseWriter, r *http.Request, err error)
 }
 
-type MiddlewareFunc func(http.HandlerFunc) http.HandlerFunc
+type MiddlewareFunc func(http.Handler) http.Handler
 
 // EnsureEverythingIsReferenced operation middleware
 func (siw *ServerInterfaceWrapper) EnsureEverythingIsReferenced(w http.ResponseWriter, r *http.Request) {
@@ -1169,12 +1169,12 @@ func (siw *ServerInterfaceWrapper) EnsureEverythingIsReferenced(w http.ResponseW
 
 	ctx = context.WithValue(ctx, Access-tokenScopes, []string{""})
 
-	var handler = func(w http.ResponseWriter, r *http.Request) {
+	var handler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.EnsureEverythingIsReferenced(w, r)
-	}
+	})
 
 	for _, middleware := range siw.HandlerMiddlewares {
-		handler = middleware(handler)
+		handler = middleware(handler).ServeHTTP
 	}
 
 	handler(w, r.WithContext(ctx))
@@ -1186,12 +1186,12 @@ func (siw *ServerInterfaceWrapper) Issue127(w http.ResponseWriter, r *http.Reque
 
 	ctx = context.WithValue(ctx, Access-tokenScopes, []string{""})
 
-	var handler = func(w http.ResponseWriter, r *http.Request) {
+	var handler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.Issue127(w, r)
-	}
+	})
 
 	for _, middleware := range siw.HandlerMiddlewares {
-		handler = middleware(handler)
+		handler = middleware(handler).ServeHTTP
 	}
 
 	handler(w, r.WithContext(ctx))
@@ -1203,12 +1203,12 @@ func (siw *ServerInterfaceWrapper) Issue185(w http.ResponseWriter, r *http.Reque
 
 	ctx = context.WithValue(ctx, Access-tokenScopes, []string{""})
 
-	var handler = func(w http.ResponseWriter, r *http.Request) {
+	var handler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.Issue185(w, r)
-	}
+	})
 
 	for _, middleware := range siw.HandlerMiddlewares {
-		handler = middleware(handler)
+		handler = middleware(handler).ServeHTTP
 	}
 
 	handler(w, r.WithContext(ctx))
@@ -1232,12 +1232,12 @@ func (siw *ServerInterfaceWrapper) Issue209(w http.ResponseWriter, r *http.Reque
 
 	ctx = context.WithValue(ctx, Access-tokenScopes, []string{""})
 
-	var handler = func(w http.ResponseWriter, r *http.Request) {
+	var handler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.Issue209(w, r, str)
-	}
+	})
 
 	for _, middleware := range siw.HandlerMiddlewares {
-		handler = middleware(handler)
+		handler = middleware(handler).ServeHTTP
 	}
 
 	handler(w, r.WithContext(ctx))
@@ -1261,12 +1261,12 @@ func (siw *ServerInterfaceWrapper) Issue30(w http.ResponseWriter, r *http.Reques
 
 	ctx = context.WithValue(ctx, Access-tokenScopes, []string{""})
 
-	var handler = func(w http.ResponseWriter, r *http.Request) {
+	var handler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.Issue30(w, r, pFallthrough)
-	}
+	})
 
 	for _, middleware := range siw.HandlerMiddlewares {
-		handler = middleware(handler)
+		handler = middleware(handler).ServeHTTP
 	}
 
 	handler(w, r.WithContext(ctx))
@@ -1278,12 +1278,12 @@ func (siw *ServerInterfaceWrapper) GetIssues375(w http.ResponseWriter, r *http.R
 
 	ctx = context.WithValue(ctx, Access-tokenScopes, []string{""})
 
-	var handler = func(w http.ResponseWriter, r *http.Request) {
+	var handler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.GetIssues375(w, r)
-	}
+	})
 
 	for _, middleware := range siw.HandlerMiddlewares {
-		handler = middleware(handler)
+		handler = middleware(handler).ServeHTTP
 	}
 
 	handler(w, r.WithContext(ctx))
@@ -1296,9 +1296,9 @@ func (siw *ServerInterfaceWrapper) Issue41(w http.ResponseWriter, r *http.Reques
 	var err error
 
 	// ------------- Path parameter "1param" -------------
-	var param StartsWithNumber
+	var n1param N5startsWithNumber
 
-	err = runtime.BindStyledParameter("simple", false, "1param", chi.URLParam(r, "1param"), &param)
+	err = runtime.BindStyledParameter("simple", false, "1param", chi.URLParam(r, "1param"), &n1param)
 	if err != nil {
 		err = fmt.Errorf("Invalid format for parameter 1param: %w", err)
 		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{err})
@@ -1307,12 +1307,12 @@ func (siw *ServerInterfaceWrapper) Issue41(w http.ResponseWriter, r *http.Reques
 
 	ctx = context.WithValue(ctx, Access-tokenScopes, []string{""})
 
-	var handler = func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.Issue41(w, r, param)
-	}
+	var handler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.Issue41(w, r, n1param)
+	})
 
 	for _, middleware := range siw.HandlerMiddlewares {
-		handler = middleware(handler)
+		handler = middleware(handler).ServeHTTP
 	}
 
 	handler(w, r.WithContext(ctx))
@@ -1345,12 +1345,12 @@ func (siw *ServerInterfaceWrapper) Issue9(w http.ResponseWriter, r *http.Request
 		return
 	}
 
-	var handler = func(w http.ResponseWriter, r *http.Request) {
+	var handler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.Issue9(w, r, params)
-	}
+	})
 
 	for _, middleware := range siw.HandlerMiddlewares {
-		handler = middleware(handler)
+		handler = middleware(handler).ServeHTTP
 	}
 
 	handler(w, r.WithContext(ctx))
@@ -1421,10 +1421,9 @@ func HandlerWithOptions(si ServerInterface, options ChiServerOptions) http.Handl
 	}
 
 	wrapper := ServerInterfaceWrapper{
-		Handler:            si,
-		HandlerMiddlewares: options.Middlewares,
-		TaggedMiddlewares:  options.TaggedMiddlewares,
-		ErrorHandlerFunc:   options.ErrorHandlerFunc,
+		Handler: si, HandlerMiddlewares: options.Middlewares,
+		TaggedMiddlewares: options.TaggedMiddlewares,
+		ErrorHandlerFunc:  options.ErrorHandlerFunc,
 	}
 
 	r.Route(options.BaseURL, func(r chi.Router) {
@@ -1436,6 +1435,7 @@ func HandlerWithOptions(si ServerInterface, options ChiServerOptions) http.Handl
 		r.Get("/issues/375", wrapper.GetIssues375)
 		r.Get("/issues/41/{1param}", wrapper.Issue41)
 		r.Get("/issues/9", wrapper.Issue9)
+
 	})
 	return r
 }

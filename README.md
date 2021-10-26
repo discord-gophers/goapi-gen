@@ -1,5 +1,4 @@
-OpenAPI Client and Server Code Generator
-----------------------------------------
+# OpenAPI Client and Server Code Generator
 
 This package contains a set of utilities for generating Go boilerplate code for
 services based on
@@ -39,12 +38,12 @@ directory does a lot of that for you. You would run it like so:
 Let's go through that `petstore.gen.go` file to show you everything which was
 generated.
 
-
 ## Generated Server Boilerplate
 
 The `/components/schemas` section in OpenAPI defines reusable objects, so Go
 types are generated for these. The Pet Store example defines `Error`, `Pet`,
 `Pets` and `NewPet`, so we do the same in Go:
+
 ```go
 // Type definition for component schema "Error"
 type Error struct {
@@ -102,6 +101,7 @@ will be passed as arguments to your function, since they are mandatory.
 Remaining arguments can be passed in headers, query arguments or cookies. Those
 will be written to a `params` object. Look at the `FindPets` function above, it
 takes as input `FindPetsParams`, which is defined as follows:
+
  ```go
 // Parameters object for FindPets
 type FindPetsParams struct {
@@ -116,6 +116,7 @@ specified, the pointer will be non-`nil`, and you can read its value.
 
 If you changed the OpenAPI specification to make the parameter required, the
 `FindPetsParams` structure will contain the type by value:
+
 ```go
 type FindPetsParams struct {
     Tags  *[]string `json:"tags,omitempty"`
@@ -143,6 +144,7 @@ func SetupHandler() {
     r.Mount("/", Handler(&myApi))
 }
 ```
+
 </summary></details>
 
 <details><summary><code>net/http</code></summary>
@@ -161,6 +163,7 @@ func SetupHandler() {
     http.Handle("/", Handler(&myApi))
 }
 ```
+
 </summary></details>
 
 #### Additional Properties in type definitions
@@ -176,6 +179,7 @@ defaults to `false` and we don't generate this boilerplate. If you would like
 an object to accept `additionalProperties`, specify a schema for `additionalProperties`.
 
 Say we declared `NewPet` above like so:
+
 ```yaml
     NewPet:
       required:
@@ -190,6 +194,7 @@ Say we declared `NewPet` above like so:
 ```
 
 The Go code for `NewPet` would now look like this:
+
 ```go
 // NewPet defines model for NewPet.
 type NewPet struct {
@@ -201,6 +206,7 @@ type NewPet struct {
 
 The additionalProperties, of type `string` become `map[string]string`, which maps
 field names to instances of the `additionalProperties` schema.
+
 ```go
 // Getter for additional properties for NewPet. Returns the specified
 // element and whether it was found
@@ -317,6 +323,7 @@ will correspond to your request schema. They map one-to-one to the functions on
 the client, except that we always generate the generic non-JSON body handler.
 
 There are some caveats to using this code.
+
 - exploded, form style query arguments, which are the default argument format
  in OpenAPI 3.0 are undecidable. Say that I have two objects, one composed of
  the fields `(name=bob, id=5)` and another which has `(name=shoe, color=brown)`.
@@ -340,8 +347,7 @@ There are some caveats to using this code.
 If you generate client-code, you can use some default-provided security providers
 which help you to use the various OpenAPI 3 Authentication mechanism.
 
-
-```
+```go
     import (
         "github.com/discord-gophers/goapi-gen/pkg/securityprovider"
     )
@@ -412,9 +418,10 @@ which help you to use the various OpenAPI 3 Authentication mechanism.
                 tag1: value1
                 tag2: value2
     ```
+
   In the example above, field `name` will be declared as:
 
-  ```
+  ```go
   Name string `json:"name" tag1:"value1" tag2:"value2"`
   ```
 
@@ -430,9 +437,10 @@ which help you to use the various OpenAPI 3 Authentication mechanism.
       get:
         x-goapi-gen-middlewares: [limit]
     ```
+
   In the example above, the following middleware calls will be added to your handler:
 
-  ```
+  ```go
   // Operation specific middleware
   if siw.TaggedMiddlewares != nil {
     if middleware, ok := siw.TaggedMiddlewares["validateJSON"]; ok {
@@ -443,7 +451,6 @@ which help you to use the various OpenAPI 3 Authentication mechanism.
     }
   }
   ```
-
 
 ## Using `goapi-gen`
 
@@ -554,7 +561,6 @@ need it. We've not yet implemented several things:
  properties were defined in JSONSchema, and the `kin-openapi` Swagger object
  knows how to parse them, but they're not part of OpenAPI 3.0, so we've left
  them out, as support is very complicated.
-
 
 ## Making changes to code generation
 
