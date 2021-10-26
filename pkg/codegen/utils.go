@@ -29,7 +29,7 @@ import (
 var pathParamRE *regexp.Regexp
 
 func init() {
-	pathParamRE = regexp.MustCompile("{[.;?]?([^{}*]+)\\*?}")
+	pathParamRE = regexp.MustCompile(`{[.;?]?([^{}*]+)\*?}`)
 }
 
 // Uppercase the first character in a string. This assumes UTF-8, so we have

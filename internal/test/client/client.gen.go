@@ -22,7 +22,7 @@ import (
 )
 
 const (
-	OpenIdScopes = "OpenId.Scopes"
+	OpenIDScopes = "OpenId.Scopes"
 )
 
 // SchemaObject defines model for SchemaObject.
@@ -958,7 +958,7 @@ func (siw *ServerInterfaceWrapper) PostJSON(w http.ResponseWriter, r *http.Reque
 func (siw *ServerInterfaceWrapper) GetJSON(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 
-	ctx = context.WithValue(ctx, OpenIdScopes, []string{"json.read", "json.admin"})
+	ctx = context.WithValue(ctx, OpenIDScopes, []string{"json.read", "json.admin"})
 
 	var handler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.GetJSON(w, r)
@@ -1005,7 +1005,7 @@ func (siw *ServerInterfaceWrapper) GetOther(w http.ResponseWriter, r *http.Reque
 func (siw *ServerInterfaceWrapper) GetJSONWithTrailingSlash(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 
-	ctx = context.WithValue(ctx, OpenIdScopes, []string{"json.read", "json.admin"})
+	ctx = context.WithValue(ctx, OpenIDScopes, []string{"json.read", "json.admin"})
 
 	var handler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.GetJSONWithTrailingSlash(w, r)

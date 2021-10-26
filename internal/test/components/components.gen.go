@@ -1319,13 +1319,13 @@ func (siw *ServerInterfaceWrapper) ParamsWithAddProps(w http.ResponseWriter, r *
 	if paramValue := r.URL.Query().Get("p1"); paramValue != "" {
 
 	} else {
-		err := fmt.Errorf("Query argument p1 is required, but not found")
+		err := fmt.Errorf("query argument p1 is required, but not found")
 		siw.ErrorHandlerFunc(w, r, &RequiredParamError{err})
 		return
 	}
 
 	if err := runtime.BindQueryParameter("simple", true, true, "p1", r.URL.Query(), &params.P1); err != nil {
-		err = fmt.Errorf("Invalid format for parameter p1: %w", err)
+		err = fmt.Errorf("invalid format for parameter p1: %w", err)
 		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{err})
 		return
 	}
@@ -1334,13 +1334,13 @@ func (siw *ServerInterfaceWrapper) ParamsWithAddProps(w http.ResponseWriter, r *
 	if paramValue := r.URL.Query().Get("p2"); paramValue != "" {
 
 	} else {
-		err := fmt.Errorf("Query argument p2 is required, but not found")
+		err := fmt.Errorf("query argument p2 is required, but not found")
 		siw.ErrorHandlerFunc(w, r, &RequiredParamError{err})
 		return
 	}
 
 	if err := runtime.BindQueryParameter("form", true, true, "p2", r.URL.Query(), &params.P2); err != nil {
-		err = fmt.Errorf("Invalid format for parameter p2: %w", err)
+		err = fmt.Errorf("invalid format for parameter p2: %w", err)
 		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{err})
 		return
 	}
