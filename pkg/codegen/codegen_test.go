@@ -104,7 +104,7 @@ func TestExamplePetStoreParseFunction(t *testing.T) {
 	findPetByIDResponse, err := examplePetstoreClient.ParseFindPetByIDResponse(cannedResponse)
 	assert.NoError(t, err)
 	assert.NotNil(t, findPetByIDResponse.JSON200)
-	assert.Equal(t, int64(5), findPetByIDResponse.JSON200.Id)
+	assert.Equal(t, int64(5), findPetByIDResponse.JSON200.ID)
 	assert.Equal(t, "testpet", findPetByIDResponse.JSON200.Name)
 	assert.NotNil(t, findPetByIDResponse.JSON200.Tag)
 	assert.Equal(t, "cat", *findPetByIDResponse.JSON200.Tag)

@@ -296,7 +296,7 @@ type ClientWithResponsesInterface interface {
 type GetPetResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
-	JSON         *Pet
+	JSON200      *Pet
 }
 
 // Status returns HTTPResponse.Status
@@ -318,7 +318,7 @@ func (r GetPetResponse) StatusCode() int {
 type ValidatePetsResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
-	JSON         *[]Pet
+	JSON200      *[]Pet
 	JSONDefault  *Error
 }
 
@@ -383,7 +383,7 @@ func ParseGetPetResponse(rsp *http.Response) (*GetPetResponse, error) {
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
 			return nil, err
 		}
-		response.JSON = &dest
+		response.JSON200 = &dest
 
 	}
 
@@ -409,7 +409,7 @@ func ParseValidatePetsResponse(rsp *http.Response) (*ValidatePetsResponse, error
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
 			return nil, err
 		}
-		response.JSON = &dest
+		response.JSON200 = &dest
 
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
 		var dest Error

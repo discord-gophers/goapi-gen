@@ -22,7 +22,7 @@ func assertJsonEqual(t *testing.T, j1 []byte, j2 []byte) {
 func TestRawJSON(t *testing.T) {
 	// Check raw json unmarshaling
 	const buf = `{"name":"bob","value1":{"present":true}}`
-	var dst ObjectWithJsonField
+	var dst ObjectWithJSONField
 	err := json.Unmarshal([]byte(buf), &dst)
 	assert.NoError(t, err)
 
@@ -39,7 +39,7 @@ func TestAdditionalProperties(t *testing.T) {
 	err := json.Unmarshal([]byte(buf), &dst)
 	assert.NoError(t, err)
 	assert.Equal(t, "bob", dst.Name)
-	assert.Equal(t, 5, dst.Id)
+	assert.Equal(t, 5, dst.ID)
 	assert.Equal(t, "yes", *dst.Optional)
 	additional, found := dst.Get("additional")
 	assert.True(t, found)

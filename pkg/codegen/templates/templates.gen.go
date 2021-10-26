@@ -135,10 +135,10 @@ func HandlerWithOptions(si ServerInterface, options ChiServerOptions) http.Handl
 `,
 	"chi-interface.tmpl": `// ServerInterface represents all server handlers.
 type ServerInterface interface {
-  {{range .}}{{.SummaryAsComment }}
-  // ({{.Method}} {{.Path}})
-  {{.OperationId}}(w http.ResponseWriter, r *http.Request{{genParamArgs .PathParams}}{{if .RequiresParamObject}}, params {{.OperationId}}Params{{end}})
-  {{end}}
+	{{range .}}{{.SummaryAsComment }}
+	// ({{.Method}} {{.Path}})
+	{{.OperationId}}(w http.ResponseWriter, r *http.Request{{genParamArgs .PathParams}}{{if .RequiresParamObject}}, params {{.OperationId}}Params{{end}})
+	{{end}}
 }
 `,
 	"chi-middleware.tmpl": `// ServerInterfaceWrapper converts contexts to parameters.

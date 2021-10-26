@@ -70,10 +70,10 @@ type ServerInterface interface {
 	AddPet(w http.ResponseWriter, r *http.Request)
 	// Deletes a pet by ID
 	// (DELETE /pets/{id})
-	DeletePet(w http.ResponseWriter, r *http.Request, iD int64)
+	DeletePet(w http.ResponseWriter, r *http.Request, id int64)
 	// Returns a pet by ID
 	// (GET /pets/{id})
-	FindPetByID(w http.ResponseWriter, r *http.Request, iD int64)
+	FindPetByID(w http.ResponseWriter, r *http.Request, id int64)
 }
 
 // ServerInterfaceWrapper converts contexts to parameters.
@@ -152,9 +152,9 @@ func (siw *ServerInterfaceWrapper) DeletePet(w http.ResponseWriter, r *http.Requ
 	var err error
 
 	// ------------- Path parameter "id" -------------
-	var iD int64
+	var id int64
 
-	err = runtime.BindStyledParameter("simple", false, "id", chi.URLParam(r, "id"), &iD)
+	err = runtime.BindStyledParameter("simple", false, "id", chi.URLParam(r, "id"), &id)
 	if err != nil {
 		err = fmt.Errorf("Invalid format for parameter id: %w", err)
 		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{err})
@@ -179,9 +179,9 @@ func (siw *ServerInterfaceWrapper) FindPetByID(w http.ResponseWriter, r *http.Re
 	var err error
 
 	// ------------- Path parameter "id" -------------
-	var iD int64
+	var id int64
 
-	err = runtime.BindStyledParameter("simple", false, "id", chi.URLParam(r, "id"), &iD)
+	err = runtime.BindStyledParameter("simple", false, "id", chi.URLParam(r, "id"), &id)
 	if err != nil {
 		err = fmt.Errorf("Invalid format for parameter id: %w", err)
 		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{err})

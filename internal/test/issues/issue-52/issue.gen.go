@@ -258,7 +258,7 @@ type ClientWithResponsesInterface interface {
 type ExampleGetResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
-	JSON         *Document
+	JSON200      *Document
 }
 
 // Status returns HTTPResponse.Status
@@ -305,7 +305,7 @@ func ParseExampleGetResponse(rsp *http.Response) (*ExampleGetResponse, error) {
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
 			return nil, err
 		}
-		response.JSON = &dest
+		response.JSON200 = &dest
 
 	}
 

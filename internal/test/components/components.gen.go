@@ -1061,7 +1061,7 @@ type ClientWithResponsesInterface interface {
 type EnsureEverythingIsReferencedResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
-	JSON         *struct {
+	JSON200      *struct {
 		// Has additional properties with schema for dictionaries
 		Five *AdditionalPropertiesObject5 `json:"five,omitempty"`
 
@@ -1219,7 +1219,7 @@ func ParseEnsureEverythingIsReferencedResponse(rsp *http.Response) (*EnsureEvery
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
 			return nil, err
 		}
-		response.JSON = &dest
+		response.JSON200 = &dest
 
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
 		var dest struct {
