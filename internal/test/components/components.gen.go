@@ -1312,8 +1312,6 @@ func (siw *ServerInterfaceWrapper) EnsureEverythingIsReferenced(w http.ResponseW
 func (siw *ServerInterfaceWrapper) ParamsWithAddProps(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 
-	var err error
-
 	// Parameter object where we will unmarshal all parameters from the context
 	var params ParamsWithAddPropsParams
 
@@ -1326,8 +1324,7 @@ func (siw *ServerInterfaceWrapper) ParamsWithAddProps(w http.ResponseWriter, r *
 		return
 	}
 
-	err = runtime.BindQueryParameter("simple", true, true, "p1", r.URL.Query(), &params.P1)
-	if err != nil {
+	if err := runtime.BindQueryParameter("simple", true, true, "p1", r.URL.Query(), &params.P1); err != nil {
 		err = fmt.Errorf("Invalid format for parameter p1: %w", err)
 		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{err})
 		return
@@ -1342,8 +1339,7 @@ func (siw *ServerInterfaceWrapper) ParamsWithAddProps(w http.ResponseWriter, r *
 		return
 	}
 
-	err = runtime.BindQueryParameter("form", true, true, "p2", r.URL.Query(), &params.P2)
-	if err != nil {
+	if err := runtime.BindQueryParameter("form", true, true, "p2", r.URL.Query(), &params.P2); err != nil {
 		err = fmt.Errorf("Invalid format for parameter p2: %w", err)
 		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{err})
 		return

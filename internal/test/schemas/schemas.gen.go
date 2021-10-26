@@ -1218,13 +1218,10 @@ func (siw *ServerInterfaceWrapper) Issue185(w http.ResponseWriter, r *http.Reque
 func (siw *ServerInterfaceWrapper) Issue209(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 
-	var err error
-
 	// ------------- Path parameter "str" -------------
 	var str StringInPath
 
-	err = runtime.BindStyledParameter("simple", false, "str", chi.URLParam(r, "str"), &str)
-	if err != nil {
+	if err := runtime.BindStyledParameter("simple", false, "str", chi.URLParam(r, "str"), &str); err != nil {
 		err = fmt.Errorf("Invalid format for parameter str: %w", err)
 		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{err})
 		return
@@ -1247,13 +1244,10 @@ func (siw *ServerInterfaceWrapper) Issue209(w http.ResponseWriter, r *http.Reque
 func (siw *ServerInterfaceWrapper) Issue30(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 
-	var err error
-
 	// ------------- Path parameter "fallthrough" -------------
 	var pFallthrough string
 
-	err = runtime.BindStyledParameter("simple", false, "fallthrough", chi.URLParam(r, "fallthrough"), &pFallthrough)
-	if err != nil {
+	if err := runtime.BindStyledParameter("simple", false, "fallthrough", chi.URLParam(r, "fallthrough"), &pFallthrough); err != nil {
 		err = fmt.Errorf("Invalid format for parameter fallthrough: %w", err)
 		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{err})
 		return
@@ -1293,13 +1287,10 @@ func (siw *ServerInterfaceWrapper) GetIssues375(w http.ResponseWriter, r *http.R
 func (siw *ServerInterfaceWrapper) Issue41(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 
-	var err error
-
 	// ------------- Path parameter "1param" -------------
 	var n1param N5startsWithNumber
 
-	err = runtime.BindStyledParameter("simple", false, "1param", chi.URLParam(r, "1param"), &n1param)
-	if err != nil {
+	if err := runtime.BindStyledParameter("simple", false, "1param", chi.URLParam(r, "1param"), &n1param); err != nil {
 		err = fmt.Errorf("Invalid format for parameter 1param: %w", err)
 		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{err})
 		return
@@ -1322,8 +1313,6 @@ func (siw *ServerInterfaceWrapper) Issue41(w http.ResponseWriter, r *http.Reques
 func (siw *ServerInterfaceWrapper) Issue9(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 
-	var err error
-
 	ctx = context.WithValue(ctx, Access-tokenScopes, []string{""})
 
 	// Parameter object where we will unmarshal all parameters from the context
@@ -1338,8 +1327,7 @@ func (siw *ServerInterfaceWrapper) Issue9(w http.ResponseWriter, r *http.Request
 		return
 	}
 
-	err = runtime.BindQueryParameter("form", true, true, "foo", r.URL.Query(), &params.Foo)
-	if err != nil {
+	if err := runtime.BindQueryParameter("form", true, true, "foo", r.URL.Query(), &params.Foo); err != nil {
 		err = fmt.Errorf("Invalid format for parameter foo: %w", err)
 		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{err})
 		return

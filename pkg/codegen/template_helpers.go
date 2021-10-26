@@ -19,8 +19,6 @@ import (
 	"os"
 	"strings"
 	"text/template"
-
-	"github.com/labstack/echo/v4"
 )
 
 const (
@@ -30,9 +28,9 @@ const (
 )
 
 var (
-	contentTypesJSON = []string{echo.MIMEApplicationJSON, "text/x-json"}
+	contentTypesJSON = []string{"application/json", "text/x-json"}
 	contentTypesYAML = []string{"application/yaml", "application/x-yaml", "text/yaml", "text/x-yaml"}
-	contentTypesXML  = []string{echo.MIMEApplicationXML, echo.MIMETextXML}
+	contentTypesXML  = []string{"application/xml", "text/xml"}
 )
 
 // This function takes an array of Parameter definition, and generates a valid
@@ -228,7 +226,7 @@ func genResponseUnmarshal(op *OperationDefinition) string {
 func buildUnmarshalCase(typeDefinition ResponseTypeDefinition, caseAction string, contentType string) (caseKey string, caseClause string) {
 	caseKey = fmt.Sprintf("%s.%s.%s", prefixLeastSpecific, contentType, typeDefinition.ResponseName)
 	caseClauseKey := getConditionOfResponseName("rsp.StatusCode", typeDefinition.ResponseName)
-	caseClause = fmt.Sprintf("case strings.Contains(rsp.Header.Get(\"%s\"), \"%s\") && %s:\n%s\n", echo.HeaderContentType, contentType, caseClauseKey, caseAction)
+	caseClause = fmt.Sprintf("case strings.Contains(rsp.Header.Get(\"%s\"), \"%s\") && %s:\n%s\n", "Content-Type", contentType, caseClauseKey, caseAction)
 	return caseKey, caseClause
 }
 

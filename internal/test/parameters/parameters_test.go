@@ -7,8 +7,6 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/labstack/echo/v4"
-	"github.com/labstack/echo/v4/middleware"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
@@ -42,109 +40,92 @@ func (t *testServer) reset() {
 }
 
 //  (GET /contentObject/{param})
-func (t *testServer) GetContentObject(ctx echo.Context, param ComplexObject) error {
+func (t *testServer) GetContentObject(w http.ResponseWriter, r *http.Request, param ComplexObject) {
 	t.complexObject = &param
-	return nil
 }
 
 //  (GET /labelExplodeArray/{.param*})
-func (t *testServer) GetLabelExplodeArray(ctx echo.Context, param []int32) error {
+func (t *testServer) GetLabelExplodeArray(w http.ResponseWriter, r *http.Request, param []int32) {
 	t.array = param
-	return nil
 }
 
 //  (GET /labelExplodeObject/{.param*})
-func (t *testServer) GetLabelExplodeObject(ctx echo.Context, param Object) error {
+func (t *testServer) GetLabelExplodeObject(w http.ResponseWriter, r *http.Request, param Object) {
 	t.object = &param
-	return nil
 }
 
 //  (GET /labelNoExplodeArray/{.param})
-func (t *testServer) GetLabelNoExplodeArray(ctx echo.Context, param []int32) error {
+func (t *testServer) GetLabelNoExplodeArray(w http.ResponseWriter, r *http.Request, param []int32) {
 	t.array = param
-	return nil
 }
 
 //  (GET /labelNoExplodeObject/{.param})
-func (t *testServer) GetLabelNoExplodeObject(ctx echo.Context, param Object) error {
+func (t *testServer) GetLabelNoExplodeObject(w http.ResponseWriter, r *http.Request, param Object) {
 	t.object = &param
-	return nil
 }
 
 //  (GET /matrixExplodeArray/{.param*})
-func (t *testServer) GetMatrixExplodeArray(ctx echo.Context, param []int32) error {
+func (t *testServer) GetMatrixExplodeArray(w http.ResponseWriter, r *http.Request, param []int32) {
 	t.array = param
-	return nil
 }
 
 //  (GET /matrixExplodeObject/{.param*})
-func (t *testServer) GetMatrixExplodeObject(ctx echo.Context, param Object) error {
+func (t *testServer) GetMatrixExplodeObject(w http.ResponseWriter, r *http.Request, param Object) {
 	t.object = &param
-	return nil
 }
 
 //  (GET /matrixNoExplodeArray/{.param})
-func (t *testServer) GetMatrixNoExplodeArray(ctx echo.Context, param []int32) error {
+func (t *testServer) GetMatrixNoExplodeArray(w http.ResponseWriter, r *http.Request, param []int32) {
 	t.array = param
-	return nil
 }
 
 //  (GET /matrixNoExplodeObject/{.param})
-func (t *testServer) GetMatrixNoExplodeObject(ctx echo.Context, param Object) error {
+func (t *testServer) GetMatrixNoExplodeObject(w http.ResponseWriter, r *http.Request, param Object) {
 	t.object = &param
-	return nil
 }
 
 //  (GET /simpleExplodeArray/{param*})
-func (t *testServer) GetSimpleExplodeArray(ctx echo.Context, param []int32) error {
+func (t *testServer) GetSimpleExplodeArray(w http.ResponseWriter, r *http.Request, param []int32) {
 	t.array = param
-	return nil
 }
 
 //  (GET /simpleExplodeObject/{param*})
-func (t *testServer) GetSimpleExplodeObject(ctx echo.Context, param Object) error {
+func (t *testServer) GetSimpleExplodeObject(w http.ResponseWriter, r *http.Request, param Object) {
 	t.object = &param
-	return nil
 }
 
 //  (GET /simpleNoExplodeArray/{param})
-func (t *testServer) GetSimpleNoExplodeArray(ctx echo.Context, param []int32) error {
+func (t *testServer) GetSimpleNoExplodeArray(w http.ResponseWriter, r *http.Request, param []int32) {
 	t.array = param
-	return nil
 }
 
 //  (GET /simpleNoExplodeObject/{param})
-func (t *testServer) GetSimpleNoExplodeObject(ctx echo.Context, param Object) error {
+func (t *testServer) GetSimpleNoExplodeObject(w http.ResponseWriter, r *http.Request, param Object) {
 	t.object = &param
-	return nil
 }
 
 //  (GET /passThrough/{param})
-func (t *testServer) GetPassThrough(ctx echo.Context, param string) error {
+func (t *testServer) GetPassThrough(w http.ResponseWriter, r *http.Request, param string) {
 	t.passThrough = &param
-	return nil
 }
 
 //  (GET /startingWithjNumber/{param})
-func (t *testServer) GetStartingWithNumber(ctx echo.Context, n1param string) error {
+func (t *testServer) GetStartingWithNumber(w http.ResponseWriter, r *http.Request, n1param string) {
 	t.n1param = &n1param
-	return nil
 }
 
 // (GET /queryDeepObject)
-func (t *testServer) GetDeepObject(ctx echo.Context, params GetDeepObjectParams) error {
+func (t *testServer) GetDeepObject(w http.ResponseWriter, r *http.Request, params GetDeepObjectParams) {
 	t.complexObject = &params.DeepObj
-	return nil
 }
 
 //  (GET /simplePrimitive/{param})
-func (t *testServer) GetSimplePrimitive(ctx echo.Context, param int32) error {
+func (t *testServer) GetSimplePrimitive(w http.ResponseWriter, r *http.Request, param int32) {
 	t.primitive = &param
-	return nil
 }
 
 //  (GET /queryForm)
-func (t *testServer) GetQueryForm(ctx echo.Context, params GetQueryFormParams) error {
+func (t *testServer) GetQueryForm(w http.ResponseWriter, r *http.Request, params GetQueryFormParams) {
 	t.queryParams = &params
 	if params.Ea != nil {
 		t.array = *params.Ea
@@ -173,11 +154,10 @@ func (t *testServer) GetQueryForm(ctx echo.Context, params GetQueryFormParams) e
 	if params.N1s != nil {
 		t.n1param = params.N1s
 	}
-	return nil
 }
 
 //  (GET /header)
-func (t *testServer) GetHeader(ctx echo.Context, params GetHeaderParams) error {
+func (t *testServer) GetHeader(w http.ResponseWriter, r *http.Request, params GetHeaderParams) {
 	t.headerParams = &params
 	if params.XPrimitive != nil {
 		t.primitive = params.XPrimitive
@@ -203,11 +183,10 @@ func (t *testServer) GetHeader(ctx echo.Context, params GetHeaderParams) error {
 	if params.N1StartingWithNumber != nil {
 		t.n1param = params.N1StartingWithNumber
 	}
-	return nil
 }
 
 //  (GET /cookie)
-func (t *testServer) GetCookie(ctx echo.Context, params GetCookieParams) error {
+func (t *testServer) GetCookie(w http.ResponseWriter, r *http.Request, params GetCookieParams) {
 	t.cookieParams = &params
 	if params.Ea != nil {
 		t.array = *params.Ea
@@ -233,14 +212,11 @@ func (t *testServer) GetCookie(ctx echo.Context, params GetCookieParams) error {
 	if params.N1s != nil {
 		t.n1param = params.N1s
 	}
-	return nil
 }
 
 func TestParameterBinding(t *testing.T) {
 	var ts testServer
-	e := echo.New()
-	e.Use(middleware.Logger())
-	RegisterHandlers(e, &ts)
+	handler := Handler(&ts)
 
 	expectedObject := Object{
 		FirstName: "Alex",
@@ -263,7 +239,7 @@ func TestParameterBinding(t *testing.T) {
 
 	// Check the passthrough case
 	//  (GET /passThrough/{param})
-	result := testutil.NewRequest().Get("/passThrough/some%20string").Go(t, e)
+	result := testutil.NewRequest().Get("/passThrough/some%20string").GoWithHTTPHandler(t, handler)
 	assert.Equal(t, http.StatusOK, result.Code())
 	require.NotNil(t, ts.passThrough)
 	assert.EqualValues(t, "some string", *ts.passThrough)
@@ -274,93 +250,93 @@ func TestParameterBinding(t *testing.T) {
 	marshaledComplexObject, err := json.Marshal(expectedComplexObject)
 	assert.NoError(t, err)
 	q := fmt.Sprintf("/contentObject/%s", string(marshaledComplexObject))
-	result = testutil.NewRequest().Get(q).Go(t, e)
+	result = testutil.NewRequest().Get(q).GoWithHTTPHandler(t, handler)
 	assert.Equal(t, http.StatusOK, result.Code())
 	assert.EqualValues(t, &expectedComplexObject, ts.complexObject)
 	ts.reset()
 
 	//  (GET /labelExplodeArray/{.param*})
-	result = testutil.NewRequest().Get("/labelExplodeArray/.3.4.5").Go(t, e)
+	result = testutil.NewRequest().Get("/labelExplodeArray/.3.4.5").GoWithHTTPHandler(t, handler)
 	assert.Equal(t, http.StatusOK, result.Code())
 	assert.EqualValues(t, expectedArray, ts.array)
 	ts.reset()
 
 	//  (GET /labelExplodeObject/{.param*})
-	result = testutil.NewRequest().Get("/labelExplodeObject/.role=admin.firstName=Alex").Go(t, e)
+	result = testutil.NewRequest().Get("/labelExplodeObject/.role=admin.firstName=Alex").GoWithHTTPHandler(t, handler)
 	assert.Equal(t, http.StatusOK, result.Code())
 	assert.EqualValues(t, &expectedObject, ts.object)
 	ts.reset()
 
 	//  (GET /labelNoExplodeArray/{.param})
-	result = testutil.NewRequest().Get("/labelNoExplodeArray/.3,4,5").Go(t, e)
+	result = testutil.NewRequest().Get("/labelNoExplodeArray/.3,4,5").GoWithHTTPHandler(t, handler)
 	assert.Equal(t, http.StatusOK, result.Code())
 	assert.EqualValues(t, expectedArray, ts.array)
 	ts.reset()
 
 	//  (GET /labelNoExplodeObject/{.param})
-	result = testutil.NewRequest().Get("/labelNoExplodeObject/.role,admin,firstName,Alex").Go(t, e)
+	result = testutil.NewRequest().Get("/labelNoExplodeObject/.role,admin,firstName,Alex").GoWithHTTPHandler(t, handler)
 	assert.Equal(t, http.StatusOK, result.Code())
 	assert.EqualValues(t, &expectedObject, ts.object)
 	ts.reset()
 
 	//  (GET /matrixExplodeArray/{.param*})
 	uri := "/matrixExplodeArray/;id=3;id=4;id=5"
-	result = testutil.NewRequest().Get(uri).Go(t, e)
+	result = testutil.NewRequest().Get(uri).GoWithHTTPHandler(t, handler)
 	assert.Equal(t, http.StatusOK, result.Code())
 	assert.EqualValues(t, expectedArray, ts.array)
 	ts.reset()
 
 	//  (GET /matrixExplodeObject/{.param*})
 	uri = "/matrixExplodeObject/;role=admin;firstName=Alex"
-	result = testutil.NewRequest().Get(uri).Go(t, e)
+	result = testutil.NewRequest().Get(uri).GoWithHTTPHandler(t, handler)
 	assert.Equal(t, http.StatusOK, result.Code())
 	assert.EqualValues(t, &expectedObject, ts.object)
 	ts.reset()
 
 	//  (GET /matrixNoExplodeArray/{.param})
-	result = testutil.NewRequest().Get("/matrixNoExplodeArray/;id=3,4,5").Go(t, e)
+	result = testutil.NewRequest().Get("/matrixNoExplodeArray/;id=3,4,5").GoWithHTTPHandler(t, handler)
 	assert.Equal(t, http.StatusOK, result.Code())
 	assert.EqualValues(t, expectedArray, ts.array)
 	ts.reset()
 
 	//  (GET /matrixNoExplodeObject/{.param})
-	result = testutil.NewRequest().Get("/matrixNoExplodeObject/;id=role,admin,firstName,Alex").Go(t, e)
+	result = testutil.NewRequest().Get("/matrixNoExplodeObject/;id=role,admin,firstName,Alex").GoWithHTTPHandler(t, handler)
 	assert.Equal(t, http.StatusOK, result.Code())
 	assert.EqualValues(t, &expectedObject, ts.object)
 	ts.reset()
 
 	//  (GET /simpleExplodeArray/{param*})
-	result = testutil.NewRequest().Get("/simpleExplodeArray/3,4,5").Go(t, e)
+	result = testutil.NewRequest().Get("/simpleExplodeArray/3,4,5").GoWithHTTPHandler(t, handler)
 	assert.Equal(t, http.StatusOK, result.Code())
 	assert.EqualValues(t, expectedArray, ts.array)
 	ts.reset()
 
 	//  (GET /simpleExplodeObject/{param*})
-	result = testutil.NewRequest().Get("/simpleExplodeObject/role=admin,firstName=Alex").Go(t, e)
+	result = testutil.NewRequest().Get("/simpleExplodeObject/role=admin,firstName=Alex").GoWithHTTPHandler(t, handler)
 	assert.Equal(t, http.StatusOK, result.Code())
 	assert.EqualValues(t, &expectedObject, ts.object)
 	ts.reset()
 
 	//  (GET /simpleNoExplodeArray/{param})
-	result = testutil.NewRequest().Get("/simpleNoExplodeArray/3,4,5").Go(t, e)
+	result = testutil.NewRequest().Get("/simpleNoExplodeArray/3,4,5").GoWithHTTPHandler(t, handler)
 	assert.Equal(t, http.StatusOK, result.Code())
 	assert.EqualValues(t, expectedArray, ts.array)
 	ts.reset()
 
 	//  (GET /simpleNoExplodeObject/{param})
-	result = testutil.NewRequest().Get("/simpleNoExplodeObject/role,admin,firstName,Alex").Go(t, e)
+	result = testutil.NewRequest().Get("/simpleNoExplodeObject/role,admin,firstName,Alex").GoWithHTTPHandler(t, handler)
 	assert.Equal(t, http.StatusOK, result.Code())
 	assert.EqualValues(t, &expectedObject, ts.object)
 	ts.reset()
 
 	//  (GET /simplePrimitive/{param})
-	result = testutil.NewRequest().Get("/simplePrimitive/5").Go(t, e)
+	result = testutil.NewRequest().Get("/simplePrimitive/5").GoWithHTTPHandler(t, handler)
 	assert.Equal(t, http.StatusOK, result.Code())
 	assert.EqualValues(t, &expectedPrimitive, ts.primitive)
 	ts.reset()
 
 	//  (GET /startingWithNumber/{1param})
-	result = testutil.NewRequest().Get("/startingWithNumber/foo").Go(t, e)
+	result = testutil.NewRequest().Get("/startingWithNumber/foo").GoWithHTTPHandler(t, handler)
 	assert.Equal(t, http.StatusOK, result.Code())
 	assert.EqualValues(t, &expectedN1Param, ts.n1param)
 	ts.reset()
@@ -369,56 +345,56 @@ func TestParameterBinding(t *testing.T) {
 	//  (GET /queryForm)
 
 	// unexploded array
-	result = testutil.NewRequest().Get("/queryForm?a=3,4,5").Go(t, e)
+	result = testutil.NewRequest().Get("/queryForm?a=3,4,5").GoWithHTTPHandler(t, handler)
 	assert.Equal(t, http.StatusOK, result.Code())
 	assert.EqualValues(t, expectedArray, ts.array)
 	ts.reset()
 
 	// exploded array
-	result = testutil.NewRequest().Get("/queryForm?ea=3&ea=4&ea=5").Go(t, e)
+	result = testutil.NewRequest().Get("/queryForm?ea=3&ea=4&ea=5").GoWithHTTPHandler(t, handler)
 	assert.Equal(t, http.StatusOK, result.Code())
 	assert.EqualValues(t, expectedArray, ts.array)
 	ts.reset()
 
 	// unexploded object
-	result = testutil.NewRequest().Get("/queryForm?o=role,admin,firstName,Alex").Go(t, e)
+	result = testutil.NewRequest().Get("/queryForm?o=role,admin,firstName,Alex").GoWithHTTPHandler(t, handler)
 	assert.Equal(t, http.StatusOK, result.Code())
 	assert.EqualValues(t, &expectedObject, ts.object)
 	ts.reset()
 
 	// exploded object
-	result = testutil.NewRequest().Get("/queryForm?role=admin&firstName=Alex").Go(t, e)
+	result = testutil.NewRequest().Get("/queryForm?role=admin&firstName=Alex").GoWithHTTPHandler(t, handler)
 	assert.Equal(t, http.StatusOK, result.Code())
 	assert.EqualValues(t, &expectedObject, ts.object)
 	ts.reset()
 
 	// exploded primitive
-	result = testutil.NewRequest().Get("/queryForm?ep=5").Go(t, e)
+	result = testutil.NewRequest().Get("/queryForm?ep=5").GoWithHTTPHandler(t, handler)
 	assert.Equal(t, http.StatusOK, result.Code())
 	assert.EqualValues(t, &expectedPrimitive, ts.primitive)
 	ts.reset()
 
 	// unexploded primitive
-	result = testutil.NewRequest().Get("/queryForm?p=5").Go(t, e)
+	result = testutil.NewRequest().Get("/queryForm?p=5").GoWithHTTPHandler(t, handler)
 	assert.Equal(t, http.StatusOK, result.Code())
 	assert.EqualValues(t, &expectedPrimitive, ts.primitive)
 	ts.reset()
 
 	// primitive string within reserved char, i.e., ';' escaped to '%3B'
-	result = testutil.NewRequest().Get("/queryForm?ps=123%3B456").Go(t, e)
+	result = testutil.NewRequest().Get("/queryForm?ps=123%3B456").GoWithHTTPHandler(t, handler)
 	assert.Equal(t, http.StatusOK, result.Code())
 	assert.EqualValues(t, &expectedPrimitiveString, ts.primitiveString)
 	ts.reset()
 
 	// complex object
 	q = fmt.Sprintf("/queryForm?co=%s", string(marshaledComplexObject))
-	result = testutil.NewRequest().Get(q).Go(t, e)
+	result = testutil.NewRequest().Get(q).GoWithHTTPHandler(t, handler)
 	assert.Equal(t, http.StatusOK, result.Code())
 	assert.EqualValues(t, &expectedComplexObject, ts.complexObject)
 	ts.reset()
 
 	// starting with number
-	result = testutil.NewRequest().Get("/queryForm?1s=foo").Go(t, e)
+	result = testutil.NewRequest().Get("/queryForm?1s=foo").GoWithHTTPHandler(t, handler)
 	assert.Equal(t, http.StatusOK, result.Code())
 	assert.EqualValues(t, &expectedN1Param, ts.n1param)
 	ts.reset()
@@ -426,7 +402,7 @@ func TestParameterBinding(t *testing.T) {
 	// complex object via deepObject
 	do := `deepObj[Id]=12345&deepObj[IsAdmin]=true&deepObj[Object][firstName]=Alex&deepObj[Object][role]=admin`
 	q = "/queryDeepObject?" + do
-	result = testutil.NewRequest().Get(q).Go(t, e)
+	result = testutil.NewRequest().Get(q).GoWithHTTPHandler(t, handler)
 	assert.Equal(t, http.StatusOK, result.Code())
 	assert.EqualValues(t, &expectedComplexObject, ts.complexObject)
 	ts.reset()
@@ -434,97 +410,95 @@ func TestParameterBinding(t *testing.T) {
 	// ---------------------- Test Header Query Parameters --------------------
 
 	// unexploded header primitive.
-	result = testutil.NewRequest().WithHeader("X-Primitive", "5").Get("/header").Go(t, e)
+	result = testutil.NewRequest().WithHeader("X-Primitive", "5").Get("/header").GoWithHTTPHandler(t, handler)
 	assert.Equal(t, http.StatusOK, result.Code())
 	assert.EqualValues(t, &expectedPrimitive, ts.primitive)
 	ts.reset()
 
 	// exploded header primitive.
-	result = testutil.NewRequest().WithHeader("X-Primitive-Exploded", "5").Get("/header").Go(t, e)
+	result = testutil.NewRequest().WithHeader("X-Primitive-Exploded", "5").Get("/header").GoWithHTTPHandler(t, handler)
 	assert.Equal(t, http.StatusOK, result.Code())
 	assert.EqualValues(t, &expectedPrimitive, ts.primitive)
 	ts.reset()
 
 	// unexploded header array
-	result = testutil.NewRequest().WithHeader("X-Array", "3,4,5").Get("/header").Go(t, e)
+	result = testutil.NewRequest().WithHeader("X-Array", "3,4,5").Get("/header").GoWithHTTPHandler(t, handler)
 	assert.Equal(t, http.StatusOK, result.Code())
 	assert.EqualValues(t, expectedArray, ts.array)
 	ts.reset()
 
 	// exploded header array
-	result = testutil.NewRequest().WithHeader("X-Array-Exploded", "3,4,5").Get("/header").Go(t, e)
+	result = testutil.NewRequest().WithHeader("X-Array-Exploded", "3,4,5").Get("/header").GoWithHTTPHandler(t, handler)
 	assert.Equal(t, http.StatusOK, result.Code())
 	assert.EqualValues(t, expectedArray, ts.array)
 	ts.reset()
 
 	// unexploded header object
 	result = testutil.NewRequest().WithHeader("X-Object",
-		"role,admin,firstName,Alex").Get("/header").Go(t, e)
+		"role,admin,firstName,Alex").Get("/header").GoWithHTTPHandler(t, handler)
 	assert.Equal(t, http.StatusOK, result.Code())
 	assert.EqualValues(t, &expectedObject, ts.object)
 	ts.reset()
 
 	// exploded header object
 	result = testutil.NewRequest().WithHeader("X-Object-Exploded",
-		"role=admin,firstName=Alex").Get("/header").Go(t, e)
+		"role=admin,firstName=Alex").Get("/header").GoWithHTTPHandler(t, handler)
 	assert.Equal(t, http.StatusOK, result.Code())
 	assert.EqualValues(t, &expectedObject, ts.object)
 	ts.reset()
 
 	// complex object
 	result = testutil.NewRequest().WithHeader("X-Complex-Object",
-		string(marshaledComplexObject)).Get("/header").Go(t, e)
+		string(marshaledComplexObject)).Get("/header").GoWithHTTPHandler(t, handler)
 	assert.Equal(t, http.StatusOK, result.Code())
 	assert.EqualValues(t, &expectedComplexObject, ts.complexObject)
 	ts.reset()
 
 	// starting with number
 	result = testutil.NewRequest().WithHeader("1-Starting-With-Number",
-		"foo").Get("/header").Go(t, e)
+		"foo").Get("/header").GoWithHTTPHandler(t, handler)
 	assert.Equal(t, http.StatusOK, result.Code())
 	assert.EqualValues(t, &expectedN1Param, ts.n1param)
 	ts.reset()
 
 	// ------------------------- Test Cookie Parameters ------------------------
-	result = testutil.NewRequest().WithCookieNameValue("p", "5").Get("/cookie").Go(t, e)
+	result = testutil.NewRequest().WithCookieNameValue("p", "5").Get("/cookie").GoWithHTTPHandler(t, handler)
 	assert.Equal(t, http.StatusOK, result.Code())
 	assert.EqualValues(t, &expectedPrimitive, ts.primitive)
 	ts.reset()
 
-	result = testutil.NewRequest().WithCookieNameValue("ep", "5").Get("/cookie").Go(t, e)
+	result = testutil.NewRequest().WithCookieNameValue("ep", "5").Get("/cookie").GoWithHTTPHandler(t, handler)
 	assert.Equal(t, http.StatusOK, result.Code())
 	assert.EqualValues(t, &expectedPrimitive, ts.primitive)
 	ts.reset()
 
-	result = testutil.NewRequest().WithCookieNameValue("a", "3,4,5").Get("/cookie").Go(t, e)
+	result = testutil.NewRequest().WithCookieNameValue("a", "3,4,5").Get("/cookie").GoWithHTTPHandler(t, handler)
 	assert.Equal(t, http.StatusOK, result.Code())
 	assert.EqualValues(t, expectedArray, ts.array)
 	ts.reset()
 
 	result = testutil.NewRequest().WithCookieNameValue(
-		"o", "role,admin,firstName,Alex").Get("/cookie").Go(t, e)
+		"o", "role,admin,firstName,Alex").Get("/cookie").GoWithHTTPHandler(t, handler)
 	assert.Equal(t, http.StatusOK, result.Code())
 	assert.EqualValues(t, &expectedObject, ts.object)
 	ts.reset()
 
-	result = testutil.NewRequest().WithCookieNameValue("1s", "foo").Get("/cookie").Go(t, e)
+	result = testutil.NewRequest().WithCookieNameValue("1s", "foo").Get("/cookie").GoWithHTTPHandler(t, handler)
 	assert.Equal(t, http.StatusOK, result.Code())
 	assert.EqualValues(t, &expectedN1Param, ts.n1param)
 	ts.reset()
 }
 
-func doRequest(t *testing.T, e *echo.Echo, code int, req *http.Request) *httptest.ResponseRecorder {
+func doRequest(t *testing.T, h http.Handler, code int, req *http.Request) *httptest.ResponseRecorder {
 	rec := httptest.NewRecorder()
-	e.ServeHTTP(rec, req)
+	h.ServeHTTP(rec, req)
 	assert.Equal(t, code, rec.Code)
 	return rec
 }
 
 func TestClientPathParams(t *testing.T) {
 	var ts testServer
-	e := echo.New()
-	e.Use(middleware.Logger())
-	RegisterHandlers(e, &ts)
+	handler := Handler(&ts)
 	server := "http://example.com"
 
 	expectedObject := Object{
@@ -544,111 +518,109 @@ func TestClientPathParams(t *testing.T) {
 
 	req, err := NewGetPassThroughRequest(server, "some string")
 	assert.NoError(t, err)
-	doRequest(t, e, http.StatusOK, req)
+	doRequest(t, handler, http.StatusOK, req)
 	require.NotNil(t, ts.passThrough)
 	assert.Equal(t, "some string", *ts.passThrough)
 	ts.reset()
 
 	req, err = NewGetStartingWithNumberRequest(server, "some string")
 	assert.NoError(t, err)
-	doRequest(t, e, http.StatusOK, req)
+	doRequest(t, handler, http.StatusOK, req)
 	require.NotNil(t, ts.n1param)
 	assert.Equal(t, "some string", *ts.n1param)
 	ts.reset()
 
 	req, err = NewGetContentObjectRequest(server, expectedComplexObject)
 	assert.NoError(t, err)
-	doRequest(t, e, http.StatusOK, req)
+	doRequest(t, handler, http.StatusOK, req)
 	assert.EqualValues(t, &expectedComplexObject, ts.complexObject)
 	ts.reset()
 
 	// Label style
 	req, err = NewGetLabelExplodeArrayRequest(server, expectedArray)
 	assert.NoError(t, err)
-	doRequest(t, e, http.StatusOK, req)
+	doRequest(t, handler, http.StatusOK, req)
 	assert.EqualValues(t, expectedArray, ts.array)
 	ts.reset()
 
 	req, err = NewGetLabelNoExplodeArrayRequest(server, expectedArray)
 	assert.NoError(t, err)
-	doRequest(t, e, http.StatusOK, req)
+	doRequest(t, handler, http.StatusOK, req)
 	assert.EqualValues(t, expectedArray, ts.array)
 	ts.reset()
 
 	req, err = NewGetLabelExplodeObjectRequest(server, expectedObject)
 	assert.NoError(t, err)
-	doRequest(t, e, http.StatusOK, req)
+	doRequest(t, handler, http.StatusOK, req)
 	assert.EqualValues(t, &expectedObject, ts.object)
 	ts.reset()
 
 	req, err = NewGetLabelNoExplodeObjectRequest(server, expectedObject)
 	assert.NoError(t, err)
-	doRequest(t, e, http.StatusOK, req)
+	doRequest(t, handler, http.StatusOK, req)
 	assert.EqualValues(t, &expectedObject, ts.object)
 	ts.reset()
 
 	// Matrix style
 	req, err = NewGetMatrixExplodeArrayRequest(server, expectedArray)
 	assert.NoError(t, err)
-	doRequest(t, e, http.StatusOK, req)
+	doRequest(t, handler, http.StatusOK, req)
 	assert.EqualValues(t, expectedArray, ts.array)
 	ts.reset()
 
 	req, err = NewGetMatrixNoExplodeArrayRequest(server, expectedArray)
 	assert.NoError(t, err)
-	doRequest(t, e, http.StatusOK, req)
+	doRequest(t, handler, http.StatusOK, req)
 	assert.EqualValues(t, expectedArray, ts.array)
 	ts.reset()
 
 	req, err = NewGetMatrixExplodeObjectRequest(server, expectedObject)
 	assert.NoError(t, err)
-	doRequest(t, e, http.StatusOK, req)
+	doRequest(t, handler, http.StatusOK, req)
 	assert.EqualValues(t, &expectedObject, ts.object)
 	ts.reset()
 
 	req, err = NewGetMatrixNoExplodeObjectRequest(server, expectedObject)
 	assert.NoError(t, err)
-	doRequest(t, e, http.StatusOK, req)
+	doRequest(t, handler, http.StatusOK, req)
 	assert.EqualValues(t, &expectedObject, ts.object)
 	ts.reset()
 
 	// Simple style
 	req, err = NewGetSimpleExplodeArrayRequest(server, expectedArray)
 	assert.NoError(t, err)
-	doRequest(t, e, http.StatusOK, req)
+	doRequest(t, handler, http.StatusOK, req)
 	assert.EqualValues(t, expectedArray, ts.array)
 	ts.reset()
 
 	req, err = NewGetSimpleNoExplodeArrayRequest(server, expectedArray)
 	assert.NoError(t, err)
-	doRequest(t, e, http.StatusOK, req)
+	doRequest(t, handler, http.StatusOK, req)
 	assert.EqualValues(t, expectedArray, ts.array)
 	ts.reset()
 
 	req, err = NewGetSimpleExplodeObjectRequest(server, expectedObject)
 	assert.NoError(t, err)
-	doRequest(t, e, http.StatusOK, req)
+	doRequest(t, handler, http.StatusOK, req)
 	assert.EqualValues(t, &expectedObject, ts.object)
 	ts.reset()
 
 	req, err = NewGetSimpleNoExplodeObjectRequest(server, expectedObject)
 	assert.NoError(t, err)
-	doRequest(t, e, http.StatusOK, req)
+	doRequest(t, handler, http.StatusOK, req)
 	assert.EqualValues(t, &expectedObject, ts.object)
 	ts.reset()
 
 	req, err = NewGetSimplePrimitiveRequest(server, expectedPrimitive)
 	assert.NoError(t, err)
-	doRequest(t, e, http.StatusOK, req)
+	doRequest(t, handler, http.StatusOK, req)
 	assert.EqualValues(t, &expectedPrimitive, ts.primitive)
 	ts.reset()
 }
 
 func TestClientQueryParams(t *testing.T) {
 	var ts testServer
-	e := echo.New()
-	e.Use(middleware.Logger())
-	RegisterHandlers(e, &ts)
+	handler := Handler(&ts)
 	server := "http://example.com"
 
 	expectedObject1 := Object{
@@ -690,7 +662,7 @@ func TestClientQueryParams(t *testing.T) {
 
 	req, err := NewGetQueryFormRequest(server, &qParams)
 	assert.NoError(t, err)
-	doRequest(t, e, http.StatusOK, req)
+	doRequest(t, handler, http.StatusOK, req)
 	require.NotNil(t, ts.queryParams)
 	assert.EqualValues(t, qParams, *ts.queryParams)
 	ts.reset()
@@ -708,7 +680,7 @@ func TestClientQueryParams(t *testing.T) {
 	}
 	req, err = NewGetCookieRequest(server, &cParams)
 	assert.NoError(t, err)
-	doRequest(t, e, http.StatusOK, req)
+	doRequest(t, handler, http.StatusOK, req)
 	require.NotNil(t, ts.cookieParams)
 	assert.EqualValues(t, cParams, *ts.cookieParams)
 	ts.reset()
@@ -726,7 +698,7 @@ func TestClientQueryParams(t *testing.T) {
 	}
 	req, err = NewGetHeaderRequest(server, &hParams)
 	assert.NoError(t, err)
-	doRequest(t, e, http.StatusOK, req)
+	doRequest(t, handler, http.StatusOK, req)
 	require.NotNil(t, ts.headerParams)
 	assert.EqualValues(t, hParams, *ts.headerParams)
 	ts.reset()

@@ -156,9 +156,6 @@ type MiddlewareFunc func(http.Handler) http.Handler
 // {{$opid}} operation middleware
 func (siw *ServerInterfaceWrapper) {{$opid}}(w http.ResponseWriter, r *http.Request) {
   ctx := r.Context()
-  {{if or .RequiresParamObject (gt (len .PathParams) 0) }}
-  var err error
-  {{end}}
 
   {{range .PathParams}}// ------------- Path parameter "{{.ParamName}}" -------------
   var {{$varName := .GoVariableName}}{{$varName}} {{.TypeDef}}
@@ -167,16 +164,14 @@ func (siw *ServerInterfaceWrapper) {{$opid}}(w http.ResponseWriter, r *http.Requ
   {{$varName}} = chi.URLParam(r, "{{.ParamName}}")
   {{end}}
   {{if .IsJson}}
-  err = json.Unmarshal([]byte(chi.URLParam(r, "{{.ParamName}}")), &{{$varName}})
-  if err != nil {
+  if err := json.Unmarshal([]byte(chi.URLParam(r, "{{.ParamName}}")), &{{$varName}}); err != nil {
     err = fmt.Errorf("Error unmarshaling parameter '{{.ParamName}}' as JSON: %w", err)
     siw.ErrorHandlerFunc(w, r, &UnmarshalingParamError{err})
     return
   }
   {{end}}
   {{if .IsStyled}}
-  err = runtime.BindStyledParameter("{{.Style}}",{{.Explode}}, "{{.ParamName}}", chi.URLParam(r, "{{.ParamName}}"), &{{$varName}})
-  if err != nil {
+  if err := runtime.BindStyledParameter("{{.Style}}",{{.Explode}}, "{{.ParamName}}", chi.URLParam(r, "{{.ParamName}}"), &{{$varName}}); err != nil {
     err = fmt.Errorf("Invalid format for parameter {{.ParamName}}: %w", err)
     siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{err})
     return
@@ -202,8 +197,7 @@ func (siw *ServerInterfaceWrapper) {{$opid}}(w http.ResponseWriter, r *http.Requ
 
       {{if .IsJson}}
         var value {{.TypeDef}}
-        err = json.Unmarshal([]byte(paramValue), &value)
-        if err != nil {
+        if err := json.Unmarshal([]byte(paramValue), &value); err != nil {
           err = fmt.Errorf("Error unmarshaling parameter '{{.ParamName}}' as JSON: %w", err)
           siw.ErrorHandlerFunc(w, r, &UnmarshalingParamError{err})
           return
@@ -217,8 +211,7 @@ func (siw *ServerInterfaceWrapper) {{$opid}}(w http.ResponseWriter, r *http.Requ
           return
       }{{end}}
       {{if .IsStyled}}
-      err = runtime.BindQueryParameter("{{.Style}}", {{.Explode}}, {{.Required}}, "{{.ParamName}}", r.URL.Query(), &params.{{.GoName}})
-      if err != nil {
+      if err := runtime.BindQueryParameter("{{.Style}}", {{.Explode}}, {{.Required}}, "{{.ParamName}}", r.URL.Query(), &params.{{.GoName}}); err != nil {
         err = fmt.Errorf("Invalid format for parameter {{.ParamName}}: %w", err)
         siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{err})
         return
@@ -244,8 +237,7 @@ func (siw *ServerInterfaceWrapper) {{$opid}}(w http.ResponseWriter, r *http.Requ
         {{end}}
 
         {{if .IsJson}}
-          err = json.Unmarshal([]byte(valueList[0]), &{{.GoName}})
-          if err != nil {
+          if err := json.Unmarshal([]byte(valueList[0]), &{{.GoName}}); err != nil {
             err = fmt.Errorf("Error unmarshaling parameter '{{.ParamName}}' as JSON: %w", err)
             siw.ErrorHandlerFunc(w, r, &UnmarshalingParamError{err})
             return
@@ -253,8 +245,7 @@ func (siw *ServerInterfaceWrapper) {{$opid}}(w http.ResponseWriter, r *http.Requ
         {{end}}
 
         {{if .IsStyled}}
-          err = runtime.BindStyledParameterWithLocation("{{.Style}}",{{.Explode}}, "{{.ParamName}}", runtime.ParamLocationHeader, valueList[0], &{{.GoName}})
-          if err != nil {
+          if err := runtime.BindStyledParameterWithLocation("{{.Style}}",{{.Explode}}, "{{.ParamName}}", runtime.ParamLocationHeader, valueList[0], &{{.GoName}}); err != nil {
             err = fmt.Errorf("Invalid format for parameter {{.ParamName}}: %w", err)
             siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{err})
             return
@@ -301,8 +292,7 @@ func (siw *ServerInterfaceWrapper) {{$opid}}(w http.ResponseWriter, r *http.Requ
 
       {{- if .IsStyled}}
         var value {{.TypeDef}}
-        err = runtime.BindStyledParameter("simple",{{.Explode}}, "{{.ParamName}}", cookie.Value, &value)
-        if err != nil {
+        if err := runtime.BindStyledParameter("simple",{{.Explode}}, "{{.ParamName}}", cookie.Value, &value); err != nil {
           err = fmt.Errorf("Invalid format for parameter {{.ParamName}}: %w", err)
           siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{err})
           return
