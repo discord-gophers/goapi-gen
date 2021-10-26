@@ -37,8 +37,10 @@ jobs:
             ${{ runner.os }}-go-
 
       - name: Test go
-        run: |
-          go test -race -v ./...
+        run: go test -race -coverprofile=coverage.out -covermode=atomic -v ./...
+
+      - name: Test coverage
+        run: go tool cover -func coverage.out
 
       - name: Test code generation
         run: |
