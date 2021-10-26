@@ -293,7 +293,7 @@ type ClientWithResponsesInterface interface {
 type ListThingsResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
-	JSON         *[]ThingWithID
+	JSON200      *[]ThingWithID
 }
 
 // Status returns HTTPResponse.Status
@@ -315,7 +315,7 @@ func (r ListThingsResponse) StatusCode() int {
 type AddThingResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
-	JSON         *[]ThingWithID
+	JSON201      *[]ThingWithID
 }
 
 // Status returns HTTPResponse.Status
@@ -379,7 +379,7 @@ func ParseListThingsResponse(rsp *http.Response) (*ListThingsResponse, error) {
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
 			return nil, err
 		}
-		response.JSON = &dest
+		response.JSON200 = &dest
 
 	}
 
@@ -405,7 +405,7 @@ func ParseAddThingResponse(rsp *http.Response) (*AddThingResponse, error) {
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
 			return nil, err
 		}
-		response.JSON = &dest
+		response.JSON201 = &dest
 
 	}
 

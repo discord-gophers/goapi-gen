@@ -162,7 +162,7 @@ func (siw *ServerInterfaceWrapper) DeletePet(w http.ResponseWriter, r *http.Requ
 	}
 
 	var handler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.DeletePet(w, r, id)
+		siw.Handler.DeletePet(w, r, iD)
 	})
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -189,7 +189,7 @@ func (siw *ServerInterfaceWrapper) FindPetByID(w http.ResponseWriter, r *http.Re
 	}
 
 	var handler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.FindPetByID(w, r, id)
+		siw.Handler.FindPetByID(w, r, iD)
 	})
 
 	for _, middleware := range siw.HandlerMiddlewares {

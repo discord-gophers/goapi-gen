@@ -56,6 +56,12 @@ func LowercaseFirstCharacter(str string) string {
 // ToCamelCase converts a string to camel case
 // with proper Go initialisms.
 func ToCamelCase(str string) string {
+	if str != "" && unicode.IsDigit([]rune(str)[0]) {
+		// FIXME this is so hacky please help
+		str = "F" + str
+		str = snaker.ForceCamelIdentifier(str)
+		return str[1:]
+	}
 	return snaker.ForceCamelIdentifier(str)
 }
 

@@ -439,7 +439,7 @@ type ClientWithResponsesInterface interface {
 type FindPetsResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
-	JSON         *[]Pet
+	JSON200      *[]Pet
 	JSONDefault  *Error
 }
 
@@ -462,7 +462,7 @@ func (r FindPetsResponse) StatusCode() int {
 type AddPetResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
-	JSON         *Pet
+	JSON200      *Pet
 	JSONDefault  *Error
 }
 
@@ -507,7 +507,7 @@ func (r DeletePetResponse) StatusCode() int {
 type FindPetByIDResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
-	JSON         *Pet
+	JSON200      *Pet
 	JSONDefault  *Error
 }
 
@@ -590,7 +590,7 @@ func ParseFindPetsResponse(rsp *http.Response) (*FindPetsResponse, error) {
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
 			return nil, err
 		}
-		response.JSON = &dest
+		response.JSON200 = &dest
 
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
 		var dest Error
@@ -623,7 +623,7 @@ func ParseAddPetResponse(rsp *http.Response) (*AddPetResponse, error) {
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
 			return nil, err
 		}
-		response.JSON = &dest
+		response.JSON200 = &dest
 
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
 		var dest Error
@@ -682,7 +682,7 @@ func ParseFindPetByIDResponse(rsp *http.Response) (*FindPetByIDResponse, error) 
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
 			return nil, err
 		}
-		response.JSON = &dest
+		response.JSON200 = &dest
 
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
 		var dest Error
