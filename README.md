@@ -127,6 +127,7 @@ type FindPetsParams struct {
 ```
 
 ### Registering handlers
+
 You can register handlers when generating a server with `-generate server`.
 
 <details><summary><code>Chi</code></summary>

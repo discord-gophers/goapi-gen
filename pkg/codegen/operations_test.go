@@ -16,6 +16,8 @@ package codegen
 import (
 	"net/http"
 	"testing"
+
+	"github.com/getkin/kin-openapi/openapi3"
 )
 
 func TestGenerateDefaultOperationID(t *testing.T) {
@@ -77,5 +79,77 @@ func TestGenerateDefaultOperationID(t *testing.T) {
 		if got != test.want {
 			t.Fatalf("Operation ID generation error. Want [%v] Got [%v]", test.want, got)
 		}
+	}
+}
+
+func TestParameterDefinition_GoVariableName(t *testing.T) {
+	type fields struct {
+		ParamName string
+		In        string
+		Required  bool
+		Spec      *openapi3.Parameter
+		Schema    Schema
+	}
+	tests := []struct {
+		name   string
+		fields fields
+		want   string
+	}{
+		{
+			name: "simple",
+			fields: fields{
+				ParamName: "foo",
+			},
+			want: "foo",
+		},
+		{
+			name: "starts with number",
+			fields: fields{
+				ParamName: "1foo",
+			},
+			want: "n1foo",
+		},
+		{
+			name: "contains underscode",
+			fields: fields{
+				ParamName: "foo_bar",
+			},
+			want: "fooBar",
+		},
+		{
+			name: "contains dash",
+			fields: fields{
+				ParamName: "foo-bar",
+			},
+			want: "fooBar",
+		},
+		{
+			name: "contains dash and underscore",
+			fields: fields{
+				ParamName: "foo-bar_baz",
+			},
+			want: "fooBarBaz",
+		},
+		{
+			name: "contains URI",
+			fields: fields{
+				ParamName: "foo-bar_baz_uri",
+			},
+			want: "fooBarBazURI",
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			pd := ParameterDefinition{
+				ParamName: tt.fields.ParamName,
+				In:        tt.fields.In,
+				Required:  tt.fields.Required,
+				Spec:      tt.fields.Spec,
+				Schema:    tt.fields.Schema,
+			}
+			if got := pd.GoVariableName(); got != tt.want {
+				t.Errorf("ParameterDefinition.GoVariableName() = %v, want %v", got, tt.want)
+			}
+		})
 	}
 }

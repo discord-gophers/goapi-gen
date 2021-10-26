@@ -45,7 +45,7 @@ func (s *Schema) MergeProperty(p Property) error {
 	// Scan all existing properties for a conflict
 	for _, e := range s.Properties {
 		if e.JsonFieldName == p.JsonFieldName && !PropertiesEqual(e, p) {
-			return errors.New(fmt.Sprintf("property '%s' already exists with a different type", e.JsonFieldName))
+			return fmt.Errorf("property '%s' already exists with a different type", e.JsonFieldName)
 		}
 	}
 	s.Properties = append(s.Properties, p)
@@ -339,38 +339,40 @@ func resolveType(schema *openapi3.Schema, path []string, outSchema *Schema) erro
 		outSchema.Properties = arrayType.Properties
 	case "integer":
 		// We default to int if format doesn't ask for something else.
-		if f == "int64" {
+		switch f {
+		case "int64":
 			outSchema.GoType = "int64"
-		} else if f == "int32" {
+		case "int32":
 			outSchema.GoType = "int32"
-		} else if f == "int16" {
+		case "int16":
 			outSchema.GoType = "int16"
-		} else if f == "int8" {
+		case "int8":
 			outSchema.GoType = "int8"
-		} else if f == "int" {
+		case "int":
 			outSchema.GoType = "int"
-		} else if f == "uint64" {
+		case "uint64":
 			outSchema.GoType = "uint64"
-		} else if f == "uint32" {
+		case "uint32":
 			outSchema.GoType = "uint32"
-		} else if f == "uint16" {
+		case "uint16":
 			outSchema.GoType = "uint16"
-		} else if f == "uint8" {
+		case "uint8":
 			outSchema.GoType = "uint8"
-		} else if f == "uint" {
+		case "uint":
 			outSchema.GoType = "uint"
-		} else if f == "" {
+		case "":
 			outSchema.GoType = "int"
-		} else {
+		default:
 			return fmt.Errorf("invalid integer format: %s", f)
 		}
 	case "number":
 		// We default to float for "number"
-		if f == "double" {
+		switch f {
+		case "double":
 			outSchema.GoType = "float64"
-		} else if f == "float" || f == "" {
+		case "float", "":
 			outSchema.GoType = "float32"
-		} else {
+		default:
 			return fmt.Errorf("invalid number format: %s", f)
 		}
 	case "boolean":

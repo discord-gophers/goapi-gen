@@ -17,10 +17,11 @@ import (
 	"bufio"
 	"bytes"
 	"fmt"
-	"github.com/kenshaw/snaker"
 	"strings"
 	"text/template"
 	"unicode"
+
+	"github.com/kenshaw/snaker"
 
 	"github.com/getkin/kin-openapi/openapi3"
 )
@@ -277,7 +278,7 @@ func (o *OperationDefinition) GetResponseTypeDefinitions() ([]ResponseTypeDefini
 				if contentType.Schema != nil {
 					responseSchema, err := GenerateGoSchema(contentType.Schema, []string{responseName})
 					if err != nil {
-						return nil, fmt.Errorf("Unable to determine Go type for %s.%s: %w", o.OperationId, contentTypeName, err)
+						return nil, fmt.Errorf("unable to determine Go type for %s.%s: %w", o.OperationId, contentTypeName, err)
 					}
 
 					var typeName string

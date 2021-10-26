@@ -221,7 +221,7 @@ func (siw *ServerInterfaceWrapper) GetWithArgs(w http.ResponseWriter, r *http.Re
 	}
 
 	if err := runtime.BindQueryParameter("form", true, false, "optional_argument", r.URL.Query(), &params.OptionalArgument); err != nil {
-		err = fmt.Errorf("Invalid format for parameter optional_argument: %w", err)
+		err = fmt.Errorf("invalid format for parameter optional_argument: %w", err)
 		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{err})
 		return
 	}
@@ -230,13 +230,13 @@ func (siw *ServerInterfaceWrapper) GetWithArgs(w http.ResponseWriter, r *http.Re
 	if paramValue := r.URL.Query().Get("required_argument"); paramValue != "" {
 
 	} else {
-		err := fmt.Errorf("Query argument required_argument is required, but not found")
+		err := fmt.Errorf("query argument required_argument is required, but not found")
 		siw.ErrorHandlerFunc(w, r, &RequiredParamError{err})
 		return
 	}
 
 	if err := runtime.BindQueryParameter("form", true, true, "required_argument", r.URL.Query(), &params.RequiredArgument); err != nil {
-		err = fmt.Errorf("Invalid format for parameter required_argument: %w", err)
+		err = fmt.Errorf("invalid format for parameter required_argument: %w", err)
 		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{err})
 		return
 	}
@@ -248,13 +248,13 @@ func (siw *ServerInterfaceWrapper) GetWithArgs(w http.ResponseWriter, r *http.Re
 		var HeaderArgument int32
 		n := len(valueList)
 		if n != 1 {
-			err := fmt.Errorf("Expected one value for header_argument, got %d", n)
+			err := fmt.Errorf("expected one value for header_argument, got %d", n)
 			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{err})
 			return
 		}
 
 		if err := runtime.BindStyledParameterWithLocation("simple", false, "header_argument", runtime.ParamLocationHeader, valueList[0], &HeaderArgument); err != nil {
-			err = fmt.Errorf("Invalid format for parameter header_argument: %w", err)
+			err = fmt.Errorf("invalid format for parameter header_argument: %w", err)
 			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{err})
 			return
 		}
@@ -282,7 +282,7 @@ func (siw *ServerInterfaceWrapper) GetWithReferences(w http.ResponseWriter, r *h
 	var globalArgument int64
 
 	if err := runtime.BindStyledParameter("simple", false, "global_argument", chi.URLParam(r, "global_argument"), &globalArgument); err != nil {
-		err = fmt.Errorf("Invalid format for parameter global_argument: %w", err)
+		err = fmt.Errorf("invalid format for parameter global_argument: %w", err)
 		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{err})
 		return
 	}
@@ -291,7 +291,7 @@ func (siw *ServerInterfaceWrapper) GetWithReferences(w http.ResponseWriter, r *h
 	var argument Argument
 
 	if err := runtime.BindStyledParameter("simple", false, "argument", chi.URLParam(r, "argument"), &argument); err != nil {
-		err = fmt.Errorf("Invalid format for parameter argument: %w", err)
+		err = fmt.Errorf("invalid format for parameter argument: %w", err)
 		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{err})
 		return
 	}
@@ -362,7 +362,7 @@ func (siw *ServerInterfaceWrapper) GetWithContentType(w http.ResponseWriter, r *
 	var contentType GetWithContentTypeParamsContentType
 
 	if err := runtime.BindStyledParameter("simple", false, "content_type", chi.URLParam(r, "content_type"), &contentType); err != nil {
-		err = fmt.Errorf("Invalid format for parameter content_type: %w", err)
+		err = fmt.Errorf("invalid format for parameter content_type: %w", err)
 		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{err})
 		return
 	}
@@ -401,7 +401,7 @@ func (siw *ServerInterfaceWrapper) CreateResource(w http.ResponseWriter, r *http
 	var argument Argument
 
 	if err := runtime.BindStyledParameter("simple", false, "argument", chi.URLParam(r, "argument"), &argument); err != nil {
-		err = fmt.Errorf("Invalid format for parameter argument: %w", err)
+		err = fmt.Errorf("invalid format for parameter argument: %w", err)
 		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{err})
 		return
 	}
@@ -425,7 +425,7 @@ func (siw *ServerInterfaceWrapper) CreateResource2(w http.ResponseWriter, r *htt
 	var inlineArgument int
 
 	if err := runtime.BindStyledParameter("simple", false, "inline_argument", chi.URLParam(r, "inline_argument"), &inlineArgument); err != nil {
-		err = fmt.Errorf("Invalid format for parameter inline_argument: %w", err)
+		err = fmt.Errorf("invalid format for parameter inline_argument: %w", err)
 		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{err})
 		return
 	}
@@ -439,7 +439,7 @@ func (siw *ServerInterfaceWrapper) CreateResource2(w http.ResponseWriter, r *htt
 	}
 
 	if err := runtime.BindQueryParameter("form", true, false, "inline_query_argument", r.URL.Query(), &params.InlineQueryArgument); err != nil {
-		err = fmt.Errorf("Invalid format for parameter inline_query_argument: %w", err)
+		err = fmt.Errorf("invalid format for parameter inline_query_argument: %w", err)
 		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{err})
 		return
 	}
@@ -463,7 +463,7 @@ func (siw *ServerInterfaceWrapper) UpdateResource3(w http.ResponseWriter, r *htt
 	var pFallthrough int
 
 	if err := runtime.BindStyledParameter("simple", false, "fallthrough", chi.URLParam(r, "fallthrough"), &pFallthrough); err != nil {
-		err = fmt.Errorf("Invalid format for parameter fallthrough: %w", err)
+		err = fmt.Errorf("invalid format for parameter fallthrough: %w", err)
 		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{err})
 		return
 	}

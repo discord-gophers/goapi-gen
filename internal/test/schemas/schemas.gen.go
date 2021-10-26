@@ -26,7 +26,7 @@ import (
 )
 
 const (
-	Access_tokenScopes = "access_token.Scopes"
+	AccessTokenScopes = "access_token.Scopes"
 )
 
 // Defines values for EnumInObjInArrayVal.
@@ -859,7 +859,7 @@ func (c *ClientWithResponses) Issue127WithResponse(ctx context.Context, reqEdito
 	if err != nil {
 		return nil, err
 	}
-	return ParseIssue127Response(rsp)
+	return ParseIssue127response(rsp)
 }
 
 // Issue185WithBodyWithResponse request with arbitrary body returning *Issue185Response
@@ -868,7 +868,7 @@ func (c *ClientWithResponses) Issue185WithBodyWithResponse(ctx context.Context, 
 	if err != nil {
 		return nil, err
 	}
-	return ParseIssue185Response(rsp)
+	return ParseIssue185response(rsp)
 }
 
 func (c *ClientWithResponses) Issue185WithResponse(ctx context.Context, body Issue185JSONRequestBody, reqEditors ...RequestEditorFn) (*Issue185Response, error) {
@@ -876,7 +876,7 @@ func (c *ClientWithResponses) Issue185WithResponse(ctx context.Context, body Iss
 	if err != nil {
 		return nil, err
 	}
-	return ParseIssue185Response(rsp)
+	return ParseIssue185response(rsp)
 }
 
 // Issue209WithResponse request returning *Issue209Response
@@ -885,7 +885,7 @@ func (c *ClientWithResponses) Issue209WithResponse(ctx context.Context, str Stri
 	if err != nil {
 		return nil, err
 	}
-	return ParseIssue209Response(rsp)
+	return ParseIssue209response(rsp)
 }
 
 // Issue30WithResponse request returning *Issue30Response
@@ -894,7 +894,7 @@ func (c *ClientWithResponses) Issue30WithResponse(ctx context.Context, pFallthro
 	if err != nil {
 		return nil, err
 	}
-	return ParseIssue30Response(rsp)
+	return ParseIssue30response(rsp)
 }
 
 // GetIssues375WithResponse request returning *GetIssues375Response
@@ -903,7 +903,7 @@ func (c *ClientWithResponses) GetIssues375WithResponse(ctx context.Context, reqE
 	if err != nil {
 		return nil, err
 	}
-	return ParseGetIssues375Response(rsp)
+	return ParseGetIssues375response(rsp)
 }
 
 // Issue41WithResponse request returning *Issue41Response
@@ -912,7 +912,7 @@ func (c *ClientWithResponses) Issue41WithResponse(ctx context.Context, n1param N
 	if err != nil {
 		return nil, err
 	}
-	return ParseIssue41Response(rsp)
+	return ParseIssue41response(rsp)
 }
 
 // Issue9WithBodyWithResponse request with arbitrary body returning *Issue9Response
@@ -921,7 +921,7 @@ func (c *ClientWithResponses) Issue9WithBodyWithResponse(ctx context.Context, pa
 	if err != nil {
 		return nil, err
 	}
-	return ParseIssue9Response(rsp)
+	return ParseIssue9response(rsp)
 }
 
 func (c *ClientWithResponses) Issue9WithResponse(ctx context.Context, params *Issue9Params, body Issue9JSONRequestBody, reqEditors ...RequestEditorFn) (*Issue9Response, error) {
@@ -929,7 +929,7 @@ func (c *ClientWithResponses) Issue9WithResponse(ctx context.Context, params *Is
 	if err != nil {
 		return nil, err
 	}
-	return ParseIssue9Response(rsp)
+	return ParseIssue9response(rsp)
 }
 
 // ParseEnsureEverythingIsReferencedResponse parses an HTTP response from a EnsureEverythingIsReferencedWithResponse call
@@ -966,8 +966,8 @@ func ParseEnsureEverythingIsReferencedResponse(rsp *http.Response) (*EnsureEvery
 	return response, nil
 }
 
-// ParseIssue127Response parses an HTTP response from a Issue127WithResponse call
-func ParseIssue127Response(rsp *http.Response) (*Issue127Response, error) {
+// ParseIssue127response parses an HTTP response from a Issue127WithResponse call
+func ParseIssue127response(rsp *http.Response) (*Issue127Response, error) {
 	bodyBytes, err := ioutil.ReadAll(rsp.Body)
 	defer func() { _ = rsp.Body.Close() }()
 	if err != nil {
@@ -1019,8 +1019,8 @@ func ParseIssue127Response(rsp *http.Response) (*Issue127Response, error) {
 	return response, nil
 }
 
-// ParseIssue185Response parses an HTTP response from a Issue185WithResponse call
-func ParseIssue185Response(rsp *http.Response) (*Issue185Response, error) {
+// ParseIssue185response parses an HTTP response from a Issue185WithResponse call
+func ParseIssue185response(rsp *http.Response) (*Issue185Response, error) {
 	bodyBytes, err := ioutil.ReadAll(rsp.Body)
 	defer func() { _ = rsp.Body.Close() }()
 	if err != nil {
@@ -1035,8 +1035,8 @@ func ParseIssue185Response(rsp *http.Response) (*Issue185Response, error) {
 	return response, nil
 }
 
-// ParseIssue209Response parses an HTTP response from a Issue209WithResponse call
-func ParseIssue209Response(rsp *http.Response) (*Issue209Response, error) {
+// ParseIssue209response parses an HTTP response from a Issue209WithResponse call
+func ParseIssue209response(rsp *http.Response) (*Issue209Response, error) {
 	bodyBytes, err := ioutil.ReadAll(rsp.Body)
 	defer func() { _ = rsp.Body.Close() }()
 	if err != nil {
@@ -1051,8 +1051,8 @@ func ParseIssue209Response(rsp *http.Response) (*Issue209Response, error) {
 	return response, nil
 }
 
-// ParseIssue30Response parses an HTTP response from a Issue30WithResponse call
-func ParseIssue30Response(rsp *http.Response) (*Issue30Response, error) {
+// ParseIssue30response parses an HTTP response from a Issue30WithResponse call
+func ParseIssue30response(rsp *http.Response) (*Issue30Response, error) {
 	bodyBytes, err := ioutil.ReadAll(rsp.Body)
 	defer func() { _ = rsp.Body.Close() }()
 	if err != nil {
@@ -1067,8 +1067,8 @@ func ParseIssue30Response(rsp *http.Response) (*Issue30Response, error) {
 	return response, nil
 }
 
-// ParseGetIssues375Response parses an HTTP response from a GetIssues375WithResponse call
-func ParseGetIssues375Response(rsp *http.Response) (*GetIssues375Response, error) {
+// ParseGetIssues375response parses an HTTP response from a GetIssues375WithResponse call
+func ParseGetIssues375response(rsp *http.Response) (*GetIssues375Response, error) {
 	bodyBytes, err := ioutil.ReadAll(rsp.Body)
 	defer func() { _ = rsp.Body.Close() }()
 	if err != nil {
@@ -1093,8 +1093,8 @@ func ParseGetIssues375Response(rsp *http.Response) (*GetIssues375Response, error
 	return response, nil
 }
 
-// ParseIssue41Response parses an HTTP response from a Issue41WithResponse call
-func ParseIssue41Response(rsp *http.Response) (*Issue41Response, error) {
+// ParseIssue41response parses an HTTP response from a Issue41WithResponse call
+func ParseIssue41response(rsp *http.Response) (*Issue41Response, error) {
 	bodyBytes, err := ioutil.ReadAll(rsp.Body)
 	defer func() { _ = rsp.Body.Close() }()
 	if err != nil {
@@ -1109,8 +1109,8 @@ func ParseIssue41Response(rsp *http.Response) (*Issue41Response, error) {
 	return response, nil
 }
 
-// ParseIssue9Response parses an HTTP response from a Issue9WithResponse call
-func ParseIssue9Response(rsp *http.Response) (*Issue9Response, error) {
+// ParseIssue9response parses an HTTP response from a Issue9WithResponse call
+func ParseIssue9response(rsp *http.Response) (*Issue9Response, error) {
 	bodyBytes, err := ioutil.ReadAll(rsp.Body)
 	defer func() { _ = rsp.Body.Close() }()
 	if err != nil {
@@ -1167,7 +1167,7 @@ type MiddlewareFunc func(http.Handler) http.Handler
 func (siw *ServerInterfaceWrapper) EnsureEverythingIsReferenced(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 
-	ctx = context.WithValue(ctx, Access-tokenScopes, []string{""})
+	ctx = context.WithValue(ctx, AccessTokenScopes, []string{""})
 
 	var handler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.EnsureEverythingIsReferenced(w, r)
@@ -1184,7 +1184,7 @@ func (siw *ServerInterfaceWrapper) EnsureEverythingIsReferenced(w http.ResponseW
 func (siw *ServerInterfaceWrapper) Issue127(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 
-	ctx = context.WithValue(ctx, Access-tokenScopes, []string{""})
+	ctx = context.WithValue(ctx, AccessTokenScopes, []string{""})
 
 	var handler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.Issue127(w, r)
@@ -1201,7 +1201,7 @@ func (siw *ServerInterfaceWrapper) Issue127(w http.ResponseWriter, r *http.Reque
 func (siw *ServerInterfaceWrapper) Issue185(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 
-	ctx = context.WithValue(ctx, Access-tokenScopes, []string{""})
+	ctx = context.WithValue(ctx, AccessTokenScopes, []string{""})
 
 	var handler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.Issue185(w, r)
@@ -1222,12 +1222,12 @@ func (siw *ServerInterfaceWrapper) Issue209(w http.ResponseWriter, r *http.Reque
 	var str StringInPath
 
 	if err := runtime.BindStyledParameter("simple", false, "str", chi.URLParam(r, "str"), &str); err != nil {
-		err = fmt.Errorf("Invalid format for parameter str: %w", err)
+		err = fmt.Errorf("invalid format for parameter str: %w", err)
 		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{err})
 		return
 	}
 
-	ctx = context.WithValue(ctx, Access-tokenScopes, []string{""})
+	ctx = context.WithValue(ctx, AccessTokenScopes, []string{""})
 
 	var handler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.Issue209(w, r, str)
@@ -1248,12 +1248,12 @@ func (siw *ServerInterfaceWrapper) Issue30(w http.ResponseWriter, r *http.Reques
 	var pFallthrough string
 
 	if err := runtime.BindStyledParameter("simple", false, "fallthrough", chi.URLParam(r, "fallthrough"), &pFallthrough); err != nil {
-		err = fmt.Errorf("Invalid format for parameter fallthrough: %w", err)
+		err = fmt.Errorf("invalid format for parameter fallthrough: %w", err)
 		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{err})
 		return
 	}
 
-	ctx = context.WithValue(ctx, Access-tokenScopes, []string{""})
+	ctx = context.WithValue(ctx, AccessTokenScopes, []string{""})
 
 	var handler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.Issue30(w, r, pFallthrough)
@@ -1270,7 +1270,7 @@ func (siw *ServerInterfaceWrapper) Issue30(w http.ResponseWriter, r *http.Reques
 func (siw *ServerInterfaceWrapper) GetIssues375(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 
-	ctx = context.WithValue(ctx, Access-tokenScopes, []string{""})
+	ctx = context.WithValue(ctx, AccessTokenScopes, []string{""})
 
 	var handler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.GetIssues375(w, r)
@@ -1291,12 +1291,12 @@ func (siw *ServerInterfaceWrapper) Issue41(w http.ResponseWriter, r *http.Reques
 	var n1param N5startsWithNumber
 
 	if err := runtime.BindStyledParameter("simple", false, "1param", chi.URLParam(r, "1param"), &n1param); err != nil {
-		err = fmt.Errorf("Invalid format for parameter 1param: %w", err)
+		err = fmt.Errorf("invalid format for parameter 1param: %w", err)
 		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{err})
 		return
 	}
 
-	ctx = context.WithValue(ctx, Access-tokenScopes, []string{""})
+	ctx = context.WithValue(ctx, AccessTokenScopes, []string{""})
 
 	var handler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.Issue41(w, r, n1param)
@@ -1313,7 +1313,7 @@ func (siw *ServerInterfaceWrapper) Issue41(w http.ResponseWriter, r *http.Reques
 func (siw *ServerInterfaceWrapper) Issue9(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 
-	ctx = context.WithValue(ctx, Access-tokenScopes, []string{""})
+	ctx = context.WithValue(ctx, AccessTokenScopes, []string{""})
 
 	// Parameter object where we will unmarshal all parameters from the context
 	var params Issue9Params
@@ -1322,13 +1322,13 @@ func (siw *ServerInterfaceWrapper) Issue9(w http.ResponseWriter, r *http.Request
 	if paramValue := r.URL.Query().Get("foo"); paramValue != "" {
 
 	} else {
-		err := fmt.Errorf("Query argument foo is required, but not found")
+		err := fmt.Errorf("query argument foo is required, but not found")
 		siw.ErrorHandlerFunc(w, r, &RequiredParamError{err})
 		return
 	}
 
 	if err := runtime.BindQueryParameter("form", true, true, "foo", r.URL.Query(), &params.Foo); err != nil {
-		err = fmt.Errorf("Invalid format for parameter foo: %w", err)
+		err = fmt.Errorf("invalid format for parameter foo: %w", err)
 		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{err})
 		return
 	}
