@@ -219,16 +219,16 @@ type ClientInterface interface {
 	GetLabelNoExplodeObject(ctx context.Context, param Object, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// GetMatrixExplodeArray request
-	GetMatrixExplodeArray(ctx context.Context, iD []int32, reqEditors ...RequestEditorFn) (*http.Response, error)
+	GetMatrixExplodeArray(ctx context.Context, id []int32, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// GetMatrixExplodeObject request
-	GetMatrixExplodeObject(ctx context.Context, iD Object, reqEditors ...RequestEditorFn) (*http.Response, error)
+	GetMatrixExplodeObject(ctx context.Context, id Object, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// GetMatrixNoExplodeArray request
-	GetMatrixNoExplodeArray(ctx context.Context, iD []int32, reqEditors ...RequestEditorFn) (*http.Response, error)
+	GetMatrixNoExplodeArray(ctx context.Context, id []int32, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// GetMatrixNoExplodeObject request
-	GetMatrixNoExplodeObject(ctx context.Context, iD Object, reqEditors ...RequestEditorFn) (*http.Response, error)
+	GetMatrixNoExplodeObject(ctx context.Context, id Object, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// GetPassThrough request
 	GetPassThrough(ctx context.Context, param string, reqEditors ...RequestEditorFn) (*http.Response, error)
@@ -342,8 +342,8 @@ func (c *Client) GetLabelNoExplodeObject(ctx context.Context, param Object, reqE
 	return c.Client.Do(req)
 }
 
-func (c *Client) GetMatrixExplodeArray(ctx context.Context, iD []int32, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewGetMatrixExplodeArrayRequest(c.Server, iD)
+func (c *Client) GetMatrixExplodeArray(ctx context.Context, id []int32, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewGetMatrixExplodeArrayRequest(c.Server, id)
 	if err != nil {
 		return nil, err
 	}
@@ -354,8 +354,8 @@ func (c *Client) GetMatrixExplodeArray(ctx context.Context, iD []int32, reqEdito
 	return c.Client.Do(req)
 }
 
-func (c *Client) GetMatrixExplodeObject(ctx context.Context, iD Object, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewGetMatrixExplodeObjectRequest(c.Server, iD)
+func (c *Client) GetMatrixExplodeObject(ctx context.Context, id Object, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewGetMatrixExplodeObjectRequest(c.Server, id)
 	if err != nil {
 		return nil, err
 	}
@@ -366,8 +366,8 @@ func (c *Client) GetMatrixExplodeObject(ctx context.Context, iD Object, reqEdito
 	return c.Client.Do(req)
 }
 
-func (c *Client) GetMatrixNoExplodeArray(ctx context.Context, iD []int32, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewGetMatrixNoExplodeArrayRequest(c.Server, iD)
+func (c *Client) GetMatrixNoExplodeArray(ctx context.Context, id []int32, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewGetMatrixNoExplodeArrayRequest(c.Server, id)
 	if err != nil {
 		return nil, err
 	}
@@ -378,8 +378,8 @@ func (c *Client) GetMatrixNoExplodeArray(ctx context.Context, iD []int32, reqEdi
 	return c.Client.Do(req)
 }
 
-func (c *Client) GetMatrixNoExplodeObject(ctx context.Context, iD Object, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewGetMatrixNoExplodeObjectRequest(c.Server, iD)
+func (c *Client) GetMatrixNoExplodeObject(ctx context.Context, id Object, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewGetMatrixNoExplodeObjectRequest(c.Server, id)
 	if err != nil {
 		return nil, err
 	}
@@ -937,12 +937,12 @@ func NewGetLabelNoExplodeObjectRequest(server string, param Object) (*http.Reque
 }
 
 // NewGetMatrixExplodeArrayRequest generates requests for GetMatrixExplodeArray
-func NewGetMatrixExplodeArrayRequest(server string, iD []int32) (*http.Request, error) {
+func NewGetMatrixExplodeArrayRequest(server string, id []int32) (*http.Request, error) {
 	var err error
 
 	var pathParam0 string
 
-	pathParam0, err = runtime.StyleParamWithLocation("matrix", true, "id", runtime.ParamLocationPath, iD)
+	pathParam0, err = runtime.StyleParamWithLocation("matrix", true, "id", runtime.ParamLocationPath, id)
 	if err != nil {
 		return nil, err
 	}
@@ -971,12 +971,12 @@ func NewGetMatrixExplodeArrayRequest(server string, iD []int32) (*http.Request, 
 }
 
 // NewGetMatrixExplodeObjectRequest generates requests for GetMatrixExplodeObject
-func NewGetMatrixExplodeObjectRequest(server string, iD Object) (*http.Request, error) {
+func NewGetMatrixExplodeObjectRequest(server string, id Object) (*http.Request, error) {
 	var err error
 
 	var pathParam0 string
 
-	pathParam0, err = runtime.StyleParamWithLocation("matrix", true, "id", runtime.ParamLocationPath, iD)
+	pathParam0, err = runtime.StyleParamWithLocation("matrix", true, "id", runtime.ParamLocationPath, id)
 	if err != nil {
 		return nil, err
 	}
@@ -1005,12 +1005,12 @@ func NewGetMatrixExplodeObjectRequest(server string, iD Object) (*http.Request, 
 }
 
 // NewGetMatrixNoExplodeArrayRequest generates requests for GetMatrixNoExplodeArray
-func NewGetMatrixNoExplodeArrayRequest(server string, iD []int32) (*http.Request, error) {
+func NewGetMatrixNoExplodeArrayRequest(server string, id []int32) (*http.Request, error) {
 	var err error
 
 	var pathParam0 string
 
-	pathParam0, err = runtime.StyleParamWithLocation("matrix", false, "id", runtime.ParamLocationPath, iD)
+	pathParam0, err = runtime.StyleParamWithLocation("matrix", false, "id", runtime.ParamLocationPath, id)
 	if err != nil {
 		return nil, err
 	}
@@ -1039,12 +1039,12 @@ func NewGetMatrixNoExplodeArrayRequest(server string, iD []int32) (*http.Request
 }
 
 // NewGetMatrixNoExplodeObjectRequest generates requests for GetMatrixNoExplodeObject
-func NewGetMatrixNoExplodeObjectRequest(server string, iD Object) (*http.Request, error) {
+func NewGetMatrixNoExplodeObjectRequest(server string, id Object) (*http.Request, error) {
 	var err error
 
 	var pathParam0 string
 
-	pathParam0, err = runtime.StyleParamWithLocation("matrix", false, "id", runtime.ParamLocationPath, iD)
+	pathParam0, err = runtime.StyleParamWithLocation("matrix", false, "id", runtime.ParamLocationPath, id)
 	if err != nil {
 		return nil, err
 	}
@@ -1581,16 +1581,16 @@ type ClientWithResponsesInterface interface {
 	GetLabelNoExplodeObjectWithResponse(ctx context.Context, param Object, reqEditors ...RequestEditorFn) (*GetLabelNoExplodeObjectResponse, error)
 
 	// GetMatrixExplodeArray request
-	GetMatrixExplodeArrayWithResponse(ctx context.Context, iD []int32, reqEditors ...RequestEditorFn) (*GetMatrixExplodeArrayResponse, error)
+	GetMatrixExplodeArrayWithResponse(ctx context.Context, id []int32, reqEditors ...RequestEditorFn) (*GetMatrixExplodeArrayResponse, error)
 
 	// GetMatrixExplodeObject request
-	GetMatrixExplodeObjectWithResponse(ctx context.Context, iD Object, reqEditors ...RequestEditorFn) (*GetMatrixExplodeObjectResponse, error)
+	GetMatrixExplodeObjectWithResponse(ctx context.Context, id Object, reqEditors ...RequestEditorFn) (*GetMatrixExplodeObjectResponse, error)
 
 	// GetMatrixNoExplodeArray request
-	GetMatrixNoExplodeArrayWithResponse(ctx context.Context, iD []int32, reqEditors ...RequestEditorFn) (*GetMatrixNoExplodeArrayResponse, error)
+	GetMatrixNoExplodeArrayWithResponse(ctx context.Context, id []int32, reqEditors ...RequestEditorFn) (*GetMatrixNoExplodeArrayResponse, error)
 
 	// GetMatrixNoExplodeObject request
-	GetMatrixNoExplodeObjectWithResponse(ctx context.Context, iD Object, reqEditors ...RequestEditorFn) (*GetMatrixNoExplodeObjectResponse, error)
+	GetMatrixNoExplodeObjectWithResponse(ctx context.Context, id Object, reqEditors ...RequestEditorFn) (*GetMatrixNoExplodeObjectResponse, error)
 
 	// GetPassThrough request
 	GetPassThroughWithResponse(ctx context.Context, param string, reqEditors ...RequestEditorFn) (*GetPassThroughResponse, error)
@@ -2104,8 +2104,8 @@ func (c *ClientWithResponses) GetLabelNoExplodeObjectWithResponse(ctx context.Co
 }
 
 // GetMatrixExplodeArrayWithResponse request returning *GetMatrixExplodeArrayResponse
-func (c *ClientWithResponses) GetMatrixExplodeArrayWithResponse(ctx context.Context, iD []int32, reqEditors ...RequestEditorFn) (*GetMatrixExplodeArrayResponse, error) {
-	rsp, err := c.GetMatrixExplodeArray(ctx, iD, reqEditors...)
+func (c *ClientWithResponses) GetMatrixExplodeArrayWithResponse(ctx context.Context, id []int32, reqEditors ...RequestEditorFn) (*GetMatrixExplodeArrayResponse, error) {
+	rsp, err := c.GetMatrixExplodeArray(ctx, id, reqEditors...)
 	if err != nil {
 		return nil, err
 	}
@@ -2113,8 +2113,8 @@ func (c *ClientWithResponses) GetMatrixExplodeArrayWithResponse(ctx context.Cont
 }
 
 // GetMatrixExplodeObjectWithResponse request returning *GetMatrixExplodeObjectResponse
-func (c *ClientWithResponses) GetMatrixExplodeObjectWithResponse(ctx context.Context, iD Object, reqEditors ...RequestEditorFn) (*GetMatrixExplodeObjectResponse, error) {
-	rsp, err := c.GetMatrixExplodeObject(ctx, iD, reqEditors...)
+func (c *ClientWithResponses) GetMatrixExplodeObjectWithResponse(ctx context.Context, id Object, reqEditors ...RequestEditorFn) (*GetMatrixExplodeObjectResponse, error) {
+	rsp, err := c.GetMatrixExplodeObject(ctx, id, reqEditors...)
 	if err != nil {
 		return nil, err
 	}
@@ -2122,8 +2122,8 @@ func (c *ClientWithResponses) GetMatrixExplodeObjectWithResponse(ctx context.Con
 }
 
 // GetMatrixNoExplodeArrayWithResponse request returning *GetMatrixNoExplodeArrayResponse
-func (c *ClientWithResponses) GetMatrixNoExplodeArrayWithResponse(ctx context.Context, iD []int32, reqEditors ...RequestEditorFn) (*GetMatrixNoExplodeArrayResponse, error) {
-	rsp, err := c.GetMatrixNoExplodeArray(ctx, iD, reqEditors...)
+func (c *ClientWithResponses) GetMatrixNoExplodeArrayWithResponse(ctx context.Context, id []int32, reqEditors ...RequestEditorFn) (*GetMatrixNoExplodeArrayResponse, error) {
+	rsp, err := c.GetMatrixNoExplodeArray(ctx, id, reqEditors...)
 	if err != nil {
 		return nil, err
 	}
@@ -2131,8 +2131,8 @@ func (c *ClientWithResponses) GetMatrixNoExplodeArrayWithResponse(ctx context.Co
 }
 
 // GetMatrixNoExplodeObjectWithResponse request returning *GetMatrixNoExplodeObjectResponse
-func (c *ClientWithResponses) GetMatrixNoExplodeObjectWithResponse(ctx context.Context, iD Object, reqEditors ...RequestEditorFn) (*GetMatrixNoExplodeObjectResponse, error) {
-	rsp, err := c.GetMatrixNoExplodeObject(ctx, iD, reqEditors...)
+func (c *ClientWithResponses) GetMatrixNoExplodeObjectWithResponse(ctx context.Context, id Object, reqEditors ...RequestEditorFn) (*GetMatrixNoExplodeObjectResponse, error) {
+	rsp, err := c.GetMatrixNoExplodeObject(ctx, id, reqEditors...)
 	if err != nil {
 		return nil, err
 	}
@@ -2565,16 +2565,16 @@ type ServerInterface interface {
 	GetLabelNoExplodeObject(ctx echo.Context, param Object) error
 
 	// (GET /matrixExplodeArray/{.id*})
-	GetMatrixExplodeArray(ctx echo.Context, iD []int32) error
+	GetMatrixExplodeArray(ctx echo.Context, id []int32) error
 
 	// (GET /matrixExplodeObject/{.id*})
-	GetMatrixExplodeObject(ctx echo.Context, iD Object) error
+	GetMatrixExplodeObject(ctx echo.Context, id Object) error
 
 	// (GET /matrixNoExplodeArray/{.id})
-	GetMatrixNoExplodeArray(ctx echo.Context, iD []int32) error
+	GetMatrixNoExplodeArray(ctx echo.Context, id []int32) error
 
 	// (GET /matrixNoExplodeObject/{.id})
-	GetMatrixNoExplodeObject(ctx echo.Context, iD Object) error
+	GetMatrixNoExplodeObject(ctx echo.Context, id Object) error
 
 	// (GET /passThrough/{param})
 	GetPassThrough(ctx echo.Context, param string) error
@@ -2932,15 +2932,15 @@ func (w *ServerInterfaceWrapper) GetLabelNoExplodeObject(ctx echo.Context) error
 func (w *ServerInterfaceWrapper) GetMatrixExplodeArray(ctx echo.Context) error {
 	var err error
 	// ------------- Path parameter "id" -------------
-	var iD []int32
+	var id []int32
 
-	err = runtime.BindStyledParameterWithLocation("matrix", true, "id", runtime.ParamLocationPath, ctx.Param("id"), &iD)
+	err = runtime.BindStyledParameterWithLocation("matrix", true, "id", runtime.ParamLocationPath, ctx.Param("id"), &id)
 	if err != nil {
 		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter id: %s", err))
 	}
 
 	// Invoke the callback with all the unmarshalled arguments
-	err = w.Handler.GetMatrixExplodeArray(ctx, iD)
+	err = w.Handler.GetMatrixExplodeArray(ctx, id)
 	return err
 }
 
@@ -2948,15 +2948,15 @@ func (w *ServerInterfaceWrapper) GetMatrixExplodeArray(ctx echo.Context) error {
 func (w *ServerInterfaceWrapper) GetMatrixExplodeObject(ctx echo.Context) error {
 	var err error
 	// ------------- Path parameter "id" -------------
-	var iD Object
+	var id Object
 
-	err = runtime.BindStyledParameterWithLocation("matrix", true, "id", runtime.ParamLocationPath, ctx.Param("id"), &iD)
+	err = runtime.BindStyledParameterWithLocation("matrix", true, "id", runtime.ParamLocationPath, ctx.Param("id"), &id)
 	if err != nil {
 		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter id: %s", err))
 	}
 
 	// Invoke the callback with all the unmarshalled arguments
-	err = w.Handler.GetMatrixExplodeObject(ctx, iD)
+	err = w.Handler.GetMatrixExplodeObject(ctx, id)
 	return err
 }
 
@@ -2964,15 +2964,15 @@ func (w *ServerInterfaceWrapper) GetMatrixExplodeObject(ctx echo.Context) error 
 func (w *ServerInterfaceWrapper) GetMatrixNoExplodeArray(ctx echo.Context) error {
 	var err error
 	// ------------- Path parameter "id" -------------
-	var iD []int32
+	var id []int32
 
-	err = runtime.BindStyledParameterWithLocation("matrix", false, "id", runtime.ParamLocationPath, ctx.Param("id"), &iD)
+	err = runtime.BindStyledParameterWithLocation("matrix", false, "id", runtime.ParamLocationPath, ctx.Param("id"), &id)
 	if err != nil {
 		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter id: %s", err))
 	}
 
 	// Invoke the callback with all the unmarshalled arguments
-	err = w.Handler.GetMatrixNoExplodeArray(ctx, iD)
+	err = w.Handler.GetMatrixNoExplodeArray(ctx, id)
 	return err
 }
 
@@ -2980,15 +2980,15 @@ func (w *ServerInterfaceWrapper) GetMatrixNoExplodeArray(ctx echo.Context) error
 func (w *ServerInterfaceWrapper) GetMatrixNoExplodeObject(ctx echo.Context) error {
 	var err error
 	// ------------- Path parameter "id" -------------
-	var iD Object
+	var id Object
 
-	err = runtime.BindStyledParameterWithLocation("matrix", false, "id", runtime.ParamLocationPath, ctx.Param("id"), &iD)
+	err = runtime.BindStyledParameterWithLocation("matrix", false, "id", runtime.ParamLocationPath, ctx.Param("id"), &id)
 	if err != nil {
 		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter id: %s", err))
 	}
 
 	// Invoke the callback with all the unmarshalled arguments
-	err = w.Handler.GetMatrixNoExplodeObject(ctx, iD)
+	err = w.Handler.GetMatrixNoExplodeObject(ctx, id)
 	return err
 }
 

@@ -141,10 +141,10 @@ type ClientInterface interface {
 	AddPet(ctx context.Context, body AddPetJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// DeletePet request
-	DeletePet(ctx context.Context, iD int64, reqEditors ...RequestEditorFn) (*http.Response, error)
+	DeletePet(ctx context.Context, id int64, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// FindPetByID request
-	FindPetByID(ctx context.Context, iD int64, reqEditors ...RequestEditorFn) (*http.Response, error)
+	FindPetByID(ctx context.Context, id int64, reqEditors ...RequestEditorFn) (*http.Response, error)
 }
 
 func (c *Client) FindPets(ctx context.Context, params *FindPetsParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
@@ -183,8 +183,8 @@ func (c *Client) AddPet(ctx context.Context, body AddPetJSONRequestBody, reqEdit
 	return c.Client.Do(req)
 }
 
-func (c *Client) DeletePet(ctx context.Context, iD int64, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewDeletePetRequest(c.Server, iD)
+func (c *Client) DeletePet(ctx context.Context, id int64, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewDeletePetRequest(c.Server, id)
 	if err != nil {
 		return nil, err
 	}
@@ -195,8 +195,8 @@ func (c *Client) DeletePet(ctx context.Context, iD int64, reqEditors ...RequestE
 	return c.Client.Do(req)
 }
 
-func (c *Client) FindPetByID(ctx context.Context, iD int64, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewFindPetByIDRequest(c.Server, iD)
+func (c *Client) FindPetByID(ctx context.Context, id int64, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewFindPetByIDRequest(c.Server, id)
 	if err != nil {
 		return nil, err
 	}
@@ -311,12 +311,12 @@ func NewAddPetRequestWithBody(server string, contentType string, body io.Reader)
 }
 
 // NewDeletePetRequest generates requests for DeletePet
-func NewDeletePetRequest(server string, iD int64) (*http.Request, error) {
+func NewDeletePetRequest(server string, id int64) (*http.Request, error) {
 	var err error
 
 	var pathParam0 string
 
-	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "id", runtime.ParamLocationPath, iD)
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "id", runtime.ParamLocationPath, id)
 	if err != nil {
 		return nil, err
 	}
@@ -345,12 +345,12 @@ func NewDeletePetRequest(server string, iD int64) (*http.Request, error) {
 }
 
 // NewFindPetByIDRequest generates requests for FindPetByID
-func NewFindPetByIDRequest(server string, iD int64) (*http.Request, error) {
+func NewFindPetByIDRequest(server string, id int64) (*http.Request, error) {
 	var err error
 
 	var pathParam0 string
 
-	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "id", runtime.ParamLocationPath, iD)
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "id", runtime.ParamLocationPath, id)
 	if err != nil {
 		return nil, err
 	}
@@ -430,10 +430,10 @@ type ClientWithResponsesInterface interface {
 	AddPetWithResponse(ctx context.Context, body AddPetJSONRequestBody, reqEditors ...RequestEditorFn) (*AddPetResponse, error)
 
 	// DeletePet request
-	DeletePetWithResponse(ctx context.Context, iD int64, reqEditors ...RequestEditorFn) (*DeletePetResponse, error)
+	DeletePetWithResponse(ctx context.Context, id int64, reqEditors ...RequestEditorFn) (*DeletePetResponse, error)
 
 	// FindPetByID request
-	FindPetByIDWithResponse(ctx context.Context, iD int64, reqEditors ...RequestEditorFn) (*FindPetByIDResponse, error)
+	FindPetByIDWithResponse(ctx context.Context, id int64, reqEditors ...RequestEditorFn) (*FindPetByIDResponse, error)
 }
 
 type FindPetsResponse struct {
@@ -554,8 +554,8 @@ func (c *ClientWithResponses) AddPetWithResponse(ctx context.Context, body AddPe
 }
 
 // DeletePetWithResponse request returning *DeletePetResponse
-func (c *ClientWithResponses) DeletePetWithResponse(ctx context.Context, iD int64, reqEditors ...RequestEditorFn) (*DeletePetResponse, error) {
-	rsp, err := c.DeletePet(ctx, iD, reqEditors...)
+func (c *ClientWithResponses) DeletePetWithResponse(ctx context.Context, id int64, reqEditors ...RequestEditorFn) (*DeletePetResponse, error) {
+	rsp, err := c.DeletePet(ctx, id, reqEditors...)
 	if err != nil {
 		return nil, err
 	}
@@ -563,8 +563,8 @@ func (c *ClientWithResponses) DeletePetWithResponse(ctx context.Context, iD int6
 }
 
 // FindPetByIDWithResponse request returning *FindPetByIDResponse
-func (c *ClientWithResponses) FindPetByIDWithResponse(ctx context.Context, iD int64, reqEditors ...RequestEditorFn) (*FindPetByIDResponse, error) {
-	rsp, err := c.FindPetByID(ctx, iD, reqEditors...)
+func (c *ClientWithResponses) FindPetByIDWithResponse(ctx context.Context, id int64, reqEditors ...RequestEditorFn) (*FindPetByIDResponse, error) {
+	rsp, err := c.FindPetByID(ctx, id, reqEditors...)
 	if err != nil {
 		return nil, err
 	}

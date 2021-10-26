@@ -28,10 +28,10 @@ type ServerInterface interface {
 	AddPet(ctx echo.Context) error
 	// Deletes a pet by ID
 	// (DELETE /pets/{id})
-	DeletePet(ctx echo.Context, iD int64) error
+	DeletePet(ctx echo.Context, id int64) error
 	// Returns a pet by ID
 	// (GET /pets/{id})
-	FindPetByID(ctx echo.Context, iD int64) error
+	FindPetByID(ctx echo.Context, id int64) error
 }
 
 // ServerInterfaceWrapper converts echo contexts to parameters.
@@ -77,15 +77,15 @@ func (w *ServerInterfaceWrapper) AddPet(ctx echo.Context) error {
 func (w *ServerInterfaceWrapper) DeletePet(ctx echo.Context) error {
 	var err error
 	// ------------- Path parameter "id" -------------
-	var iD int64
+	var id int64
 
-	err = runtime.BindStyledParameterWithLocation("simple", false, "id", runtime.ParamLocationPath, ctx.Param("id"), &iD)
+	err = runtime.BindStyledParameterWithLocation("simple", false, "id", runtime.ParamLocationPath, ctx.Param("id"), &id)
 	if err != nil {
 		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter id: %s", err))
 	}
 
 	// Invoke the callback with all the unmarshalled arguments
-	err = w.Handler.DeletePet(ctx, iD)
+	err = w.Handler.DeletePet(ctx, id)
 	return err
 }
 
@@ -93,15 +93,15 @@ func (w *ServerInterfaceWrapper) DeletePet(ctx echo.Context) error {
 func (w *ServerInterfaceWrapper) FindPetByID(ctx echo.Context) error {
 	var err error
 	// ------------- Path parameter "id" -------------
-	var iD int64
+	var id int64
 
-	err = runtime.BindStyledParameterWithLocation("simple", false, "id", runtime.ParamLocationPath, ctx.Param("id"), &iD)
+	err = runtime.BindStyledParameterWithLocation("simple", false, "id", runtime.ParamLocationPath, ctx.Param("id"), &id)
 	if err != nil {
 		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter id: %s", err))
 	}
 
 	// Invoke the callback with all the unmarshalled arguments
-	err = w.Handler.FindPetByID(ctx, iD)
+	err = w.Handler.FindPetByID(ctx, id)
 	return err
 }
 

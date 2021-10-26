@@ -480,9 +480,7 @@ func Parse{{genResponseTypeName $opid | ucFirst}}(rsp *http.Response) (*{{genRes
 
     return response, nil
 }
-{{end}}{{/* range . $opid := .OperationId */}}
-
-`,
+{{ end}}{{/* range . $opid := .OperationId */}}`,
 	"client.tmpl": `// RequestEditorFn  is the function signature for the RequestEditor callback function
 type RequestEditorFn func(ctx context.Context, req *http.Request) error
 
