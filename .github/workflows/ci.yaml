@@ -32,6 +32,7 @@ jobs:
 
       - name: Test code generation
         run: |
+          go get -v ./...
           go generate ./pkg/codegen/templates
           go generate ./...
           go mod tidy
