@@ -77,7 +77,7 @@ point of use.
 
 For each element in the `paths` map in OpenAPI, we will generate a Go handler
 function in an interface object. Here is the generated Go interface for our
-chi server.
+Chi server.
 
 ```go
 type ServerInterface interface {
