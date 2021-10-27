@@ -405,7 +405,7 @@ which help you to use the various OpenAPI 3 Authentication mechanism.
   will override any default value. This extended property isn't supported in all parts of
   OpenAPI, so please refer to the spec as to where it's allowed. Swagger validation tools will
   flag incorrect usage of this property.
-- `x-goapi-gen-extra-tags`: adds extra Go field tags to the generated struct field. This is
+- `x-go-extra-tags`: adds extra Go field tags to the generated struct field. This is
   useful for interfacing with tag based ORM or validation libraries. The extra tags that
   are added are in addition to the regular json tags that are generated. If you specify your
   own `json` tag, you will override the default one.
@@ -417,7 +417,7 @@ which help you to use the various OpenAPI 3 Authentication mechanism.
           properties:
             name:
               type: string
-              x-goapi-gen-extra-tags:
+              x-go-extra-tags:
                 tag1: value1
                 tag2: value2
     ```
@@ -428,7 +428,7 @@ which help you to use the various OpenAPI 3 Authentication mechanism.
   Name string `json:"name" tag1:"value1" tag2:"value2"`
   ```
 
-- `x-goapi-gen-middlewares`: specifies a list of tagged middlewares. These can be specific
+- `x-go-middlewares`: specifies a list of tagged middlewares. These can be specific
   middlewares that are operation-specific, as well as path-specific. This is very useful when you
   want to give a specific routes middleware, but not to all operations. The middleware are always
   called in the order of definition. If the tagged middleware is not defined, it will be silently
@@ -436,9 +436,9 @@ which help you to use the various OpenAPI 3 Authentication mechanism.
 
     ```yaml
     /pets:
-      x-goapi-gen-middlewares: [validateJSON]
+      x-go-middlewares: [validateJSON]
       get:
-        x-goapi-gen-middlewares: [limit]
+        x-go-middlewares: [limit]
     ```
 
   In the example above, the following middleware calls will be added to your handler:

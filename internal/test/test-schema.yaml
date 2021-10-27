@@ -91,14 +91,14 @@ paths:
           $ref: "#/components/responses/SimpleResponse"
   /get-with-tagged-middleware:
     summary: GetWithTaggedMiddleware
-    x-goapi-gen-middlewares: [pathMiddleware]
+    x-go-middlewares: [pathMiddleware]
     get:
       operationId: getWithTaggedMiddleware
       responses:
         '200':
           $ref: "#/components/responses/SimpleResponse"
     post:
-      x-goapi-gen-middlewares: [operationMiddleware]
+      x-go-middlewares: [operationMiddleware]
       operationId: postWithTaggedMiddleware
       responses:
         '200':
