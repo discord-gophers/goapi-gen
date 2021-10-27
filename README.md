@@ -489,15 +489,15 @@ To generate a server that only handles `admin` paths, use the argument
 `-include-tags="admin"`. When neither of these arguments is present, all paths
 are generated.
 
-`goapi-gen` can filter schemas based on the option `--exclude-schemas`, which is
-a comma separated list of schema names. For instance, `--exclude-schemas=Pet,NewPet`
+`goapi-gen` can filter schemas based on the option `-exclude-schemas`, which is
+a comma separated list of schema names. For instance, `-exclude-schemas=Pet,NewPet`
 will exclude from generation schemas `Pet` and `NewPet`. This allow to have a
 in the same package a manually defined structure or interface and refer to it
 in the openapi spec.
 
 Since `go generate` commands must be a single line, all the options above can make
 them pretty unwieldy, so you can specify all of the options in a configuration
-file via the `--config` option. Please see the test under
+file via the `-config` option. Please see the test under
 [`/internal/test/externalref/`](https://github.com/discord-gophers/goapi-gen/blob/master/internal/test/externalref/externalref.cfg.yaml)
 for an example. The structure of the file is as follows:
 
