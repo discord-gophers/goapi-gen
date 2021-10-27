@@ -459,7 +459,7 @@ which help you to use the various OpenAPI 3 Authentication mechanism.
 
 ```
 NAME:
-   goapi-gen - A new cli application
+   goapi-gen - generate go code from openapi specification yaml
 
 USAGE:
    goapi-gen [global options] command [command options] [arguments...]
