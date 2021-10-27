@@ -901,13 +901,10 @@ type ServerInterface interface {
 
 // ServerInterfaceWrapper converts contexts to parameters.
 type ServerInterfaceWrapper struct {
-	Handler            ServerInterface
-	HandlerMiddlewares []MiddlewareFunc
-	TaggedMiddlewares  map[string]MiddlewareFunc
-	ErrorHandlerFunc   func(w http.ResponseWriter, r *http.Request, err error)
+	Handler           ServerInterface
+	TaggedMiddlewares map[string]func(http.Handler) http.Handler
+	ErrorHandlerFunc  func(w http.ResponseWriter, r *http.Request, err error)
 }
-
-type MiddlewareFunc func(http.Handler) http.Handler
 
 // PostBoth operation middleware
 func (siw *ServerInterfaceWrapper) PostBoth(w http.ResponseWriter, r *http.Request) {
@@ -916,10 +913,6 @@ func (siw *ServerInterfaceWrapper) PostBoth(w http.ResponseWriter, r *http.Reque
 	var handler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.PostBoth(w, r)
 	})
-
-	for _, middleware := range siw.HandlerMiddlewares {
-		handler = middleware(handler).ServeHTTP
-	}
 
 	handler(w, r.WithContext(ctx))
 }
@@ -932,10 +925,6 @@ func (siw *ServerInterfaceWrapper) GetBoth(w http.ResponseWriter, r *http.Reques
 		siw.Handler.GetBoth(w, r)
 	})
 
-	for _, middleware := range siw.HandlerMiddlewares {
-		handler = middleware(handler).ServeHTTP
-	}
-
 	handler(w, r.WithContext(ctx))
 }
 
@@ -946,10 +935,6 @@ func (siw *ServerInterfaceWrapper) PostJSON(w http.ResponseWriter, r *http.Reque
 	var handler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.PostJSON(w, r)
 	})
-
-	for _, middleware := range siw.HandlerMiddlewares {
-		handler = middleware(handler).ServeHTTP
-	}
 
 	handler(w, r.WithContext(ctx))
 }
@@ -964,10 +949,6 @@ func (siw *ServerInterfaceWrapper) GetJSON(w http.ResponseWriter, r *http.Reques
 		siw.Handler.GetJSON(w, r)
 	})
 
-	for _, middleware := range siw.HandlerMiddlewares {
-		handler = middleware(handler).ServeHTTP
-	}
-
 	handler(w, r.WithContext(ctx))
 }
 
@@ -979,10 +960,6 @@ func (siw *ServerInterfaceWrapper) PostOther(w http.ResponseWriter, r *http.Requ
 		siw.Handler.PostOther(w, r)
 	})
 
-	for _, middleware := range siw.HandlerMiddlewares {
-		handler = middleware(handler).ServeHTTP
-	}
-
 	handler(w, r.WithContext(ctx))
 }
 
@@ -993,10 +970,6 @@ func (siw *ServerInterfaceWrapper) GetOther(w http.ResponseWriter, r *http.Reque
 	var handler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.GetOther(w, r)
 	})
-
-	for _, middleware := range siw.HandlerMiddlewares {
-		handler = middleware(handler).ServeHTTP
-	}
 
 	handler(w, r.WithContext(ctx))
 }
@@ -1010,10 +983,6 @@ func (siw *ServerInterfaceWrapper) GetJSONWithTrailingSlash(w http.ResponseWrite
 	var handler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.GetJSONWithTrailingSlash(w, r)
 	})
-
-	for _, middleware := range siw.HandlerMiddlewares {
-		handler = middleware(handler).ServeHTTP
-	}
 
 	handler(w, r.WithContext(ctx))
 }
@@ -1045,8 +1014,7 @@ func Handler(si ServerInterface) http.Handler {
 type ChiServerOptions struct {
 	BaseURL           string
 	BaseRouter        chi.Router
-	Middlewares       []MiddlewareFunc
-	TaggedMiddlewares map[string]MiddlewareFunc
+	TaggedMiddlewares map[string]func(http.Handler) http.Handler
 	ErrorHandlerFunc  func(w http.ResponseWriter, r *http.Request, err error)
 }
 
@@ -1083,7 +1051,7 @@ func HandlerWithOptions(si ServerInterface, options ChiServerOptions) http.Handl
 	}
 
 	wrapper := ServerInterfaceWrapper{
-		Handler: si, HandlerMiddlewares: options.Middlewares,
+		Handler:           si,
 		TaggedMiddlewares: options.TaggedMiddlewares,
 		ErrorHandlerFunc:  options.ErrorHandlerFunc,
 	}

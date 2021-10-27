@@ -1285,13 +1285,10 @@ type ServerInterface interface {
 
 // ServerInterfaceWrapper converts contexts to parameters.
 type ServerInterfaceWrapper struct {
-	Handler            ServerInterface
-	HandlerMiddlewares []MiddlewareFunc
-	TaggedMiddlewares  map[string]MiddlewareFunc
-	ErrorHandlerFunc   func(w http.ResponseWriter, r *http.Request, err error)
+	Handler           ServerInterface
+	TaggedMiddlewares map[string]func(http.Handler) http.Handler
+	ErrorHandlerFunc  func(w http.ResponseWriter, r *http.Request, err error)
 }
-
-type MiddlewareFunc func(http.Handler) http.Handler
 
 // EnsureEverythingIsReferenced operation middleware
 func (siw *ServerInterfaceWrapper) EnsureEverythingIsReferenced(w http.ResponseWriter, r *http.Request) {
@@ -1300,10 +1297,6 @@ func (siw *ServerInterfaceWrapper) EnsureEverythingIsReferenced(w http.ResponseW
 	var handler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.EnsureEverythingIsReferenced(w, r)
 	})
-
-	for _, middleware := range siw.HandlerMiddlewares {
-		handler = middleware(handler).ServeHTTP
-	}
 
 	handler(w, r.WithContext(ctx))
 }
@@ -1335,10 +1328,6 @@ func (siw *ServerInterfaceWrapper) ParamsWithAddProps(w http.ResponseWriter, r *
 		siw.Handler.ParamsWithAddProps(w, r, params)
 	})
 
-	for _, middleware := range siw.HandlerMiddlewares {
-		handler = middleware(handler).ServeHTTP
-	}
-
 	handler(w, r.WithContext(ctx))
 }
 
@@ -1349,10 +1338,6 @@ func (siw *ServerInterfaceWrapper) BodyWithAddProps(w http.ResponseWriter, r *ht
 	var handler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.BodyWithAddProps(w, r)
 	})
-
-	for _, middleware := range siw.HandlerMiddlewares {
-		handler = middleware(handler).ServeHTTP
-	}
 
 	handler(w, r.WithContext(ctx))
 }
@@ -1384,8 +1369,7 @@ func Handler(si ServerInterface) http.Handler {
 type ChiServerOptions struct {
 	BaseURL           string
 	BaseRouter        chi.Router
-	Middlewares       []MiddlewareFunc
-	TaggedMiddlewares map[string]MiddlewareFunc
+	TaggedMiddlewares map[string]func(http.Handler) http.Handler
 	ErrorHandlerFunc  func(w http.ResponseWriter, r *http.Request, err error)
 }
 
@@ -1422,7 +1406,7 @@ func HandlerWithOptions(si ServerInterface, options ChiServerOptions) http.Handl
 	}
 
 	wrapper := ServerInterfaceWrapper{
-		Handler: si, HandlerMiddlewares: options.Middlewares,
+		Handler:           si,
 		TaggedMiddlewares: options.TaggedMiddlewares,
 		ErrorHandlerFunc:  options.ErrorHandlerFunc,
 	}

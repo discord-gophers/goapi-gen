@@ -170,13 +170,10 @@ type ServerInterface interface {
 
 // ServerInterfaceWrapper converts contexts to parameters.
 type ServerInterfaceWrapper struct {
-	Handler            ServerInterface
-	HandlerMiddlewares []MiddlewareFunc
-	TaggedMiddlewares  map[string]MiddlewareFunc
-	ErrorHandlerFunc   func(w http.ResponseWriter, r *http.Request, err error)
+	Handler           ServerInterface
+	TaggedMiddlewares map[string]func(http.Handler) http.Handler
+	ErrorHandlerFunc  func(w http.ResponseWriter, r *http.Request, err error)
 }
-
-type MiddlewareFunc func(http.Handler) http.Handler
 
 // GetEveryTypeOptional operation middleware
 func (siw *ServerInterfaceWrapper) GetEveryTypeOptional(w http.ResponseWriter, r *http.Request) {
@@ -185,10 +182,6 @@ func (siw *ServerInterfaceWrapper) GetEveryTypeOptional(w http.ResponseWriter, r
 	var handler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.GetEveryTypeOptional(w, r)
 	})
-
-	for _, middleware := range siw.HandlerMiddlewares {
-		handler = middleware(handler).ServeHTTP
-	}
 
 	handler(w, r.WithContext(ctx))
 }
@@ -200,10 +193,6 @@ func (siw *ServerInterfaceWrapper) GetSimple(w http.ResponseWriter, r *http.Requ
 	var handler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.GetSimple(w, r)
 	})
-
-	for _, middleware := range siw.HandlerMiddlewares {
-		handler = middleware(handler).ServeHTTP
-	}
 
 	handler(w, r.WithContext(ctx))
 }
@@ -257,10 +246,6 @@ func (siw *ServerInterfaceWrapper) GetWithArgs(w http.ResponseWriter, r *http.Re
 		siw.Handler.GetWithArgs(w, r, params)
 	})
 
-	for _, middleware := range siw.HandlerMiddlewares {
-		handler = middleware(handler).ServeHTTP
-	}
-
 	handler(w, r.WithContext(ctx))
 }
 
@@ -290,10 +275,6 @@ func (siw *ServerInterfaceWrapper) GetWithReferences(w http.ResponseWriter, r *h
 		siw.Handler.GetWithReferences(w, r, globalArgument, argument)
 	})
 
-	for _, middleware := range siw.HandlerMiddlewares {
-		handler = middleware(handler).ServeHTTP
-	}
-
 	handler(w, r.WithContext(ctx))
 }
 
@@ -304,10 +285,6 @@ func (siw *ServerInterfaceWrapper) GetWithTaggedMiddleware(w http.ResponseWriter
 	var handler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.GetWithTaggedMiddleware(w, r)
 	})
-
-	for _, middleware := range siw.HandlerMiddlewares {
-		handler = middleware(handler).ServeHTTP
-	}
 
 	// Operation specific middleware
 	if siw.TaggedMiddlewares != nil {
@@ -326,10 +303,6 @@ func (siw *ServerInterfaceWrapper) PostWithTaggedMiddleware(w http.ResponseWrite
 	var handler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.PostWithTaggedMiddleware(w, r)
 	})
-
-	for _, middleware := range siw.HandlerMiddlewares {
-		handler = middleware(handler).ServeHTTP
-	}
 
 	// Operation specific middleware
 	if siw.TaggedMiddlewares != nil {
@@ -361,10 +334,6 @@ func (siw *ServerInterfaceWrapper) GetWithContentType(w http.ResponseWriter, r *
 		siw.Handler.GetWithContentType(w, r, contentType)
 	})
 
-	for _, middleware := range siw.HandlerMiddlewares {
-		handler = middleware(handler).ServeHTTP
-	}
-
 	handler(w, r.WithContext(ctx))
 }
 
@@ -375,10 +344,6 @@ func (siw *ServerInterfaceWrapper) GetReservedKeyword(w http.ResponseWriter, r *
 	var handler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.GetReservedKeyword(w, r)
 	})
-
-	for _, middleware := range siw.HandlerMiddlewares {
-		handler = middleware(handler).ServeHTTP
-	}
 
 	handler(w, r.WithContext(ctx))
 }
@@ -399,10 +364,6 @@ func (siw *ServerInterfaceWrapper) CreateResource(w http.ResponseWriter, r *http
 	var handler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.CreateResource(w, r, argument)
 	})
-
-	for _, middleware := range siw.HandlerMiddlewares {
-		handler = middleware(handler).ServeHTTP
-	}
 
 	handler(w, r.WithContext(ctx))
 }
@@ -435,10 +396,6 @@ func (siw *ServerInterfaceWrapper) CreateResource2(w http.ResponseWriter, r *htt
 		siw.Handler.CreateResource2(w, r, inlineArgument, params)
 	})
 
-	for _, middleware := range siw.HandlerMiddlewares {
-		handler = middleware(handler).ServeHTTP
-	}
-
 	handler(w, r.WithContext(ctx))
 }
 
@@ -459,10 +416,6 @@ func (siw *ServerInterfaceWrapper) UpdateResource3(w http.ResponseWriter, r *htt
 		siw.Handler.UpdateResource3(w, r, pFallthrough)
 	})
 
-	for _, middleware := range siw.HandlerMiddlewares {
-		handler = middleware(handler).ServeHTTP
-	}
-
 	handler(w, r.WithContext(ctx))
 }
 
@@ -473,10 +426,6 @@ func (siw *ServerInterfaceWrapper) GetResponseWithReference(w http.ResponseWrite
 	var handler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.GetResponseWithReference(w, r)
 	})
-
-	for _, middleware := range siw.HandlerMiddlewares {
-		handler = middleware(handler).ServeHTTP
-	}
 
 	handler(w, r.WithContext(ctx))
 }
@@ -508,8 +457,7 @@ func Handler(si ServerInterface) http.Handler {
 type ChiServerOptions struct {
 	BaseURL           string
 	BaseRouter        chi.Router
-	Middlewares       []MiddlewareFunc
-	TaggedMiddlewares map[string]MiddlewareFunc
+	TaggedMiddlewares map[string]func(http.Handler) http.Handler
 	ErrorHandlerFunc  func(w http.ResponseWriter, r *http.Request, err error)
 }
 
@@ -546,7 +494,7 @@ func HandlerWithOptions(si ServerInterface, options ChiServerOptions) http.Handl
 	}
 
 	wrapper := ServerInterfaceWrapper{
-		Handler: si, HandlerMiddlewares: options.Middlewares,
+		Handler:           si,
 		TaggedMiddlewares: options.TaggedMiddlewares,
 		ErrorHandlerFunc:  options.ErrorHandlerFunc,
 	}

@@ -5,7 +5,7 @@ import (
 	"text/template"
 )
 
-//go:embed *.tmpl chi/*.tmpl
+//go:embed *.tmpl
 var templates embed.FS
 
 // Parse parses declared templates.
@@ -13,5 +13,5 @@ func Parse(t *template.Template) (*template.Template, error) {
 	if t == nil {
 		t = template.New("goapi-gen")
 	}
-	return t.ParseFS(templates, "*.tmpl", "chi/*.tmpl")
+	return t.ParseFS(templates, "*.tmpl")
 }

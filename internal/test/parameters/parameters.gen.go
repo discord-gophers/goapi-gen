@@ -2606,13 +2606,10 @@ type ServerInterface interface {
 
 // ServerInterfaceWrapper converts contexts to parameters.
 type ServerInterfaceWrapper struct {
-	Handler            ServerInterface
-	HandlerMiddlewares []MiddlewareFunc
-	TaggedMiddlewares  map[string]MiddlewareFunc
-	ErrorHandlerFunc   func(w http.ResponseWriter, r *http.Request, err error)
+	Handler           ServerInterface
+	TaggedMiddlewares map[string]func(http.Handler) http.Handler
+	ErrorHandlerFunc  func(w http.ResponseWriter, r *http.Request, err error)
 }
-
-type MiddlewareFunc func(http.Handler) http.Handler
 
 // GetContentObject operation middleware
 func (siw *ServerInterfaceWrapper) GetContentObject(w http.ResponseWriter, r *http.Request) {
@@ -2630,10 +2627,6 @@ func (siw *ServerInterfaceWrapper) GetContentObject(w http.ResponseWriter, r *ht
 	var handler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.GetContentObject(w, r, param)
 	})
-
-	for _, middleware := range siw.HandlerMiddlewares {
-		handler = middleware(handler).ServeHTTP
-	}
 
 	handler(w, r.WithContext(ctx))
 }
@@ -2746,10 +2739,6 @@ func (siw *ServerInterfaceWrapper) GetCookie(w http.ResponseWriter, r *http.Requ
 	var handler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.GetCookie(w, r, params)
 	})
-
-	for _, middleware := range siw.HandlerMiddlewares {
-		handler = middleware(handler).ServeHTTP
-	}
 
 	handler(w, r.WithContext(ctx))
 }
@@ -2927,10 +2916,6 @@ func (siw *ServerInterfaceWrapper) GetHeader(w http.ResponseWriter, r *http.Requ
 		siw.Handler.GetHeader(w, r, params)
 	})
 
-	for _, middleware := range siw.HandlerMiddlewares {
-		handler = middleware(handler).ServeHTTP
-	}
-
 	handler(w, r.WithContext(ctx))
 }
 
@@ -2950,10 +2935,6 @@ func (siw *ServerInterfaceWrapper) GetLabelExplodeArray(w http.ResponseWriter, r
 	var handler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.GetLabelExplodeArray(w, r, param)
 	})
-
-	for _, middleware := range siw.HandlerMiddlewares {
-		handler = middleware(handler).ServeHTTP
-	}
 
 	handler(w, r.WithContext(ctx))
 }
@@ -2975,10 +2956,6 @@ func (siw *ServerInterfaceWrapper) GetLabelExplodeObject(w http.ResponseWriter, 
 		siw.Handler.GetLabelExplodeObject(w, r, param)
 	})
 
-	for _, middleware := range siw.HandlerMiddlewares {
-		handler = middleware(handler).ServeHTTP
-	}
-
 	handler(w, r.WithContext(ctx))
 }
 
@@ -2998,10 +2975,6 @@ func (siw *ServerInterfaceWrapper) GetLabelNoExplodeArray(w http.ResponseWriter,
 	var handler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.GetLabelNoExplodeArray(w, r, param)
 	})
-
-	for _, middleware := range siw.HandlerMiddlewares {
-		handler = middleware(handler).ServeHTTP
-	}
 
 	handler(w, r.WithContext(ctx))
 }
@@ -3023,10 +2996,6 @@ func (siw *ServerInterfaceWrapper) GetLabelNoExplodeObject(w http.ResponseWriter
 		siw.Handler.GetLabelNoExplodeObject(w, r, param)
 	})
 
-	for _, middleware := range siw.HandlerMiddlewares {
-		handler = middleware(handler).ServeHTTP
-	}
-
 	handler(w, r.WithContext(ctx))
 }
 
@@ -3046,10 +3015,6 @@ func (siw *ServerInterfaceWrapper) GetMatrixExplodeArray(w http.ResponseWriter, 
 	var handler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.GetMatrixExplodeArray(w, r, id)
 	})
-
-	for _, middleware := range siw.HandlerMiddlewares {
-		handler = middleware(handler).ServeHTTP
-	}
 
 	handler(w, r.WithContext(ctx))
 }
@@ -3071,10 +3036,6 @@ func (siw *ServerInterfaceWrapper) GetMatrixExplodeObject(w http.ResponseWriter,
 		siw.Handler.GetMatrixExplodeObject(w, r, id)
 	})
 
-	for _, middleware := range siw.HandlerMiddlewares {
-		handler = middleware(handler).ServeHTTP
-	}
-
 	handler(w, r.WithContext(ctx))
 }
 
@@ -3094,10 +3055,6 @@ func (siw *ServerInterfaceWrapper) GetMatrixNoExplodeArray(w http.ResponseWriter
 	var handler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.GetMatrixNoExplodeArray(w, r, id)
 	})
-
-	for _, middleware := range siw.HandlerMiddlewares {
-		handler = middleware(handler).ServeHTTP
-	}
 
 	handler(w, r.WithContext(ctx))
 }
@@ -3119,10 +3076,6 @@ func (siw *ServerInterfaceWrapper) GetMatrixNoExplodeObject(w http.ResponseWrite
 		siw.Handler.GetMatrixNoExplodeObject(w, r, id)
 	})
 
-	for _, middleware := range siw.HandlerMiddlewares {
-		handler = middleware(handler).ServeHTTP
-	}
-
 	handler(w, r.WithContext(ctx))
 }
 
@@ -3138,10 +3091,6 @@ func (siw *ServerInterfaceWrapper) GetPassThrough(w http.ResponseWriter, r *http
 	var handler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.GetPassThrough(w, r, param)
 	})
-
-	for _, middleware := range siw.HandlerMiddlewares {
-		handler = middleware(handler).ServeHTTP
-	}
 
 	handler(w, r.WithContext(ctx))
 }
@@ -3164,10 +3113,6 @@ func (siw *ServerInterfaceWrapper) GetDeepObject(w http.ResponseWriter, r *http.
 	var handler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.GetDeepObject(w, r, params)
 	})
-
-	for _, middleware := range siw.HandlerMiddlewares {
-		handler = middleware(handler).ServeHTTP
-	}
 
 	handler(w, r.WithContext(ctx))
 }
@@ -3261,10 +3206,6 @@ func (siw *ServerInterfaceWrapper) GetQueryForm(w http.ResponseWriter, r *http.R
 		siw.Handler.GetQueryForm(w, r, params)
 	})
 
-	for _, middleware := range siw.HandlerMiddlewares {
-		handler = middleware(handler).ServeHTTP
-	}
-
 	handler(w, r.WithContext(ctx))
 }
 
@@ -3284,10 +3225,6 @@ func (siw *ServerInterfaceWrapper) GetSimpleExplodeArray(w http.ResponseWriter, 
 	var handler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.GetSimpleExplodeArray(w, r, param)
 	})
-
-	for _, middleware := range siw.HandlerMiddlewares {
-		handler = middleware(handler).ServeHTTP
-	}
 
 	handler(w, r.WithContext(ctx))
 }
@@ -3309,10 +3246,6 @@ func (siw *ServerInterfaceWrapper) GetSimpleExplodeObject(w http.ResponseWriter,
 		siw.Handler.GetSimpleExplodeObject(w, r, param)
 	})
 
-	for _, middleware := range siw.HandlerMiddlewares {
-		handler = middleware(handler).ServeHTTP
-	}
-
 	handler(w, r.WithContext(ctx))
 }
 
@@ -3332,10 +3265,6 @@ func (siw *ServerInterfaceWrapper) GetSimpleNoExplodeArray(w http.ResponseWriter
 	var handler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.GetSimpleNoExplodeArray(w, r, param)
 	})
-
-	for _, middleware := range siw.HandlerMiddlewares {
-		handler = middleware(handler).ServeHTTP
-	}
 
 	handler(w, r.WithContext(ctx))
 }
@@ -3357,10 +3286,6 @@ func (siw *ServerInterfaceWrapper) GetSimpleNoExplodeObject(w http.ResponseWrite
 		siw.Handler.GetSimpleNoExplodeObject(w, r, param)
 	})
 
-	for _, middleware := range siw.HandlerMiddlewares {
-		handler = middleware(handler).ServeHTTP
-	}
-
 	handler(w, r.WithContext(ctx))
 }
 
@@ -3381,10 +3306,6 @@ func (siw *ServerInterfaceWrapper) GetSimplePrimitive(w http.ResponseWriter, r *
 		siw.Handler.GetSimplePrimitive(w, r, param)
 	})
 
-	for _, middleware := range siw.HandlerMiddlewares {
-		handler = middleware(handler).ServeHTTP
-	}
-
 	handler(w, r.WithContext(ctx))
 }
 
@@ -3400,10 +3321,6 @@ func (siw *ServerInterfaceWrapper) GetStartingWithNumber(w http.ResponseWriter, 
 	var handler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.GetStartingWithNumber(w, r, n1param)
 	})
-
-	for _, middleware := range siw.HandlerMiddlewares {
-		handler = middleware(handler).ServeHTTP
-	}
 
 	handler(w, r.WithContext(ctx))
 }
@@ -3435,8 +3352,7 @@ func Handler(si ServerInterface) http.Handler {
 type ChiServerOptions struct {
 	BaseURL           string
 	BaseRouter        chi.Router
-	Middlewares       []MiddlewareFunc
-	TaggedMiddlewares map[string]MiddlewareFunc
+	TaggedMiddlewares map[string]func(http.Handler) http.Handler
 	ErrorHandlerFunc  func(w http.ResponseWriter, r *http.Request, err error)
 }
 
@@ -3473,7 +3389,7 @@ func HandlerWithOptions(si ServerInterface, options ChiServerOptions) http.Handl
 	}
 
 	wrapper := ServerInterfaceWrapper{
-		Handler: si, HandlerMiddlewares: options.Middlewares,
+		Handler:           si,
 		TaggedMiddlewares: options.TaggedMiddlewares,
 		ErrorHandlerFunc:  options.ErrorHandlerFunc,
 	}
