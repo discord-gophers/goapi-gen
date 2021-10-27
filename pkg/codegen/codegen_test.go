@@ -304,7 +304,7 @@ components:
         dead_since:
           type: string
           format: date-time
-          x-go-gen-extra-tags:
+          x-go-extra-tags:
             tag1: value1
             tag2: value2
         cause:

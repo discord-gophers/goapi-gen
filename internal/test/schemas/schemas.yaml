@@ -134,7 +134,7 @@ components:
     CustomStringType:
       type: string
       format: custom
-      x-go-gen-extra-tags:
+      x-go-extra-tags:
         foo: bar
     NullableProperties:
       type: object
