@@ -78,13 +78,10 @@ type ServerInterface interface {
 
 // ServerInterfaceWrapper converts contexts to parameters.
 type ServerInterfaceWrapper struct {
-	Handler            ServerInterface
-	HandlerMiddlewares []MiddlewareFunc
-	TaggedMiddlewares  map[string]MiddlewareFunc
-	ErrorHandlerFunc   func(w http.ResponseWriter, r *http.Request, err error)
+	Handler           ServerInterface
+	TaggedMiddlewares map[string]func(http.Handler) http.Handler
+	ErrorHandlerFunc  func(w http.ResponseWriter, r *http.Request, err error)
 }
-
-type MiddlewareFunc func(http.Handler) http.Handler
 
 // FindPets operation middleware
 func (siw *ServerInterfaceWrapper) FindPets(w http.ResponseWriter, r *http.Request) {
@@ -113,10 +110,6 @@ func (siw *ServerInterfaceWrapper) FindPets(w http.ResponseWriter, r *http.Reque
 		siw.Handler.FindPets(w, r, params)
 	})
 
-	for _, middleware := range siw.HandlerMiddlewares {
-		handler = middleware(handler).ServeHTTP
-	}
-
 	handler(w, r.WithContext(ctx))
 }
 
@@ -127,10 +120,6 @@ func (siw *ServerInterfaceWrapper) AddPet(w http.ResponseWriter, r *http.Request
 	var handler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.AddPet(w, r)
 	})
-
-	for _, middleware := range siw.HandlerMiddlewares {
-		handler = middleware(handler).ServeHTTP
-	}
 
 	handler(w, r.WithContext(ctx))
 }
@@ -152,10 +141,6 @@ func (siw *ServerInterfaceWrapper) DeletePet(w http.ResponseWriter, r *http.Requ
 		siw.Handler.DeletePet(w, r, id)
 	})
 
-	for _, middleware := range siw.HandlerMiddlewares {
-		handler = middleware(handler).ServeHTTP
-	}
-
 	handler(w, r.WithContext(ctx))
 }
 
@@ -175,10 +160,6 @@ func (siw *ServerInterfaceWrapper) FindPetByID(w http.ResponseWriter, r *http.Re
 	var handler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.FindPetByID(w, r, id)
 	})
-
-	for _, middleware := range siw.HandlerMiddlewares {
-		handler = middleware(handler).ServeHTTP
-	}
 
 	handler(w, r.WithContext(ctx))
 }
@@ -210,8 +191,7 @@ func Handler(si ServerInterface) http.Handler {
 type ChiServerOptions struct {
 	BaseURL           string
 	BaseRouter        chi.Router
-	Middlewares       []MiddlewareFunc
-	TaggedMiddlewares map[string]MiddlewareFunc
+	TaggedMiddlewares map[string]func(http.Handler) http.Handler
 	ErrorHandlerFunc  func(w http.ResponseWriter, r *http.Request, err error)
 }
 
@@ -248,7 +228,7 @@ func HandlerWithOptions(si ServerInterface, options ChiServerOptions) http.Handl
 	}
 
 	wrapper := ServerInterfaceWrapper{
-		Handler: si, HandlerMiddlewares: options.Middlewares,
+		Handler:           si,
 		TaggedMiddlewares: options.TaggedMiddlewares,
 		ErrorHandlerFunc:  options.ErrorHandlerFunc,
 	}

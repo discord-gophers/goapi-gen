@@ -6,8 +6,7 @@ func Handler(si ServerInterface) http.Handler {
 type ChiServerOptions struct {
     BaseURL string
     BaseRouter chi.Router
-    Middlewares []MiddlewareFunc
-	TaggedMiddlewares map[string]MiddlewareFunc
+	TaggedMiddlewares map[string]func(http.Handler) http.Handler
     ErrorHandlerFunc   func(w http.ResponseWriter, r *http.Request, err error)
 }
 
@@ -44,8 +43,7 @@ func HandlerWithOptions(si ServerInterface, options ChiServerOptions) http.Handl
     }
 
     {{if .}}wrapper := ServerInterfaceWrapper{
-        Handler: si, HandlerMiddlewares:
-        options.Middlewares,
+        Handler: si,
         TaggedMiddlewares: options.TaggedMiddlewares,
         ErrorHandlerFunc: options.ErrorHandlerFunc,
     }

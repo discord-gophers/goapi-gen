@@ -1,12 +1,9 @@
 // ServerInterfaceWrapper converts contexts to parameters.
 type ServerInterfaceWrapper struct {
   Handler ServerInterface
-  HandlerMiddlewares []MiddlewareFunc
-	TaggedMiddlewares map[string]MiddlewareFunc
+	TaggedMiddlewares map[string]func(http.Handler) http.Handler
   ErrorHandlerFunc func(w http.ResponseWriter, r *http.Request, err error)
 }
-
-type MiddlewareFunc func(http.Handler) http.Handler
 
 {{range .}}{{$opid := .OperationId}}
 
@@ -169,10 +166,6 @@ func (siw *ServerInterfaceWrapper) {{$opid}}(w http.ResponseWriter, r *http.Requ
   var handler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
     siw.Handler.{{.OperationId}}(w, r{{genParamNames .PathParams}}{{if .RequiresParamObject}}, params{{end}})
   })
-
-  for _, middleware := range siw.HandlerMiddlewares {
-    handler = middleware(handler).ServeHTTP
-  }
 
   {{ with .Middlewares -}}
   // Operation specific middleware
