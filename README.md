@@ -457,6 +457,35 @@ which help you to use the various OpenAPI 3 Authentication mechanism.
 
 ## Using `goapi-gen`
 
+```
+NAME:
+   goapi-gen - A new cli application
+
+USAGE:
+   goapi-gen [global options] command [command options] [arguments...]
+
+VERSION:
+   v0.0.1-alpha
+
+COMMANDS:
+   list     list available generation options
+   help, h  Shows a list of commands or help for one command
+
+GLOBAL OPTIONS:
+   --package value, -p value          The package name for generated code. (default: swagger file name)
+   --generate value, -g value         List of generation options. (default: "types", "client", "server", "spec")
+   --out value, -o value              Output file (default: <stdout>)
+   --include-tags value, -t value     Only include matching operations in the given tags.
+   --exclude-tags value, -T value     Exclude matching operations in the given tags
+   --templates value, -s value        Generate templates from a different directory (default: <builtin>)
+   --import-mapping value, -i value   A dict from the external reference to golang package path
+   --exclude-schemas value, -S value  Exclude matching schemas from generation
+   --alias, -a                        Alias type declerations when possible (default: false)
+   --config value, -c value           Read configuration from a config file (default: <none>)
+   --help, -h                         show help (default: false)
+   --version, -v                      print the version (default: false)
+```
+
 The default options for `goapi-gen` will generate everything; client, server,
 type definitions and embedded swagger spec, but you can generate subsets of
 those via the `-generate` flag. It defaults to `types,client,server,spec`, but
@@ -478,26 +507,26 @@ you can specify any combination of those.
  Go include paths. Please see below.
 
 So, for example, if you would like to produce only the server code, you could
-run `goapi-gen -generate types,server`. You could generate `types` and
+run `goapi-gen --generate types,server`. You could generate `types` and
 `server` into separate files, but both are required for the server code.
 
 `goapi-gen` can filter paths base on their tags in the openapi definition.
-Use either `-include-tags` or `-exclude-tags` followed by a comma-separated list
+Use either `--include-tags` or `--exclude-tags` followed by a comma-separated list
 of tags. For instance, to generate a server that serves all paths except those
-tagged with `auth` or `admin`, use the argument, `-exclude-tags="auth,admin"`.
+tagged with `auth` or `admin`, use the argument, `--exclude-tags="auth,admin"`.
 To generate a server that only handles `admin` paths, use the argument
-`-include-tags="admin"`. When neither of these arguments is present, all paths
+`--include-tags="admin"`. When neither of these arguments is present, all paths
 are generated.
 
-`goapi-gen` can filter schemas based on the option `-exclude-schemas`, which is
-a comma separated list of schema names. For instance, `-exclude-schemas=Pet,NewPet`
+`goapi-gen` can filter schemas based on the option `--exclude-schemas`, which is
+a comma separated list of schema names. For instance, `--exclude-schemas=Pet,NewPet`
 will exclude from generation schemas `Pet` and `NewPet`. This allow to have a
 in the same package a manually defined structure or interface and refer to it
 in the openapi spec.
 
 Since `go generate` commands must be a single line, all the options above can make
 them pretty unwieldy, so you can specify all of the options in a configuration
-file via the `-config` option. Please see the test under
+file via the `--config` option. Please see the test under
 [`/internal/test/externalref/`](https://github.com/discord-gophers/goapi-gen/blob/master/internal/test/externalref/externalref.cfg.yaml)
 for an example. The structure of the file is as follows:
 
