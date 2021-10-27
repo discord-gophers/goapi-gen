@@ -8,8 +8,8 @@ import (
 const (
 	extPropGoType    = "x-go-type"
 	extPropOmitEmpty = "x-omitempty"
-	extPropExtraTags = "x-goapi-gen-extra-tags"
-	extMiddlewares   = "x-goapi-gen-middlewares"
+	extPropExtraTags = "x-go-gen-extra-tags"
+	extMiddlewares   = "x-go-gen-middlewares"
 )
 
 func extTypeName(extPropValue interface{}) (string, error) {
