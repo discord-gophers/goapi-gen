@@ -14,100 +14,68 @@
 package main
 
 import (
+	_ "embed"
+	"errors"
 	"flag"
 	"fmt"
-	"io/ioutil"
 	"os"
-	"path"
 	"path/filepath"
-	"runtime/debug"
 	"strings"
 
-	"gopkg.in/yaml.v2"
-
 	"github.com/discord-gophers/goapi-gen/pkg/codegen"
-	"github.com/discord-gophers/goapi-gen/pkg/util"
+	"github.com/urfave/cli/v2"
 )
 
-func errExit(format string, args ...interface{}) {
-	_, _ = fmt.Fprintf(os.Stderr, format, args...)
-	os.Exit(1)
-}
-
-var (
-	flagPackageName    string
-	flagGenerate       string
-	flagOutputFile     string
-	flagIncludeTags    string
-	flagExcludeTags    string
-	flagTemplatesDir   string
-	flagImportMapping  string
-	flagExcludeSchemas string
-	flagConfigFile     string
-	flagAliasTypes     bool
-	flagPrintVersion   bool
+const (
+	PackageKey        = "package"
+	GenerateKey       = "generate"
+	OutKey            = "out"
+	IncludeTagsKey    = "include-tags"
+	ExcludeTagsKey    = "exclude-tags"
+	TemplatesKey      = "templates"
+	ImportMappingKey  = "import-mapping"
+	ExcludeSchemasKey = "exclude-schemas"
+	AliasKey          = "alias"
+	ConfigKey         = "config"
 )
 
-type configuration struct {
-	PackageName     string            `yaml:"package"`
-	GenerateTargets []string          `yaml:"generate"`
-	OutputFile      string            `yaml:"output"`
-	IncludeTags     []string          `yaml:"include-tags"`
-	ExcludeTags     []string          `yaml:"exclude-tags"`
-	TemplatesDir    string            `yaml:"templates"`
-	ImportMapping   map[string]string `yaml:"import-mapping"`
-	ExcludeSchemas  []string          `yaml:"exclude-schemas"`
-}
-
-func main() {
-
-	flag.StringVar(&flagPackageName, "package", "", "The package name for generated code")
-	flag.StringVar(&flagGenerate, "generate", "types,client,server,spec",
-		`Comma-separated list of code to generate; valid options: "types", "client", "server", "spec", "skip-fmt", "skip-prune"`)
-	flag.StringVar(&flagOutputFile, "o", "", "Where to output generated code, stdout is default")
-	flag.StringVar(&flagIncludeTags, "include-tags", "", "Only include operations with the given tags. Comma-separated list of tags.")
-	flag.StringVar(&flagExcludeTags, "exclude-tags", "", "Exclude operations that are tagged with the given tags. Comma-separated list of tags.")
-	flag.StringVar(&flagTemplatesDir, "templates", "", "Path to directory containing user templates")
-	flag.StringVar(&flagImportMapping, "import-mapping", "", "A dict from the external reference to golang package path")
-	flag.StringVar(&flagExcludeSchemas, "exclude-schemas", "", "A comma separated list of schemas which must be excluded from generation")
-	flag.StringVar(&flagConfigFile, "config", "", "a YAML config file that controls goapi-gen behavior")
-	flag.BoolVar(&flagAliasTypes, "alias-types", false, "Alias type declarations of possible")
-	flag.BoolVar(&flagPrintVersion, "version", false, "when specified, print version and exit")
-	flag.Parse()
-
-	if flagPrintVersion {
-		bi, ok := debug.ReadBuildInfo()
-		if !ok {
-			fmt.Fprintln(os.Stderr, "error reading build info")
-			os.Exit(1)
-		}
-		fmt.Println(bi.Main.Path + "/cmd/goapi-gen")
-		fmt.Println(bi.Main.Version)
-		return
+func run(c *cli.Context, cfg *config) error {
+	if c.Args().Len() == 0 && (cfg.Package == "" || cfg.Package == "-") {
+		return errors.New("package required when reading from stdin")
 	}
 
-	if flag.NArg() < 1 {
-		fmt.Println("Please specify a path to a OpenAPI 3.0 spec file")
-		os.Exit(1)
-	}
-
-	cfg := configFromFlags()
-
-	// If the package name has not been specified, we will use the name of the
-	// swagger file.
-	if cfg.PackageName == "" {
+	if cfg.Package == "" {
 		path := flag.Arg(0)
 		baseName := filepath.Base(path)
-		// Split the base name on '.' to get the first part of the file.
 		nameParts := strings.Split(baseName, ".")
-		cfg.PackageName = codegen.ToCamelCase(nameParts[0])
+		cfg.Package = codegen.ToCamelCase(nameParts[0])
+	}
+
+	var err error
+	in := os.Stdin
+	if file := c.Args().Get(0); file != "" {
+		in, err = os.Open(file)
+		if err != nil {
+			return fmt.Errorf("could not not open %s: %v", file, err)
+		}
+		defer in.Close()
+	}
+
+	templates, err := parseTemplateOverrides(cfg.Templates)
+	if err != nil {
+		return fmt.Errorf("could not open templates: %s\n", err)
 	}
 
 	opts := codegen.Options{
-		AliasTypes: flagAliasTypes,
+		IncludeTags:    cfg.IncludeTags,
+		ExcludeTags:    cfg.ExcludeTags,
+		ExcludeSchemas: cfg.ExcludeSchemas,
+		UserTemplates:  templates,
+		ImportMapping:  cfg.ImportMapping,
 	}
-	for _, g := range cfg.GenerateTargets {
-		switch g {
+
+	for _, tgt := range cfg.Generate {
+		switch tgt {
 		case "client":
 			opts.GenerateClient = true
 		case "server":
@@ -121,113 +89,142 @@ func main() {
 		case "skip-prune":
 			opts.SkipPrune = true
 		default:
-			fmt.Printf("unknown generate option %s\n", g)
-			flag.PrintDefaults()
-			os.Exit(1)
+			return fmt.Errorf("unknown generation option: %s", tgt)
 		}
 	}
 
-	opts.IncludeTags = cfg.IncludeTags
-	opts.ExcludeTags = cfg.ExcludeTags
-	opts.ExcludeSchemas = cfg.ExcludeSchemas
-
-	swagger, err := util.LoadSwagger(flag.Arg(0))
+	swagger, err := parseSwagger(in)
 	if err != nil {
-		errExit("error loading swagger spec\n: %s", err)
+		return fmt.Errorf("could not load spec: %v", err)
+	}
+	code, err := codegen.Generate(swagger, cfg.Package, opts)
+	if err != nil {
+		return fmt.Errorf("could not generate code: %v", err)
 	}
 
-	templates, err := loadTemplateOverrides(cfg.TemplatesDir)
-	if err != nil {
-		errExit("error loading template overrides: %s\n", err)
-	}
-	opts.UserTemplates = templates
-
-	opts.ImportMapping = cfg.ImportMapping
-
-	code, err := codegen.Generate(swagger, cfg.PackageName, opts)
-	if err != nil {
-		errExit("error generating code: %s\n", err)
-	}
-
-	if cfg.OutputFile != "" {
-		err = ioutil.WriteFile(cfg.OutputFile, []byte(code), 0644)
+	out := os.Stdout
+	if cfg.Out != "" {
+		out, err = os.Create(cfg.Out)
 		if err != nil {
-			errExit("error writing generated code to file: %s", err)
+			return fmt.Errorf("could not open output file: %v", err)
 		}
-	} else {
-		fmt.Println(code)
+		defer out.Close()
+	}
+
+	_, err = out.WriteString(code)
+	if err != nil {
+		return fmt.Errorf("could not write code: %v", err)
+	}
+
+	return nil
+}
+
+func main() {
+	f := &flagConfig{
+		GenerateTargets: cli.NewStringSlice("types", "client", "server", "spec"),
+		IncludeTags:     &cli.StringSlice{},
+		ExcludeTags:     &cli.StringSlice{},
+		ImportMapping:   &cli.StringSlice{},
+		ExcludeSchemas:  &cli.StringSlice{},
+	}
+	app := &cli.App{
+		Flags: []cli.Flag{
+			&cli.StringFlag{
+				Name:        PackageKey,
+				Aliases:     []string{"p"},
+				Usage:       "The package name for generated code.",
+				DefaultText: "swagger file name",
+				Destination: &f.PackageName,
+			},
+			&cli.StringSliceFlag{
+				Name:        GenerateKey,
+				Aliases:     []string{"g"},
+				Value:       cli.NewStringSlice("types", "client", "server", "spec"),
+				Usage:       `List of generation options.`,
+				DefaultText: "types,client,server,spec",
+				Destination: f.GenerateTargets,
+			},
+			&cli.StringFlag{
+				Name:        OutKey,
+				Aliases:     []string{"o"},
+				Usage:       "Output file",
+				DefaultText: "<stdout>",
+				Destination: &f.OutputFile,
+			},
+			&cli.StringSliceFlag{
+				Name:        IncludeTagsKey,
+				Aliases:     []string{"t"},
+				Usage:       "Only include matching operations in the given tags.",
+				DefaultText: "<all>",
+				Destination: f.IncludeTags,
+			},
+			&cli.StringSliceFlag{
+				Name:        ExcludeTagsKey,
+				Aliases:     []string{"T"},
+				Usage:       "Exclude matching operations in the given tags",
+				DefaultText: "<none>",
+				Destination: f.ExcludeTags,
+			},
+			&cli.StringFlag{
+				Name:        TemplatesKey,
+				Aliases:     []string{"s"},
+				Usage:       "Generate templates from a different directory",
+				DefaultText: "<builtin>",
+				Destination: &f.TemplatesDir,
+			},
+			&cli.StringSliceFlag{
+				Name:        ImportMappingKey,
+				Aliases:     []string{"i"},
+				Usage:       "A dict from the external reference to golang package path",
+				Destination: f.ImportMapping,
+			},
+			&cli.StringSliceFlag{
+				Name:        ExcludeSchemasKey,
+				Aliases:     []string{"S"},
+				Usage:       "Exclude matching schemas from generation",
+				DefaultText: "<none>",
+				Destination: f.ExcludeSchemas,
+			},
+			&cli.BoolFlag{
+				Name:        AliasKey,
+				Aliases:     []string{"a"},
+				Usage:       "Alias type declerations when possible",
+				Destination: &f.AliasTypes,
+			},
+			&cli.StringFlag{
+				Name:        ConfigKey,
+				Aliases:     []string{"c"},
+				Usage:       "Read configuration from a config file",
+				DefaultText: "<none>",
+			},
+		},
+		EnableBashCompletion: true,
+		Version:              "v0.0.1-alpha",
+		Action: func(c *cli.Context) error {
+			cfg, err := parseConfig(c, f)
+			if err != nil {
+				return fmt.Errorf("could not parse args: %v", err)
+			}
+			return run(c, cfg)
+		},
+
+		Commands: []*cli.Command{
+			{
+				Name:  "list",
+				Usage: "list available generation options",
+				Action: func(c *cli.Context) error {
+					fmt.Println(generateList)
+					return nil
+				},
+			},
+		},
+	}
+	err := app.Run(os.Args)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "error: %v\n", err)
+		os.Exit(1)
 	}
 }
 
-func loadTemplateOverrides(templatesDir string) (map[string]string, error) {
-	var templates = make(map[string]string)
-
-	if templatesDir == "" {
-		return templates, nil
-	}
-
-	files, err := ioutil.ReadDir(templatesDir)
-	if err != nil {
-		return nil, err
-	}
-
-	for _, f := range files {
-		data, err := ioutil.ReadFile(path.Join(templatesDir, f.Name()))
-		if err != nil {
-			return nil, err
-		}
-		templates[f.Name()] = string(data)
-	}
-
-	return templates, nil
-}
-
-// configFromFlags parses the flags and the config file. Anything which is
-// a zerovalue in the configuration file will be replaced with the flag
-// value, this means that the config file overrides flag values.
-func configFromFlags() *configuration {
-	var cfg configuration
-
-	// Load the configuration file first.
-	if flagConfigFile != "" {
-		f, err := os.Open(flagConfigFile)
-		if err != nil {
-			errExit("failed to open config file with error: %v\n", err)
-		}
-		defer f.Close()
-		err = yaml.NewDecoder(f).Decode(&cfg)
-		if err != nil {
-			errExit("error parsing config file: %v\n", err)
-		}
-	}
-
-	if cfg.PackageName == "" {
-		cfg.PackageName = flagPackageName
-	}
-	if cfg.GenerateTargets == nil {
-		cfg.GenerateTargets = util.ParseCommandLineList(flagGenerate)
-	}
-	if cfg.IncludeTags == nil {
-		cfg.IncludeTags = util.ParseCommandLineList(flagIncludeTags)
-	}
-	if cfg.ExcludeTags == nil {
-		cfg.ExcludeTags = util.ParseCommandLineList(flagExcludeTags)
-	}
-	if cfg.TemplatesDir == "" {
-		cfg.TemplatesDir = flagTemplatesDir
-	}
-	if cfg.ImportMapping == nil && flagImportMapping != "" {
-		var err error
-		cfg.ImportMapping, err = util.ParseCommandlineMap(flagImportMapping)
-		if err != nil {
-			errExit("error parsing import-mapping: %s\n", err)
-		}
-	}
-	if cfg.ExcludeSchemas == nil {
-		cfg.ExcludeSchemas = util.ParseCommandLineList(flagExcludeSchemas)
-	}
-	if cfg.OutputFile == "" {
-		cfg.OutputFile = flagOutputFile
-	}
-	return &cfg
-}
+// //go:embed list.txt
+var generateList string
