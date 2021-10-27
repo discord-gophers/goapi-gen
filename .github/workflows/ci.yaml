@@ -27,6 +27,9 @@ jobs:
       - name: go get
         run: go get -v ./...
 
+      - name: go vet
+        run: go vet ./...
+
       - name: go test
         run: go test -race -coverprofile=coverage.out -covermode=atomic -v ./...
 
