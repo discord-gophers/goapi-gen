@@ -63,7 +63,7 @@ func run(c *cli.Context, cfg *config) error {
 
 	templates, err := parseTemplateOverrides(cfg.Templates)
 	if err != nil {
-		return fmt.Errorf("could not open templates: %s\n", err)
+		return fmt.Errorf("could not open templates: %s", err)
 	}
 
 	opts := codegen.Options{
@@ -213,7 +213,7 @@ func main() {
 			{
 				Name:  "list",
 				Usage: "list available generation options",
-				Action: func(c *cli.Context) error {
+				Action: func(_ *cli.Context) error {
 					fmt.Println(generateList)
 					return nil
 				},

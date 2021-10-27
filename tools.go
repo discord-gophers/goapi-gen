@@ -1,6 +1,7 @@
+//go:build tools
 // +build tools
 
-package tools
+package main
 
 import (
 	_ "github.com/cyberdelia/templates"
