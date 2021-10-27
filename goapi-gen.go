@@ -26,6 +26,8 @@ import (
 	"github.com/urfave/cli/v2"
 )
 
+var Version = "v0.0.1-alpha"
+
 const (
 	PackageKey        = "package"
 	GenerateKey       = "generate"
@@ -128,6 +130,7 @@ func main() {
 		ExcludeSchemas:  &cli.StringSlice{},
 	}
 	app := &cli.App{
+		Name: "goapi-gen",
 		Flags: []cli.Flag{
 			&cli.StringFlag{
 				Name:        PackageKey,
@@ -199,7 +202,7 @@ func main() {
 			},
 		},
 		EnableBashCompletion: true,
-		Version:              "v0.0.1-alpha",
+		Version:              Version,
 		Usage:                "Generate Go code from OpenAPI specification YAML",
 		Action: func(c *cli.Context) error {
 			cfg, err := parseConfig(c, f)
@@ -218,6 +221,36 @@ func main() {
 					return nil
 				},
 			},
+			{
+				Name:   "docs",
+				Usage:  "generate docs",
+				Hidden: true,
+				Flags: []cli.Flag{
+					&cli.StringFlag{
+						Name:        "out",
+						Usage:       "Output file",
+						DefaultText: "<stdout>",
+					},
+				},
+				Action: func(c *cli.Context) error {
+					out := os.Stdout
+					if c.IsSet("out") {
+						fi, err := os.Create(c.String("out"))
+						if err != nil {
+							return err
+						}
+						defer fi.Close()
+						out = fi
+					}
+
+					md, err := c.App.ToMarkdown()
+					if err != nil {
+						return err
+					}
+					_, err = fmt.Fprintln(out, md[strings.Index(md, "#"):])
+					return err
+				},
+			},
 		},
 	}
 	err := app.Run(os.Args)
@@ -227,5 +260,5 @@ func main() {
 	}
 }
 
-// //go:embed list.txt
+//go:embed list.txt
 var generateList string

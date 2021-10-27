@@ -457,34 +457,7 @@ which help you to use the various OpenAPI 3 Authentication mechanism.
 
 ## Using `goapi-gen`
 
-```
-NAME:
-   goapi-gen - Generate Go code from OpenAPI specification YAML
-
-USAGE:
-   goapi-gen [global options] command [command options] [arguments...]
-
-VERSION:
-   v0.0.1-alpha
-
-COMMANDS:
-   list     list available generation options
-   help, h  Shows a list of commands or help for one command
-
-GLOBAL OPTIONS:
-   --package value, -p value          The package name for generated code. (default: swagger file name)
-   --generate value, -g value         List of generation options. (default: "types", "client", "server", "spec")
-   --out value, -o value              Output file (default: <stdout>)
-   --include-tags value, -t value     Only include matching operations in the given tags.
-   --exclude-tags value, -T value     Exclude matching operations in the given tags
-   --templates value, -s value        Generate templates from a different directory (default: <builtin>)
-   --import-mapping value, -i value   A dict from the external reference to golang package path
-   --exclude-schemas value, -S value  Exclude matching schemas from generation
-   --alias, -a                        Alias type declerations when possible (default: false)
-   --config value, -c value           Read configuration from a config file (default: <none>)
-   --help, -h                         show help (default: false)
-   --version, -v                      print the version (default: false)
-```
+[Usage details](docs.md)
 
 The default options for `goapi-gen` will generate everything; client, server,
 type definitions and embedded swagger spec, but you can generate subsets of
