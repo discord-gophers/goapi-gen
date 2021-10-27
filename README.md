@@ -34,7 +34,7 @@ write a lot of boilerplate code to perform all the marshalling and unmarshalling
 into objects which match the OpenAPI 3.0 definition. The code generator in this
 directory does a lot of that for you. You would run it like so:
 
-    go install github.com/discord-gophers/goapi-gen/cmd/goapi-gen@latest
+    go install github.com/discord-gophers/goapi-gen@latest
     goapi-gen petstore-expanded.yaml  > petstore.gen.go
 
 Let's go through that `petstore.gen.go` file to show you everything which was
@@ -542,7 +542,7 @@ import-mapping:
   ./packageB/spec.yaml: github.com/discord-gophers/goapi-gen/internal/test/externalref/packageB
 ```
 
-Have a look at [`cmd/goapi-gen/goapi-gen.go`](https://github.com/discord-gophers/goapi-gen/blob/master/cmd/goapi-gen/goapi-gen.go#L48)
+Have a look at [`goapi-gen.go`](https://github.com/discord-gophers/goapi-gen/blob/master/goapi-gen.go#L48)
 to see all the fields on the configuration structure.
 
 ### Import Mappings

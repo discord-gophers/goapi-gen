@@ -200,7 +200,7 @@ func main() {
 		},
 		EnableBashCompletion: true,
 		Version:              "v0.0.1-alpha",
-		Usage:                "goapi-gen [-args] [file]: generate go code from openapi specification yaml",
+		Usage:                "generate go code from openapi specification yaml",
 		Action: func(c *cli.Context) error {
 			cfg, err := parseConfig(c, f)
 			if err != nil {
