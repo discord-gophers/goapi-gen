@@ -327,7 +327,7 @@ func TestBindQueryParameter(t *testing.T) {
 
 	t.Run("deeperObject", func(t *testing.T) {
 		dst := &struct {
-			ID      int  `json:"Id"`
+			ID      int  `json:"ID"`
 			IsAdmin bool `json:"IsAdmin"`
 			Object  struct {
 				FirstName string `json:"firstName"`
@@ -336,7 +336,7 @@ func TestBindQueryParameter(t *testing.T) {
 		}{}
 
 		want := &struct {
-			ID      int  `json:"Id"`
+			ID      int  `json:"ID"`
 			IsAdmin bool `json:"IsAdmin"`
 			Object  struct {
 				FirstName string `json:"firstName"`
@@ -355,7 +355,7 @@ func TestBindQueryParameter(t *testing.T) {
 		}
 
 		params := url.Values{
-			"deepObj[Id]":                {"12345"},
+			"deepObj[ID]":                {"12345"},
 			"deepObj[IsAdmin]":           {"true"},
 			"deepObj[Object][firstName]": {"Alex"},
 			"deepObj[Object][role]":      {"admin"},
