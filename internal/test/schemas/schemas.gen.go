@@ -1319,13 +1319,6 @@ func (siw *ServerInterfaceWrapper) Issue9(w http.ResponseWriter, r *http.Request
 	var params Issue9Params
 
 	// ------------- Required query parameter "foo" -------------
-	if paramValue := r.URL.Query().Get("foo"); paramValue != "" {
-
-	} else {
-		err := fmt.Errorf("query argument foo is required, but not found")
-		siw.ErrorHandlerFunc(w, r, &RequiredParamError{err})
-		return
-	}
 
 	if err := runtime.BindQueryParameter("form", true, true, "foo", r.URL.Query(), &params.Foo); err != nil {
 		err = fmt.Errorf("invalid format for parameter foo: %w", err)

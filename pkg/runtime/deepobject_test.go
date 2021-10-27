@@ -77,3 +77,112 @@ func TestDeepObject(t *testing.T) {
 	require.NoError(t, err)
 	assert.EqualValues(t, srcObj, dstObj)
 }
+
+func TestUnmarshalDeepObject(t *testing.T) {
+	type args struct {
+		dst       interface{}
+		paramName string
+		params    url.Values
+	}
+	tests := []struct {
+		name    string
+		args    args
+		want    interface{}
+		wantErr bool
+	}{
+		{
+			name: "simple",
+			args: args{
+				dst: &struct {
+					I int `json:"i"`
+				}{},
+				paramName: "p",
+				params: url.Values{
+					"p[i]": {"12"},
+				},
+			},
+			want: &struct {
+				I int `json:"i"`
+			}{I: 12},
+			wantErr: false,
+		},
+		{
+			name: "no values",
+			args: args{
+				dst: &struct {
+					I int `json:"i"`
+				}{},
+				paramName: "p",
+				params: url.Values{
+					"p": {},
+				},
+			},
+			want: &struct {
+				I int `json:"i"`
+			}{I: 0},
+			wantErr: false,
+		},
+		{
+			name: "advanced",
+			args: args{
+				paramName: "deepObj",
+				dst: &struct {
+					ID      int  `json:"Id"`
+					IsAdmin bool `json:"IsAdmin"`
+					Object  struct {
+						FirstName string `json:"firstName"`
+						Role      string `json:"role"`
+					} `json:"Object"`
+				}{},
+				params: url.Values{
+					"deepObj[Id]":                {"12345"},
+					"deepObj[IsAdmin]":           {"true"},
+					"deepObj[Object][firstName]": {"Alex"},
+					"deepObj[Object][role]":      {"admin"},
+				},
+			},
+			want: &struct {
+				ID      int  `json:"Id"`
+				IsAdmin bool `json:"IsAdmin"`
+				Object  struct {
+					FirstName string `json:"firstName"`
+					Role      string `json:"role"`
+				} `json:"Object"`
+			}{
+				ID:      12345,
+				IsAdmin: true,
+				Object: struct {
+					FirstName string `json:"firstName"`
+					Role      string `json:"role"`
+				}{
+					FirstName: "Alex",
+					Role:      "admin",
+				},
+			},
+		},
+		{
+			name: "invalid",
+			args: args{
+				dst:       &struct{}{},
+				paramName: "p",
+				params: url.Values{
+					"p[[i]": {"12"},
+				},
+			},
+			want:    &struct{}{},
+			wantErr: true,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			err := UnmarshalDeepObject(tt.args.dst, tt.args.paramName, tt.args.params)
+
+			if (err != nil) != tt.wantErr {
+				require.NoError(t, err, "UnmarshalDeepObject() error")
+				return
+			}
+
+			require.Equal(t, tt.want, tt.args.dst, "UnmarshalDeepObject() invalid")
+		})
+	}
+}

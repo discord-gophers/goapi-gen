@@ -68,7 +68,7 @@ func BindStyledParameterWithLocation(style string, explode bool, paramName strin
 	// If the destination implements encoding.TextUnmarshaler we use it for binding
 	if tu, ok := dest.(encoding.TextUnmarshaler); ok {
 		if err := tu.UnmarshalText([]byte(value)); err != nil {
-			return fmt.Errorf("error unmarshaling '%s' text as %T: %s", value, dest, err)
+			return fmt.Errorf("error unmarshaling '%s' text as %T: %v", value, dest, err)
 		}
 
 		return nil
@@ -95,7 +95,7 @@ func BindStyledParameterWithLocation(style string, explode bool, paramName strin
 		// Chop up the parameter into parts based on its style
 		parts, err := splitStyledParameter(style, explode, false, paramName, value)
 		if err != nil {
-			return fmt.Errorf("error splitting input '%s' into parts: %s", value, err)
+			return fmt.Errorf("error splitting input '%s' into parts: %v", value, err)
 		}
 
 		return bindSplitPartsToDestinationArray(parts, dest)
@@ -212,7 +212,7 @@ func bindSplitPartsToDestinationArray(parts []string, dest interface{}) error {
 	for i, p := range parts {
 		err := BindStringToObject(p, newArray.Index(i).Addr().Interface())
 		if err != nil {
-			return fmt.Errorf("error setting array element: %s", err)
+			return fmt.Errorf("error setting array element: %v", err)
 		}
 	}
 	v.Set(newArray)
@@ -258,25 +258,27 @@ func bindSplitPartsToDestinationStruct(paramName string, parts []string, explode
 	jsonParam := "{" + strings.Join(fields, ",") + "}"
 	err := json.Unmarshal([]byte(jsonParam), dest)
 	if err != nil {
-		return fmt.Errorf("error binding parameter %s fields: %s", paramName, err)
+		return fmt.Errorf("error binding parameter %s fields: %v", paramName, err)
 	}
 	return nil
 }
 
-// This works much like BindStyledParameter, however it takes a query argument
-// input array from the url package, since query arguments come through a
-// different path than the styled arguments. They're also exceptionally fussy.
+// BindQueryParameter works much like BindStyledParameter, however it takes a
+// query argument input array from the url package, since query arguments come
+// through a different path than the styled arguments. They're also
+// exceptionally fussy.
+//
 // For example, consider the exploded and unexploded form parameter examples:
 // (exploded) /users?role=admin&firstName=Alex
 // (unexploded) /users?id=role,admin,firstName,Alex
 //
-// In the first case, we can pull the "id" parameter off the context,
-// and unmarshal via json as an intermediate. Easy. In the second case, we
-// don't have the id QueryParam present, but must find "role", and "firstName".
-// what if there is another parameter similar to "ID" named "role"? We can't
-// tell them apart. This code tries to fail, but the moral of the story is that
-// you shouldn't pass objects via form styled query arguments, just use
-// the Content parameter form.
+// In the first case, we can pull the "id" parameter off the context, and
+// unmarshal via json as an intermediate. Easy. In the second case, we don't
+// have the id QueryParam present, but must find "role", and "firstName".  what
+// if there is another parameter similar to "ID" named "role"? We can't tell
+// them apart. This code tries to fail, but the moral of the story is that you
+// shouldn't pass objects via form styled query arguments, just use the Content
+// parameter form.
 func BindQueryParameter(style string, explode bool, required bool, paramName string,
 	queryParams url.Values, dest interface{}) error {
 
@@ -286,18 +288,17 @@ func BindQueryParameter(style string, explode bool, required bool, paramName str
 	// intermediate value form which is either dv or dv dereferenced.
 	v := dv
 
-	// inner code will bind the string's value to this interface.
-	var output interface{}
+	// If the parameter is required, then the generated code will pass us
+	// a pointer to it: &int, &object, and so forth. We can directly set
+	// them.
+	output := dest
 
-	if required {
-		// If the parameter is required, then the generated code will pass us
-		// a pointer to it: &int, &object, and so forth. We can directly set
-		// them.
-		output = dest
-	} else {
-		// For optional parameters, we have an extra indirect. An optional
-		// parameter of type "int" will be *int on the struct. We pass that
-		// in by pointer, and have **int.
+	// For optional parameters, we have an extra indirect. An optional
+	// parameter of type "int" will be *int on the struct. We pass that
+	// in by pointer, and have **int.
+	if !required {
+		// If the destination isn't nil, just use that.
+		output = v.Interface()
 
 		// If the destination, is a nil pointer, we need to allocate it.
 		if v.IsNil() {
@@ -307,9 +308,6 @@ func BindQueryParameter(style string, explode bool, required bool, paramName str
 			// as we don't want to write anything to destination until we can
 			// unmarshal successfully, and check whether a field is required.
 			output = newValue.Interface()
-		} else {
-			// If the destination isn't nil, just use that.
-			output = v.Interface()
 		}
 
 		// Get rid of that extra indirect as compared to the required case,
@@ -339,9 +337,8 @@ func BindQueryParameter(style string, explode bool, required bool, paramName str
 				if !found {
 					if required {
 						return fmt.Errorf("query parameter '%s' is required", paramName)
-					} else {
-						return nil
 					}
+					return nil
 				}
 				err = bindSplitPartsToDestinationArray(values, output)
 			case reflect.Struct:
@@ -356,38 +353,41 @@ func BindQueryParameter(style string, explode bool, required bool, paramName str
 				if len(values) == 0 {
 					if required {
 						return fmt.Errorf("query parameter '%s' is required", paramName)
-					} else {
-						return nil
 					}
+					return nil
 				}
+
 				if len(values) != 1 {
 					return fmt.Errorf("multiple values for single value parameter '%s'", paramName)
 				}
+
 				err = BindStringToObject(values[0], output)
 			}
 			if err != nil {
 				return err
 			}
+
 			// If the parameter is required, and we've successfully unmarshaled
 			// it, this assigns the new object to the pointer pointer.
 			if !required {
 				dv.Set(reflect.ValueOf(output))
 			}
 			return nil
-		} else {
-			values, found := queryParams[paramName]
-			if !found {
-				if required {
-					return fmt.Errorf("query parameter '%s' is required", paramName)
-				} else {
-					return nil
-				}
-			}
-			if len(values) != 1 {
-				return fmt.Errorf("parameter '%s' is not exploded, but is specified multiple times", paramName)
-			}
-			parts = strings.Split(values[0], ",")
 		}
+
+		values, found := queryParams[paramName]
+		if !found {
+			if required {
+				return fmt.Errorf("query parameter '%s' is required", paramName)
+			}
+			return nil
+		}
+
+		if len(values) != 1 {
+			return fmt.Errorf("parameter '%s' is not exploded, but is specified multiple times", paramName)
+		}
+		parts = strings.Split(values[0], ",")
+
 		var err error
 		switch k {
 		case reflect.Slice:
@@ -398,9 +398,8 @@ func BindQueryParameter(style string, explode bool, required bool, paramName str
 			if len(parts) == 0 {
 				if required {
 					return fmt.Errorf("query parameter '%s' is required", paramName)
-				} else {
-					return nil
 				}
+				return nil
 			}
 			if len(parts) != 1 {
 				return fmt.Errorf("multiple values for single value parameter '%s'", paramName)
@@ -423,7 +422,6 @@ func BindQueryParameter(style string, explode bool, required bool, paramName str
 		return fmt.Errorf("query arguments of style '%s' aren't yet supported", style)
 	default:
 		return fmt.Errorf("style '%s' on parameter '%s' is invalid", style, paramName)
-
 	}
 }
 
@@ -470,7 +468,7 @@ func bindParamsToExplodedObject(paramName string, values url.Values, dest interf
 			}
 			err := BindStringToObject(fieldVal[0], v.Field(i).Addr().Interface())
 			if err != nil {
-				return fmt.Errorf("could not bind query arg '%s' to request object: %s'", paramName, err)
+				return fmt.Errorf("could not bind query arg '%s' to request object: %v'", paramName, err)
 			}
 		}
 	}

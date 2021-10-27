@@ -90,7 +90,7 @@ type GetWithArgsParams struct {
 	// An optional query argument
 	OptionalArgument *int64 `json:"optional_argument,omitempty"`
 
-	// An optional query argument
+	// A required query argument
 	RequiredArgument int64 `json:"required_argument"`
 
 	// An optional query argument
@@ -216,9 +216,6 @@ func (siw *ServerInterfaceWrapper) GetWithArgs(w http.ResponseWriter, r *http.Re
 	var params GetWithArgsParams
 
 	// ------------- Optional query parameter "optional_argument" -------------
-	if paramValue := r.URL.Query().Get("optional_argument"); paramValue != "" {
-
-	}
 
 	if err := runtime.BindQueryParameter("form", true, false, "optional_argument", r.URL.Query(), &params.OptionalArgument); err != nil {
 		err = fmt.Errorf("invalid format for parameter optional_argument: %w", err)
@@ -227,13 +224,6 @@ func (siw *ServerInterfaceWrapper) GetWithArgs(w http.ResponseWriter, r *http.Re
 	}
 
 	// ------------- Required query parameter "required_argument" -------------
-	if paramValue := r.URL.Query().Get("required_argument"); paramValue != "" {
-
-	} else {
-		err := fmt.Errorf("query argument required_argument is required, but not found")
-		siw.ErrorHandlerFunc(w, r, &RequiredParamError{err})
-		return
-	}
 
 	if err := runtime.BindQueryParameter("form", true, true, "required_argument", r.URL.Query(), &params.RequiredArgument); err != nil {
 		err = fmt.Errorf("invalid format for parameter required_argument: %w", err)
@@ -434,9 +424,6 @@ func (siw *ServerInterfaceWrapper) CreateResource2(w http.ResponseWriter, r *htt
 	var params CreateResource2Params
 
 	// ------------- Optional query parameter "inline_query_argument" -------------
-	if paramValue := r.URL.Query().Get("inline_query_argument"); paramValue != "" {
-
-	}
 
 	if err := runtime.BindQueryParameter("form", true, false, "inline_query_argument", r.URL.Query(), &params.InlineQueryArgument); err != nil {
 		err = fmt.Errorf("invalid format for parameter inline_query_argument: %w", err)
