@@ -1,6 +1,6 @@
 // Handler creates http.Handler with routing matching OpenAPI spec.
 func Handler(si ServerInterface) http.Handler {
-  return HandlerWithOptions(si, ChiServerOptions{})
+	return HandlerWithOptions(si, ChiServerOptions{})
 }
 
 type ChiServerOptions struct {
