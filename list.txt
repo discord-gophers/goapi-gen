@@ -1,0 +1,20 @@
+Available Options:
+types          generate all type definitions inside the OpenAPI spec.
+                 - Everything under #components
+                 - Request parameters
+                 - Request bodies
+                 - Response types
+
+server         Generate the Chi server boilerplate. This code is dependant on
+               that produced by the types option.
+
+client         Generate the client boilerplate. It, too, requires the types to
+               be present in the package.
+
+spec           embed the OpenAPI spec into the generated code as a gzipped
+               blob.
+
+skip-fmt       Skip running goimports on generated code. Useful for debugging.
+
+skip-prune     Skip pruning unused components from the spec before code
+               generation.

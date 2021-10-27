@@ -13,4 +13,4 @@ This is the structure:
 
 To generate the handler glue, run:
 
-    go run cmd/goapi-gen/goapi-gen.go --package petstore examples/petstore-expanded/petstore-expanded.yaml  > examples/petstore-expanded/petstore.gen.go
+    go run github.com/discord-gophers/goapi-gen --package petstore examples/petstore-expanded/petstore-expanded.yaml  > examples/petstore-expanded/petstore.gen.go
