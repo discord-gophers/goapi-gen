@@ -33,9 +33,6 @@ jobs:
       - name: go test with coverage
         run: go tool cover -func coverage.out
 
-      - name: go generate templates
-        run: go generate ./pkg/codegen/templates
-
       - name: go generate all
         run: go generate ./...
 
