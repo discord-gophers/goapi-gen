@@ -46,12 +46,17 @@ func (siw *ServerInterfaceWrapper) {{$opid}}(w http.ResponseWriter, r *http.Requ
     var params {{.OperationId}}Params
 
     {{range $paramIdx, $param := .QueryParams}}// ------------- {{if .Required}}Required{{else}}Optional{{end}} query parameter "{{.ParamName}}" -------------
+      {{if .IsStyled}}
+      if err := runtime.BindQueryParameter("{{.Style}}", {{.Explode}}, {{.Required}}, "{{.ParamName}}", r.URL.Query(), &params.{{.GoName}}); err != nil {
+        err = fmt.Errorf("invalid format for parameter {{.ParamName}}: %w", err)
+        siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{err})
+        return
+      }
+      {{else}}
       if paramValue := r.URL.Query().Get("{{.ParamName}}"); paramValue != "" {
-
       {{if .IsPassThrough}}
         params.{{.GoName}} = {{if not .Required}}&{{end}}paramValue
       {{end}}
-
       {{if .IsJson}}
         var value {{.TypeDef}}
         if err := json.Unmarshal([]byte(paramValue), &value); err != nil {
@@ -59,7 +64,6 @@ func (siw *ServerInterfaceWrapper) {{$opid}}(w http.ResponseWriter, r *http.Requ
           siw.ErrorHandlerFunc(w, r, &UnmarshalingParamError{err})
           return
         }
-
         params.{{.GoName}} = {{if not .Required}}&{{end}}value
       {{end}}
       }{{if .Required}} else {
@@ -67,12 +71,6 @@ func (siw *ServerInterfaceWrapper) {{$opid}}(w http.ResponseWriter, r *http.Requ
           siw.ErrorHandlerFunc(w, r, &RequiredParamError{err})
           return
       }{{end}}
-      {{if .IsStyled}}
-      if err := runtime.BindQueryParameter("{{.Style}}", {{.Explode}}, {{.Required}}, "{{.ParamName}}", r.URL.Query(), &params.{{.GoName}}); err != nil {
-        err = fmt.Errorf("invalid format for parameter {{.ParamName}}: %w", err)
-        siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{err})
-        return
-      }
       {{end}}
   {{end}}
 

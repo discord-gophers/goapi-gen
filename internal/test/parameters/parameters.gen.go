@@ -3154,13 +3154,6 @@ func (siw *ServerInterfaceWrapper) GetDeepObject(w http.ResponseWriter, r *http.
 	var params GetDeepObjectParams
 
 	// ------------- Required query parameter "deepObj" -------------
-	if paramValue := r.URL.Query().Get("deepObj"); paramValue != "" {
-
-	} else {
-		err := fmt.Errorf("query argument deepObj is required, but not found")
-		siw.ErrorHandlerFunc(w, r, &RequiredParamError{err})
-		return
-	}
 
 	if err := runtime.BindQueryParameter("deepObject", true, true, "deepObj", r.URL.Query(), &params.DeepObj); err != nil {
 		err = fmt.Errorf("invalid format for parameter deepObj: %w", err)
@@ -3187,9 +3180,6 @@ func (siw *ServerInterfaceWrapper) GetQueryForm(w http.ResponseWriter, r *http.R
 	var params GetQueryFormParams
 
 	// ------------- Optional query parameter "ea" -------------
-	if paramValue := r.URL.Query().Get("ea"); paramValue != "" {
-
-	}
 
 	if err := runtime.BindQueryParameter("form", true, false, "ea", r.URL.Query(), &params.Ea); err != nil {
 		err = fmt.Errorf("invalid format for parameter ea: %w", err)
@@ -3198,9 +3188,6 @@ func (siw *ServerInterfaceWrapper) GetQueryForm(w http.ResponseWriter, r *http.R
 	}
 
 	// ------------- Optional query parameter "a" -------------
-	if paramValue := r.URL.Query().Get("a"); paramValue != "" {
-
-	}
 
 	if err := runtime.BindQueryParameter("form", false, false, "a", r.URL.Query(), &params.A); err != nil {
 		err = fmt.Errorf("invalid format for parameter a: %w", err)
@@ -3209,9 +3196,6 @@ func (siw *ServerInterfaceWrapper) GetQueryForm(w http.ResponseWriter, r *http.R
 	}
 
 	// ------------- Optional query parameter "eo" -------------
-	if paramValue := r.URL.Query().Get("eo"); paramValue != "" {
-
-	}
 
 	if err := runtime.BindQueryParameter("form", true, false, "eo", r.URL.Query(), &params.Eo); err != nil {
 		err = fmt.Errorf("invalid format for parameter eo: %w", err)
@@ -3220,9 +3204,6 @@ func (siw *ServerInterfaceWrapper) GetQueryForm(w http.ResponseWriter, r *http.R
 	}
 
 	// ------------- Optional query parameter "o" -------------
-	if paramValue := r.URL.Query().Get("o"); paramValue != "" {
-
-	}
 
 	if err := runtime.BindQueryParameter("form", false, false, "o", r.URL.Query(), &params.O); err != nil {
 		err = fmt.Errorf("invalid format for parameter o: %w", err)
@@ -3231,9 +3212,6 @@ func (siw *ServerInterfaceWrapper) GetQueryForm(w http.ResponseWriter, r *http.R
 	}
 
 	// ------------- Optional query parameter "ep" -------------
-	if paramValue := r.URL.Query().Get("ep"); paramValue != "" {
-
-	}
 
 	if err := runtime.BindQueryParameter("form", true, false, "ep", r.URL.Query(), &params.Ep); err != nil {
 		err = fmt.Errorf("invalid format for parameter ep: %w", err)
@@ -3242,9 +3220,6 @@ func (siw *ServerInterfaceWrapper) GetQueryForm(w http.ResponseWriter, r *http.R
 	}
 
 	// ------------- Optional query parameter "p" -------------
-	if paramValue := r.URL.Query().Get("p"); paramValue != "" {
-
-	}
 
 	if err := runtime.BindQueryParameter("form", false, false, "p", r.URL.Query(), &params.P); err != nil {
 		err = fmt.Errorf("invalid format for parameter p: %w", err)
@@ -3253,9 +3228,6 @@ func (siw *ServerInterfaceWrapper) GetQueryForm(w http.ResponseWriter, r *http.R
 	}
 
 	// ------------- Optional query parameter "ps" -------------
-	if paramValue := r.URL.Query().Get("ps"); paramValue != "" {
-
-	}
 
 	if err := runtime.BindQueryParameter("form", true, false, "ps", r.URL.Query(), &params.Ps); err != nil {
 		err = fmt.Errorf("invalid format for parameter ps: %w", err)
@@ -3264,6 +3236,7 @@ func (siw *ServerInterfaceWrapper) GetQueryForm(w http.ResponseWriter, r *http.R
 	}
 
 	// ------------- Optional query parameter "co" -------------
+
 	if paramValue := r.URL.Query().Get("co"); paramValue != "" {
 
 		var value ComplexObject
@@ -3272,15 +3245,11 @@ func (siw *ServerInterfaceWrapper) GetQueryForm(w http.ResponseWriter, r *http.R
 			siw.ErrorHandlerFunc(w, r, &UnmarshalingParamError{err})
 			return
 		}
-
 		params.Co = &value
 
 	}
 
 	// ------------- Optional query parameter "1s" -------------
-	if paramValue := r.URL.Query().Get("1s"); paramValue != "" {
-
-	}
 
 	if err := runtime.BindQueryParameter("form", true, false, "1s", r.URL.Query(), &params.N1s); err != nil {
 		err = fmt.Errorf("invalid format for parameter 1s: %w", err)

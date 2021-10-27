@@ -94,9 +94,6 @@ func (siw *ServerInterfaceWrapper) FindPets(w http.ResponseWriter, r *http.Reque
 	var params FindPetsParams
 
 	// ------------- Optional query parameter "tags" -------------
-	if paramValue := r.URL.Query().Get("tags"); paramValue != "" {
-
-	}
 
 	if err := runtime.BindQueryParameter("form", true, false, "tags", r.URL.Query(), &params.Tags); err != nil {
 		err = fmt.Errorf("invalid format for parameter tags: %w", err)
@@ -105,9 +102,6 @@ func (siw *ServerInterfaceWrapper) FindPets(w http.ResponseWriter, r *http.Reque
 	}
 
 	// ------------- Optional query parameter "limit" -------------
-	if paramValue := r.URL.Query().Get("limit"); paramValue != "" {
-
-	}
 
 	if err := runtime.BindQueryParameter("form", true, false, "limit", r.URL.Query(), &params.Limit); err != nil {
 		err = fmt.Errorf("invalid format for parameter limit: %w", err)

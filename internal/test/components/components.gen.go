@@ -1316,13 +1316,6 @@ func (siw *ServerInterfaceWrapper) ParamsWithAddProps(w http.ResponseWriter, r *
 	var params ParamsWithAddPropsParams
 
 	// ------------- Required query parameter "p1" -------------
-	if paramValue := r.URL.Query().Get("p1"); paramValue != "" {
-
-	} else {
-		err := fmt.Errorf("query argument p1 is required, but not found")
-		siw.ErrorHandlerFunc(w, r, &RequiredParamError{err})
-		return
-	}
 
 	if err := runtime.BindQueryParameter("simple", true, true, "p1", r.URL.Query(), &params.P1); err != nil {
 		err = fmt.Errorf("invalid format for parameter p1: %w", err)
@@ -1331,13 +1324,6 @@ func (siw *ServerInterfaceWrapper) ParamsWithAddProps(w http.ResponseWriter, r *
 	}
 
 	// ------------- Required query parameter "p2" -------------
-	if paramValue := r.URL.Query().Get("p2"); paramValue != "" {
-
-	} else {
-		err := fmt.Errorf("query argument p2 is required, but not found")
-		siw.ErrorHandlerFunc(w, r, &RequiredParamError{err})
-		return
-	}
 
 	if err := runtime.BindQueryParameter("form", true, true, "p2", r.URL.Query(), &params.P2); err != nil {
 		err = fmt.Errorf("invalid format for parameter p2: %w", err)
