@@ -17,4 +17,4 @@ package internal
 // server. The file petstore.gen.go is automatically generated from the schema
 
 // Run goapi-gen to regenerate the petstore boilerplate
-//go:generate go run github.com/discord-gophers/goapi-gen/cmd/goapi-gen -package=petstore -generate types,client -o ../petstore-client.gen.go ../petstore-expanded.yaml
+//go:generate go run github.com/discord-gophers/goapi-gen/cmd/goapi-gen --package=petstore --generate types,client -o ../petstore-client.gen.go ../petstore-expanded.yaml
