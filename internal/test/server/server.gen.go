@@ -141,12 +141,6 @@ type ServerInterface interface {
 	// Getter with referenced parameter and referenced response
 	// (GET /get-with-references/{global_argument}/{argument})
 	GetWithReferences(w http.ResponseWriter, r *http.Request, globalArgument int64, argument Argument)
-
-	// (GET /get-with-tagged-middleware)
-	GetWithTaggedMiddleware(w http.ResponseWriter, r *http.Request)
-
-	// (POST /get-with-tagged-middleware)
-	PostWithTaggedMiddleware(w http.ResponseWriter, r *http.Request)
 	// Get an object by ID
 	// (GET /get-with-type/{content_type})
 	GetWithContentType(w http.ResponseWriter, r *http.Request, contentType GetWithContentTypeParamsContentType)
@@ -166,6 +160,12 @@ type ServerInterface interface {
 	// get response with reference
 	// (GET /response-with-reference)
 	GetResponseWithReference(w http.ResponseWriter, r *http.Request)
+
+	// (GET /with-tagged-middleware)
+	GetWithTaggedMiddleware(w http.ResponseWriter, r *http.Request)
+
+	// (POST /with-tagged-middleware)
+	PostWithTaggedMiddleware(w http.ResponseWriter, r *http.Request)
 }
 
 // ServerInterfaceWrapper converts contexts to parameters.
@@ -274,41 +274,6 @@ func (siw *ServerInterfaceWrapper) GetWithReferences(w http.ResponseWriter, r *h
 	var handler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.GetWithReferences(w, r, globalArgument, argument)
 	})
-
-	handler(w, r.WithContext(ctx))
-}
-
-// GetWithTaggedMiddleware operation middleware
-func (siw *ServerInterfaceWrapper) GetWithTaggedMiddleware(w http.ResponseWriter, r *http.Request) {
-	ctx := r.Context()
-
-	var handler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.GetWithTaggedMiddleware(w, r)
-	})
-
-	// Operation specific middleware
-	if middleware, ok := siw.Middlewares["pathMiddleware"]; ok {
-		handler = middleware(handler).ServeHTTP
-	}
-
-	handler(w, r.WithContext(ctx))
-}
-
-// PostWithTaggedMiddleware operation middleware
-func (siw *ServerInterfaceWrapper) PostWithTaggedMiddleware(w http.ResponseWriter, r *http.Request) {
-	ctx := r.Context()
-
-	var handler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.PostWithTaggedMiddleware(w, r)
-	})
-
-	// Operation specific middleware
-	if middleware, ok := siw.Middlewares["pathMiddleware"]; ok {
-		handler = middleware(handler).ServeHTTP
-	}
-	if middleware, ok := siw.Middlewares["operationMiddleware"]; ok {
-		handler = middleware(handler).ServeHTTP
-	}
 
 	handler(w, r.WithContext(ctx))
 }
@@ -426,6 +391,35 @@ func (siw *ServerInterfaceWrapper) GetResponseWithReference(w http.ResponseWrite
 	handler(w, r.WithContext(ctx))
 }
 
+// GetWithTaggedMiddleware operation middleware
+func (siw *ServerInterfaceWrapper) GetWithTaggedMiddleware(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+
+	var handler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.GetWithTaggedMiddleware(w, r)
+	})
+
+	// Operation specific middleware
+	handler = siw.Middlewares["pathMiddleware"](handler).ServeHTTP
+
+	handler(w, r.WithContext(ctx))
+}
+
+// PostWithTaggedMiddleware operation middleware
+func (siw *ServerInterfaceWrapper) PostWithTaggedMiddleware(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+
+	var handler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.PostWithTaggedMiddleware(w, r)
+	})
+
+	// Operation specific middleware
+	handler = siw.Middlewares["pathMiddleware"](handler).ServeHTTP
+	handler = siw.Middlewares["operationMiddleware"](handler).ServeHTTP
+
+	handler(w, r.WithContext(ctx))
+}
+
 type UnescapedCookieParamError struct {
 	error
 }
@@ -476,19 +470,26 @@ func Handler(si ServerInterface, opts ...ServerOption) http.Handler {
 		ErrorHandlerFunc: options.ErrorHandlerFunc,
 	}
 
+	middlewares := []string{"operationMiddleware", "pathMiddleware"}
+	for _, m := range middlewares {
+		if _, ok := wrapper.Middlewares[m]; !ok {
+			panic("goapi-gen: could not find tagged middleware " + m)
+		}
+	}
+
 	r.Route(options.BaseURL, func(r chi.Router) {
 		r.Get("/every-type-optional", wrapper.GetEveryTypeOptional)
 		r.Get("/get-simple", wrapper.GetSimple)
 		r.Get("/get-with-args", wrapper.GetWithArgs)
 		r.Get("/get-with-references/{global_argument}/{argument}", wrapper.GetWithReferences)
-		r.Get("/get-with-tagged-middleware", wrapper.GetWithTaggedMiddleware)
-		r.Post("/get-with-tagged-middleware", wrapper.PostWithTaggedMiddleware)
 		r.Get("/get-with-type/{content_type}", wrapper.GetWithContentType)
 		r.Get("/reserved-keyword", wrapper.GetReservedKeyword)
 		r.Post("/resource/{argument}", wrapper.CreateResource)
 		r.Post("/resource2/{inline_argument}", wrapper.CreateResource2)
 		r.Put("/resource3/{fallthrough}", wrapper.UpdateResource3)
 		r.Get("/response-with-reference", wrapper.GetResponseWithReference)
+		r.Get("/with-tagged-middleware", wrapper.GetWithTaggedMiddleware)
+		r.Post("/with-tagged-middleware", wrapper.PostWithTaggedMiddleware)
 
 	})
 	return r

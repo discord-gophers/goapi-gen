@@ -5,7 +5,7 @@ info:
   license:
     name: MIT
 servers:
-  - url: http://openapitest.deepmap.ai
+  - url: http://example.com
 paths:
   /response-with-reference:
     get:
@@ -89,7 +89,7 @@ paths:
       responses:
         '200':
           $ref: "#/components/responses/SimpleResponse"
-  /get-with-tagged-middleware:
+  /with-tagged-middleware:
     summary: GetWithTaggedMiddleware
     x-go-middlewares: [pathMiddleware]
     get:

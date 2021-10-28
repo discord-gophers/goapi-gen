@@ -170,9 +170,8 @@ func (siw *ServerInterfaceWrapper) {{$opid}}(w http.ResponseWriter, r *http.Requ
 	{{ with .Middlewares -}}
 	// Operation specific middleware
 	{{- range . }}
-		if middleware, ok := siw.Middlewares[{{printf "%q" .}}]; ok {
-		handler = middleware(handler).ServeHTTP
-	}
+	{{ $tag := printf "%q" . -}}
+	handler = siw.Middlewares[{{$tag}}](handler).ServeHTTP
 	{{- end }}
 	{{- end }}
 
