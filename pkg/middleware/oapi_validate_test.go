@@ -21,7 +21,7 @@ info:
   version: 1.0.0
   title: TestServer
 servers:
-  - url: http://deepmap.ai/
+  - url: http://example.com
 paths:
   /resource:
     get:
@@ -136,7 +136,6 @@ func TestOapiRequestValidatorWithOptions(t *testing.T) {
 	options := Options{
 		Options: openapi3filter.Options{
 			AuthenticationFunc: func(c context.Context, input *openapi3filter.AuthenticationInput) error {
-
 				for _, s := range input.Scopes {
 					if s == "someScope" {
 						return nil
@@ -162,7 +161,7 @@ func TestOapiRequestValidatorWithOptions(t *testing.T) {
 
 	// Call a protected function to which we have access
 	{
-		rec := doGet(t, r, "http://deepmap.ai/protected_resource")
+		rec := doGet(t, r, "http://example.com/protected_resource")
 		assert.Equal(t, http.StatusNoContent, rec.Code)
 		assert.True(t, called, "Handler should have been called")
 		called = false
@@ -174,7 +173,7 @@ func TestOapiRequestValidatorWithOptions(t *testing.T) {
 	})
 	// Call a protected function to which we dont have access
 	{
-		rec := doGet(t, r, "http://deepmap.ai/protected_resource2")
+		rec := doGet(t, r, "http://example.com/protected_resource2")
 		assert.Equal(t, http.StatusUnauthorized, rec.Code)
 		assert.False(t, called, "Handler should not have been called")
 		called = false
@@ -186,16 +185,14 @@ func TestOapiRequestValidatorWithOptions(t *testing.T) {
 	})
 	// Call a protected function without credentials
 	{
-		rec := doGet(t, r, "http://deepmap.ai/protected_resource_401")
+		rec := doGet(t, r, "http://example.com/protected_resource_401")
 		assert.Equal(t, http.StatusUnauthorized, rec.Code)
 		assert.False(t, called, "Handler should not have been called")
 		called = false
 	}
-
 }
 
 func testRequestValidatorBasicFunctions(t *testing.T, r *chi.Mux) {
-
 	called := false
 
 	// Install a request handler for /resource. We want to make sure it doesn't
@@ -206,14 +203,14 @@ func testRequestValidatorBasicFunctions(t *testing.T, r *chi.Mux) {
 
 	// Let's send the request to the wrong server, this should fail validation
 	{
-		rec := doGet(t, r, "http://not.deepmap.ai/resource")
+		rec := doGet(t, r, "http://not.example.com/resource")
 		assert.Equal(t, http.StatusBadRequest, rec.Code)
 		assert.False(t, called, "Handler should not have been called")
 	}
 
 	// Let's send a good request, it should pass
 	{
-		rec := doGet(t, r, "http://deepmap.ai/resource")
+		rec := doGet(t, r, "http://example.com/resource")
 		assert.Equal(t, http.StatusOK, rec.Code)
 		assert.True(t, called, "Handler should have been called")
 		called = false
@@ -221,7 +218,7 @@ func testRequestValidatorBasicFunctions(t *testing.T, r *chi.Mux) {
 
 	// Send an out-of-spec parameter
 	{
-		rec := doGet(t, r, "http://deepmap.ai/resource?id=500")
+		rec := doGet(t, r, "http://example.com/resource?id=500")
 		assert.Equal(t, http.StatusBadRequest, rec.Code)
 		assert.False(t, called, "Handler should not have been called")
 		called = false
@@ -229,7 +226,7 @@ func testRequestValidatorBasicFunctions(t *testing.T, r *chi.Mux) {
 
 	// Send a bad parameter type
 	{
-		rec := doGet(t, r, "http://deepmap.ai/resource?id=foo")
+		rec := doGet(t, r, "http://example.com/resource?id=foo")
 		assert.Equal(t, http.StatusBadRequest, rec.Code)
 		assert.False(t, called, "Handler should not have been called")
 		called = false
@@ -249,7 +246,7 @@ func testRequestValidatorBasicFunctions(t *testing.T, r *chi.Mux) {
 		}{
 			Name: "Marcin",
 		}
-		rec := doPost(t, r, "http://deepmap.ai/resource", body)
+		rec := doPost(t, r, "http://example.com/resource", body)
 		assert.Equal(t, http.StatusNoContent, rec.Code)
 		assert.True(t, called, "Handler should have been called")
 		called = false
@@ -262,10 +259,9 @@ func testRequestValidatorBasicFunctions(t *testing.T, r *chi.Mux) {
 		}{
 			Name: 7,
 		}
-		rec := doPost(t, r, "http://deepmap.ai/resource", body)
+		rec := doPost(t, r, "http://example.com/resource", body)
 		assert.Equal(t, http.StatusBadRequest, rec.Code)
 		assert.False(t, called, "Handler should not have been called")
 		called = false
 	}
-
 }

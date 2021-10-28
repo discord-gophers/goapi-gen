@@ -5,7 +5,7 @@ info:
   license:
     name: MIT
 servers:
-  - url: http://openapitest.deepmap.ai
+  - url: http://example.com
 paths:
   /simplePrimitive/{param}:
     get:

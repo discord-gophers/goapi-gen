@@ -6,7 +6,7 @@ info:
     Test cases for various issues found over time. Please add a test case for
     any bug fixed.
 servers:
-  - url: http://openapitest.deepmap.ai
+  - url: http://example.com
 paths:
   /ensure-everything-is-referenced:
     get:
