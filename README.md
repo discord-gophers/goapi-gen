@@ -1,5 +1,7 @@
 # OpenAPI Client and Server Code Generator
 
+[![Go Reference](https://pkg.go.dev/badge/github.com/discord-gophers/goapi-gen.svg)](https://pkg.go.dev/github.com/discord-gophers/goapi-gen)
+
 ⚠️⚠️⚠️ We are currently making large, breaking refactor changes. As such, this library may be in flux until we've tagged an initial release.
 
 This package contains a set of utilities for generating Go boilerplate code for
@@ -446,10 +448,10 @@ which help you to use the various OpenAPI 3 Authentication mechanism.
   ```go
   // Operation specific middleware
   if siw.TaggedMiddlewares != nil {
-    if middleware, ok := siw.TaggedMiddlewares["validateJSON"]; ok {
+    if middleware, ok := siw.Middlewares["validateJSON"]; ok {
       handler = middleware(handler)
     }
-    if middleware, ok := siw.TaggedMiddlewares["limit"]; ok {
+    if middleware, ok := siw.Middlewares["limit"]; ok {
       handler = middleware(handler)
     }
   }
@@ -569,18 +571,7 @@ need it. We've not yet implemented several things:
 
 ## Making changes to code generation
 
-The code generator uses a tool to inline all the template definitions into
-code, so that we don't have to deal with the location of the template files.
-When you update any of the files under the `templates/` directory, you will
-need to regenerate the template inlines:
-
-    go generate ./pkg/codegen/templates
-
-All this command does is inline the files ending in `.tmpl` into the specified
-Go file.
-
-Afterwards you should run `go generate ./...`, and the templates will be updated
- accordingly.
+After updating any files under the `pkg/codegen/templates` directory, run `go generate ./...`, and the templates will be updated accordingly.
 
 Alternatively, you can provide custom templates to override built-in ones using
 the `-templates` flag specifying a path to a directory containing templates
