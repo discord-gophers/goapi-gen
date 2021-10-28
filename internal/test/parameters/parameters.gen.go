@@ -10,7 +10,7 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"net/url"
 	"path"
@@ -159,6 +159,7 @@ func NewClient(server string, opts ...ClientOption) (*Client, error) {
 	// create a client with sane default values
 	client := Client{
 		Server: server,
+		Client: &http.Client{},
 	}
 	// mutate client and add all optional params
 	for _, o := range opts {
@@ -169,10 +170,6 @@ func NewClient(server string, opts ...ClientOption) (*Client, error) {
 	// ensure the server URL always has a trailing slash
 	if !strings.HasSuffix(client.Server, "/") {
 		client.Server += "/"
-	}
-	// create httpClient, if not already present
-	if client.Client == nil {
-		client.Client = &http.Client{}
 	}
 	return &client, nil
 }
@@ -1546,7 +1543,7 @@ func NewClientWithResponses(server string, opts ...ClientOption) (*ClientWithRes
 }
 
 // WithBaseURL overrides the baseURL.
-func WithBaseURL(baseURL string) ClientOption {
+func WithClientBaseURL(baseURL string) ClientOption {
 	return func(c *Client) error {
 		newBaseURL, err := url.Parse(baseURL)
 		if err != nil {
@@ -2222,7 +2219,7 @@ func (c *ClientWithResponses) GetStartingWithNumberWithResponse(ctx context.Cont
 
 // ParseGetContentObjectResponse parses an HTTP response from a GetContentObjectWithResponse call
 func ParseGetContentObjectResponse(rsp *http.Response) (*GetContentObjectResponse, error) {
-	bodyBytes, err := ioutil.ReadAll(rsp.Body)
+	bodyBytes, err := io.ReadAll(rsp.Body)
 	defer func() { _ = rsp.Body.Close() }()
 	if err != nil {
 		return nil, err
@@ -2238,7 +2235,7 @@ func ParseGetContentObjectResponse(rsp *http.Response) (*GetContentObjectRespons
 
 // ParseGetCookieResponse parses an HTTP response from a GetCookieWithResponse call
 func ParseGetCookieResponse(rsp *http.Response) (*GetCookieResponse, error) {
-	bodyBytes, err := ioutil.ReadAll(rsp.Body)
+	bodyBytes, err := io.ReadAll(rsp.Body)
 	defer func() { _ = rsp.Body.Close() }()
 	if err != nil {
 		return nil, err
@@ -2254,7 +2251,7 @@ func ParseGetCookieResponse(rsp *http.Response) (*GetCookieResponse, error) {
 
 // ParseGetHeaderResponse parses an HTTP response from a GetHeaderWithResponse call
 func ParseGetHeaderResponse(rsp *http.Response) (*GetHeaderResponse, error) {
-	bodyBytes, err := ioutil.ReadAll(rsp.Body)
+	bodyBytes, err := io.ReadAll(rsp.Body)
 	defer func() { _ = rsp.Body.Close() }()
 	if err != nil {
 		return nil, err
@@ -2270,7 +2267,7 @@ func ParseGetHeaderResponse(rsp *http.Response) (*GetHeaderResponse, error) {
 
 // ParseGetLabelExplodeArrayResponse parses an HTTP response from a GetLabelExplodeArrayWithResponse call
 func ParseGetLabelExplodeArrayResponse(rsp *http.Response) (*GetLabelExplodeArrayResponse, error) {
-	bodyBytes, err := ioutil.ReadAll(rsp.Body)
+	bodyBytes, err := io.ReadAll(rsp.Body)
 	defer func() { _ = rsp.Body.Close() }()
 	if err != nil {
 		return nil, err
@@ -2286,7 +2283,7 @@ func ParseGetLabelExplodeArrayResponse(rsp *http.Response) (*GetLabelExplodeArra
 
 // ParseGetLabelExplodeObjectResponse parses an HTTP response from a GetLabelExplodeObjectWithResponse call
 func ParseGetLabelExplodeObjectResponse(rsp *http.Response) (*GetLabelExplodeObjectResponse, error) {
-	bodyBytes, err := ioutil.ReadAll(rsp.Body)
+	bodyBytes, err := io.ReadAll(rsp.Body)
 	defer func() { _ = rsp.Body.Close() }()
 	if err != nil {
 		return nil, err
@@ -2302,7 +2299,7 @@ func ParseGetLabelExplodeObjectResponse(rsp *http.Response) (*GetLabelExplodeObj
 
 // ParseGetLabelNoExplodeArrayResponse parses an HTTP response from a GetLabelNoExplodeArrayWithResponse call
 func ParseGetLabelNoExplodeArrayResponse(rsp *http.Response) (*GetLabelNoExplodeArrayResponse, error) {
-	bodyBytes, err := ioutil.ReadAll(rsp.Body)
+	bodyBytes, err := io.ReadAll(rsp.Body)
 	defer func() { _ = rsp.Body.Close() }()
 	if err != nil {
 		return nil, err
@@ -2318,7 +2315,7 @@ func ParseGetLabelNoExplodeArrayResponse(rsp *http.Response) (*GetLabelNoExplode
 
 // ParseGetLabelNoExplodeObjectResponse parses an HTTP response from a GetLabelNoExplodeObjectWithResponse call
 func ParseGetLabelNoExplodeObjectResponse(rsp *http.Response) (*GetLabelNoExplodeObjectResponse, error) {
-	bodyBytes, err := ioutil.ReadAll(rsp.Body)
+	bodyBytes, err := io.ReadAll(rsp.Body)
 	defer func() { _ = rsp.Body.Close() }()
 	if err != nil {
 		return nil, err
@@ -2334,7 +2331,7 @@ func ParseGetLabelNoExplodeObjectResponse(rsp *http.Response) (*GetLabelNoExplod
 
 // ParseGetMatrixExplodeArrayResponse parses an HTTP response from a GetMatrixExplodeArrayWithResponse call
 func ParseGetMatrixExplodeArrayResponse(rsp *http.Response) (*GetMatrixExplodeArrayResponse, error) {
-	bodyBytes, err := ioutil.ReadAll(rsp.Body)
+	bodyBytes, err := io.ReadAll(rsp.Body)
 	defer func() { _ = rsp.Body.Close() }()
 	if err != nil {
 		return nil, err
@@ -2350,7 +2347,7 @@ func ParseGetMatrixExplodeArrayResponse(rsp *http.Response) (*GetMatrixExplodeAr
 
 // ParseGetMatrixExplodeObjectResponse parses an HTTP response from a GetMatrixExplodeObjectWithResponse call
 func ParseGetMatrixExplodeObjectResponse(rsp *http.Response) (*GetMatrixExplodeObjectResponse, error) {
-	bodyBytes, err := ioutil.ReadAll(rsp.Body)
+	bodyBytes, err := io.ReadAll(rsp.Body)
 	defer func() { _ = rsp.Body.Close() }()
 	if err != nil {
 		return nil, err
@@ -2366,7 +2363,7 @@ func ParseGetMatrixExplodeObjectResponse(rsp *http.Response) (*GetMatrixExplodeO
 
 // ParseGetMatrixNoExplodeArrayResponse parses an HTTP response from a GetMatrixNoExplodeArrayWithResponse call
 func ParseGetMatrixNoExplodeArrayResponse(rsp *http.Response) (*GetMatrixNoExplodeArrayResponse, error) {
-	bodyBytes, err := ioutil.ReadAll(rsp.Body)
+	bodyBytes, err := io.ReadAll(rsp.Body)
 	defer func() { _ = rsp.Body.Close() }()
 	if err != nil {
 		return nil, err
@@ -2382,7 +2379,7 @@ func ParseGetMatrixNoExplodeArrayResponse(rsp *http.Response) (*GetMatrixNoExplo
 
 // ParseGetMatrixNoExplodeObjectResponse parses an HTTP response from a GetMatrixNoExplodeObjectWithResponse call
 func ParseGetMatrixNoExplodeObjectResponse(rsp *http.Response) (*GetMatrixNoExplodeObjectResponse, error) {
-	bodyBytes, err := ioutil.ReadAll(rsp.Body)
+	bodyBytes, err := io.ReadAll(rsp.Body)
 	defer func() { _ = rsp.Body.Close() }()
 	if err != nil {
 		return nil, err
@@ -2398,7 +2395,7 @@ func ParseGetMatrixNoExplodeObjectResponse(rsp *http.Response) (*GetMatrixNoExpl
 
 // ParseGetPassThroughResponse parses an HTTP response from a GetPassThroughWithResponse call
 func ParseGetPassThroughResponse(rsp *http.Response) (*GetPassThroughResponse, error) {
-	bodyBytes, err := ioutil.ReadAll(rsp.Body)
+	bodyBytes, err := io.ReadAll(rsp.Body)
 	defer func() { _ = rsp.Body.Close() }()
 	if err != nil {
 		return nil, err
@@ -2414,7 +2411,7 @@ func ParseGetPassThroughResponse(rsp *http.Response) (*GetPassThroughResponse, e
 
 // ParseGetDeepObjectResponse parses an HTTP response from a GetDeepObjectWithResponse call
 func ParseGetDeepObjectResponse(rsp *http.Response) (*GetDeepObjectResponse, error) {
-	bodyBytes, err := ioutil.ReadAll(rsp.Body)
+	bodyBytes, err := io.ReadAll(rsp.Body)
 	defer func() { _ = rsp.Body.Close() }()
 	if err != nil {
 		return nil, err
@@ -2430,7 +2427,7 @@ func ParseGetDeepObjectResponse(rsp *http.Response) (*GetDeepObjectResponse, err
 
 // ParseGetQueryFormResponse parses an HTTP response from a GetQueryFormWithResponse call
 func ParseGetQueryFormResponse(rsp *http.Response) (*GetQueryFormResponse, error) {
-	bodyBytes, err := ioutil.ReadAll(rsp.Body)
+	bodyBytes, err := io.ReadAll(rsp.Body)
 	defer func() { _ = rsp.Body.Close() }()
 	if err != nil {
 		return nil, err
@@ -2446,7 +2443,7 @@ func ParseGetQueryFormResponse(rsp *http.Response) (*GetQueryFormResponse, error
 
 // ParseGetSimpleExplodeArrayResponse parses an HTTP response from a GetSimpleExplodeArrayWithResponse call
 func ParseGetSimpleExplodeArrayResponse(rsp *http.Response) (*GetSimpleExplodeArrayResponse, error) {
-	bodyBytes, err := ioutil.ReadAll(rsp.Body)
+	bodyBytes, err := io.ReadAll(rsp.Body)
 	defer func() { _ = rsp.Body.Close() }()
 	if err != nil {
 		return nil, err
@@ -2462,7 +2459,7 @@ func ParseGetSimpleExplodeArrayResponse(rsp *http.Response) (*GetSimpleExplodeAr
 
 // ParseGetSimpleExplodeObjectResponse parses an HTTP response from a GetSimpleExplodeObjectWithResponse call
 func ParseGetSimpleExplodeObjectResponse(rsp *http.Response) (*GetSimpleExplodeObjectResponse, error) {
-	bodyBytes, err := ioutil.ReadAll(rsp.Body)
+	bodyBytes, err := io.ReadAll(rsp.Body)
 	defer func() { _ = rsp.Body.Close() }()
 	if err != nil {
 		return nil, err
@@ -2478,7 +2475,7 @@ func ParseGetSimpleExplodeObjectResponse(rsp *http.Response) (*GetSimpleExplodeO
 
 // ParseGetSimpleNoExplodeArrayResponse parses an HTTP response from a GetSimpleNoExplodeArrayWithResponse call
 func ParseGetSimpleNoExplodeArrayResponse(rsp *http.Response) (*GetSimpleNoExplodeArrayResponse, error) {
-	bodyBytes, err := ioutil.ReadAll(rsp.Body)
+	bodyBytes, err := io.ReadAll(rsp.Body)
 	defer func() { _ = rsp.Body.Close() }()
 	if err != nil {
 		return nil, err
@@ -2494,7 +2491,7 @@ func ParseGetSimpleNoExplodeArrayResponse(rsp *http.Response) (*GetSimpleNoExplo
 
 // ParseGetSimpleNoExplodeObjectResponse parses an HTTP response from a GetSimpleNoExplodeObjectWithResponse call
 func ParseGetSimpleNoExplodeObjectResponse(rsp *http.Response) (*GetSimpleNoExplodeObjectResponse, error) {
-	bodyBytes, err := ioutil.ReadAll(rsp.Body)
+	bodyBytes, err := io.ReadAll(rsp.Body)
 	defer func() { _ = rsp.Body.Close() }()
 	if err != nil {
 		return nil, err
@@ -2510,7 +2507,7 @@ func ParseGetSimpleNoExplodeObjectResponse(rsp *http.Response) (*GetSimpleNoExpl
 
 // ParseGetSimplePrimitiveResponse parses an HTTP response from a GetSimplePrimitiveWithResponse call
 func ParseGetSimplePrimitiveResponse(rsp *http.Response) (*GetSimplePrimitiveResponse, error) {
-	bodyBytes, err := ioutil.ReadAll(rsp.Body)
+	bodyBytes, err := io.ReadAll(rsp.Body)
 	defer func() { _ = rsp.Body.Close() }()
 	if err != nil {
 		return nil, err
@@ -2526,7 +2523,7 @@ func ParseGetSimplePrimitiveResponse(rsp *http.Response) (*GetSimplePrimitiveRes
 
 // ParseGetStartingWithNumberResponse parses an HTTP response from a GetStartingWithNumberWithResponse call
 func ParseGetStartingWithNumberResponse(rsp *http.Response) (*GetStartingWithNumberResponse, error) {
-	bodyBytes, err := ioutil.ReadAll(rsp.Body)
+	bodyBytes, err := io.ReadAll(rsp.Body)
 	defer func() { _ = rsp.Body.Close() }()
 	if err != nil {
 		return nil, err
@@ -2606,9 +2603,9 @@ type ServerInterface interface {
 
 // ServerInterfaceWrapper converts contexts to parameters.
 type ServerInterfaceWrapper struct {
-	Handler           ServerInterface
-	TaggedMiddlewares map[string]func(http.Handler) http.Handler
-	ErrorHandlerFunc  func(w http.ResponseWriter, r *http.Request, err error)
+	Handler          ServerInterface
+	Middlewares      map[string]func(http.Handler) http.Handler
+	ErrorHandlerFunc func(w http.ResponseWriter, r *http.Request, err error)
 }
 
 // GetContentObject operation middleware
@@ -3344,54 +3341,35 @@ type TooManyValuesForParamError struct {
 	error
 }
 
+type ServerOptions struct {
+	BaseURL          string
+	BaseRouter       chi.Router
+	Middlewares      map[string]func(http.Handler) http.Handler
+	ErrorHandlerFunc func(w http.ResponseWriter, r *http.Request, err error)
+}
+
+type ServerOption func(*ServerOptions)
+
 // Handler creates http.Handler with routing matching OpenAPI spec.
-func Handler(si ServerInterface) http.Handler {
-	return HandlerWithOptions(si, ChiServerOptions{})
-}
-
-type ChiServerOptions struct {
-	BaseURL           string
-	BaseRouter        chi.Router
-	TaggedMiddlewares map[string]func(http.Handler) http.Handler
-	ErrorHandlerFunc  func(w http.ResponseWriter, r *http.Request, err error)
-}
-
-// HandlerFromMux creates http.Handler with routing matching OpenAPI spec based on the provided mux.
-func HandlerFromMux(si ServerInterface, r chi.Router) http.Handler {
-	return HandlerWithOptions(si, ChiServerOptions{
-		BaseRouter: r,
-	})
-}
-
-func HandlerFromMuxWithBaseURL(si ServerInterface, r chi.Router, baseURL string) http.Handler {
-	return HandlerWithOptions(si, ChiServerOptions{
-		BaseURL:    baseURL,
-		BaseRouter: r,
-	})
-}
-
-// HandlerWithOptions creates http.Handler with additional options
-func HandlerWithOptions(si ServerInterface, options ChiServerOptions) http.Handler {
-	r := options.BaseRouter
-
-	if r == nil {
-		r = chi.NewRouter()
-	}
-
-	if options.ErrorHandlerFunc == nil {
-		options.ErrorHandlerFunc = func(w http.ResponseWriter, r *http.Request, err error) {
+func Handler(si ServerInterface, opts ...ServerOption) http.Handler {
+	options := &ServerOptions{
+		BaseURL:     "/",
+		BaseRouter:  chi.NewRouter(),
+		Middlewares: make(map[string]func(http.Handler) http.Handler),
+		ErrorHandlerFunc: func(w http.ResponseWriter, r *http.Request, err error) {
 			http.Error(w, err.Error(), http.StatusBadRequest)
-		}
+		},
 	}
 
-	if options.BaseURL == "" {
-		options.BaseURL = "/"
+	for _, f := range opts {
+		f(options)
 	}
 
+	r := options.BaseRouter
 	wrapper := ServerInterfaceWrapper{
-		Handler:           si,
-		TaggedMiddlewares: options.TaggedMiddlewares,
-		ErrorHandlerFunc:  options.ErrorHandlerFunc,
+		Handler:          si,
+		Middlewares:      options.Middlewares,
+		ErrorHandlerFunc: options.ErrorHandlerFunc,
 	}
 
 	r.Route(options.BaseURL, func(r chi.Router) {
@@ -3418,6 +3396,36 @@ func HandlerWithOptions(si ServerInterface, options ChiServerOptions) http.Handl
 
 	})
 	return r
+}
+
+func WithRouter(r chi.Router) ServerOption {
+	return func(s *ServerOptions) {
+		s.BaseRouter = r
+	}
+}
+
+func WithServerBaseURL(url string) ServerOption {
+	return func(s *ServerOptions) {
+		s.BaseURL = url
+	}
+}
+
+func WithMiddleware(key string, middleware func(http.Handler) http.Handler) ServerOption {
+	return func(s *ServerOptions) {
+		s.Middlewares[key] = middleware
+	}
+}
+
+func WithMiddlewares(middlewares map[string]func(http.Handler) http.Handler) ServerOption {
+	return func(s *ServerOptions) {
+		s.Middlewares = middlewares
+	}
+}
+
+func WithErrorHandler(handler func(w http.ResponseWriter, r *http.Request, err error)) ServerOption {
+	return func(s *ServerOptions) {
+		s.ErrorHandlerFunc = handler
+	}
 }
 
 // Base64 encoded, gzipped, json marshaled Swagger object

@@ -12,7 +12,6 @@ import (
 	"encoding/xml"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"net/http"
 	"net/url"
 	"path"
@@ -124,6 +123,7 @@ func NewClient(server string, opts ...ClientOption) (*Client, error) {
 	// create a client with sane default values
 	client := Client{
 		Server: server,
+		Client: &http.Client{},
 	}
 	// mutate client and add all optional params
 	for _, o := range opts {
@@ -134,10 +134,6 @@ func NewClient(server string, opts ...ClientOption) (*Client, error) {
 	// ensure the server URL always has a trailing slash
 	if !strings.HasSuffix(client.Server, "/") {
 		client.Server += "/"
-	}
-	// create httpClient, if not already present
-	if client.Client == nil {
-		client.Client = &http.Client{}
 	}
 	return &client, nil
 }
@@ -620,7 +616,7 @@ func NewClientWithResponses(server string, opts ...ClientOption) (*ClientWithRes
 }
 
 // WithBaseURL overrides the baseURL.
-func WithBaseURL(baseURL string) ClientOption {
+func WithClientBaseURL(baseURL string) ClientOption {
 	return func(c *Client) error {
 		newBaseURL, err := url.Parse(baseURL)
 		if err != nil {
@@ -934,7 +930,7 @@ func (c *ClientWithResponses) Issue9WithResponse(ctx context.Context, params *Is
 
 // ParseEnsureEverythingIsReferencedResponse parses an HTTP response from a EnsureEverythingIsReferencedWithResponse call
 func ParseEnsureEverythingIsReferencedResponse(rsp *http.Response) (*EnsureEverythingIsReferencedResponse, error) {
-	bodyBytes, err := ioutil.ReadAll(rsp.Body)
+	bodyBytes, err := io.ReadAll(rsp.Body)
 	defer func() { _ = rsp.Body.Close() }()
 	if err != nil {
 		return nil, err
@@ -968,7 +964,7 @@ func ParseEnsureEverythingIsReferencedResponse(rsp *http.Response) (*EnsureEvery
 
 // ParseIssue127response parses an HTTP response from a Issue127WithResponse call
 func ParseIssue127response(rsp *http.Response) (*Issue127Response, error) {
-	bodyBytes, err := ioutil.ReadAll(rsp.Body)
+	bodyBytes, err := io.ReadAll(rsp.Body)
 	defer func() { _ = rsp.Body.Close() }()
 	if err != nil {
 		return nil, err
@@ -1021,7 +1017,7 @@ func ParseIssue127response(rsp *http.Response) (*Issue127Response, error) {
 
 // ParseIssue185response parses an HTTP response from a Issue185WithResponse call
 func ParseIssue185response(rsp *http.Response) (*Issue185Response, error) {
-	bodyBytes, err := ioutil.ReadAll(rsp.Body)
+	bodyBytes, err := io.ReadAll(rsp.Body)
 	defer func() { _ = rsp.Body.Close() }()
 	if err != nil {
 		return nil, err
@@ -1037,7 +1033,7 @@ func ParseIssue185response(rsp *http.Response) (*Issue185Response, error) {
 
 // ParseIssue209response parses an HTTP response from a Issue209WithResponse call
 func ParseIssue209response(rsp *http.Response) (*Issue209Response, error) {
-	bodyBytes, err := ioutil.ReadAll(rsp.Body)
+	bodyBytes, err := io.ReadAll(rsp.Body)
 	defer func() { _ = rsp.Body.Close() }()
 	if err != nil {
 		return nil, err
@@ -1053,7 +1049,7 @@ func ParseIssue209response(rsp *http.Response) (*Issue209Response, error) {
 
 // ParseIssue30response parses an HTTP response from a Issue30WithResponse call
 func ParseIssue30response(rsp *http.Response) (*Issue30Response, error) {
-	bodyBytes, err := ioutil.ReadAll(rsp.Body)
+	bodyBytes, err := io.ReadAll(rsp.Body)
 	defer func() { _ = rsp.Body.Close() }()
 	if err != nil {
 		return nil, err
@@ -1069,7 +1065,7 @@ func ParseIssue30response(rsp *http.Response) (*Issue30Response, error) {
 
 // ParseGetIssues375response parses an HTTP response from a GetIssues375WithResponse call
 func ParseGetIssues375response(rsp *http.Response) (*GetIssues375Response, error) {
-	bodyBytes, err := ioutil.ReadAll(rsp.Body)
+	bodyBytes, err := io.ReadAll(rsp.Body)
 	defer func() { _ = rsp.Body.Close() }()
 	if err != nil {
 		return nil, err
@@ -1095,7 +1091,7 @@ func ParseGetIssues375response(rsp *http.Response) (*GetIssues375Response, error
 
 // ParseIssue41response parses an HTTP response from a Issue41WithResponse call
 func ParseIssue41response(rsp *http.Response) (*Issue41Response, error) {
-	bodyBytes, err := ioutil.ReadAll(rsp.Body)
+	bodyBytes, err := io.ReadAll(rsp.Body)
 	defer func() { _ = rsp.Body.Close() }()
 	if err != nil {
 		return nil, err
@@ -1111,7 +1107,7 @@ func ParseIssue41response(rsp *http.Response) (*Issue41Response, error) {
 
 // ParseIssue9response parses an HTTP response from a Issue9WithResponse call
 func ParseIssue9response(rsp *http.Response) (*Issue9Response, error) {
-	bodyBytes, err := ioutil.ReadAll(rsp.Body)
+	bodyBytes, err := io.ReadAll(rsp.Body)
 	defer func() { _ = rsp.Body.Close() }()
 	if err != nil {
 		return nil, err
@@ -1155,9 +1151,9 @@ type ServerInterface interface {
 
 // ServerInterfaceWrapper converts contexts to parameters.
 type ServerInterfaceWrapper struct {
-	Handler           ServerInterface
-	TaggedMiddlewares map[string]func(http.Handler) http.Handler
-	ErrorHandlerFunc  func(w http.ResponseWriter, r *http.Request, err error)
+	Handler          ServerInterface
+	Middlewares      map[string]func(http.Handler) http.Handler
+	ErrorHandlerFunc func(w http.ResponseWriter, r *http.Request, err error)
 }
 
 // EnsureEverythingIsReferenced operation middleware
@@ -1321,54 +1317,35 @@ type TooManyValuesForParamError struct {
 	error
 }
 
+type ServerOptions struct {
+	BaseURL          string
+	BaseRouter       chi.Router
+	Middlewares      map[string]func(http.Handler) http.Handler
+	ErrorHandlerFunc func(w http.ResponseWriter, r *http.Request, err error)
+}
+
+type ServerOption func(*ServerOptions)
+
 // Handler creates http.Handler with routing matching OpenAPI spec.
-func Handler(si ServerInterface) http.Handler {
-	return HandlerWithOptions(si, ChiServerOptions{})
-}
-
-type ChiServerOptions struct {
-	BaseURL           string
-	BaseRouter        chi.Router
-	TaggedMiddlewares map[string]func(http.Handler) http.Handler
-	ErrorHandlerFunc  func(w http.ResponseWriter, r *http.Request, err error)
-}
-
-// HandlerFromMux creates http.Handler with routing matching OpenAPI spec based on the provided mux.
-func HandlerFromMux(si ServerInterface, r chi.Router) http.Handler {
-	return HandlerWithOptions(si, ChiServerOptions{
-		BaseRouter: r,
-	})
-}
-
-func HandlerFromMuxWithBaseURL(si ServerInterface, r chi.Router, baseURL string) http.Handler {
-	return HandlerWithOptions(si, ChiServerOptions{
-		BaseURL:    baseURL,
-		BaseRouter: r,
-	})
-}
-
-// HandlerWithOptions creates http.Handler with additional options
-func HandlerWithOptions(si ServerInterface, options ChiServerOptions) http.Handler {
-	r := options.BaseRouter
-
-	if r == nil {
-		r = chi.NewRouter()
-	}
-
-	if options.ErrorHandlerFunc == nil {
-		options.ErrorHandlerFunc = func(w http.ResponseWriter, r *http.Request, err error) {
+func Handler(si ServerInterface, opts ...ServerOption) http.Handler {
+	options := &ServerOptions{
+		BaseURL:     "/",
+		BaseRouter:  chi.NewRouter(),
+		Middlewares: make(map[string]func(http.Handler) http.Handler),
+		ErrorHandlerFunc: func(w http.ResponseWriter, r *http.Request, err error) {
 			http.Error(w, err.Error(), http.StatusBadRequest)
-		}
+		},
 	}
 
-	if options.BaseURL == "" {
-		options.BaseURL = "/"
+	for _, f := range opts {
+		f(options)
 	}
 
+	r := options.BaseRouter
 	wrapper := ServerInterfaceWrapper{
-		Handler:           si,
-		TaggedMiddlewares: options.TaggedMiddlewares,
-		ErrorHandlerFunc:  options.ErrorHandlerFunc,
+		Handler:          si,
+		Middlewares:      options.Middlewares,
+		ErrorHandlerFunc: options.ErrorHandlerFunc,
 	}
 
 	r.Route(options.BaseURL, func(r chi.Router) {
@@ -1383,6 +1360,36 @@ func HandlerWithOptions(si ServerInterface, options ChiServerOptions) http.Handl
 
 	})
 	return r
+}
+
+func WithRouter(r chi.Router) ServerOption {
+	return func(s *ServerOptions) {
+		s.BaseRouter = r
+	}
+}
+
+func WithServerBaseURL(url string) ServerOption {
+	return func(s *ServerOptions) {
+		s.BaseURL = url
+	}
+}
+
+func WithMiddleware(key string, middleware func(http.Handler) http.Handler) ServerOption {
+	return func(s *ServerOptions) {
+		s.Middlewares[key] = middleware
+	}
+}
+
+func WithMiddlewares(middlewares map[string]func(http.Handler) http.Handler) ServerOption {
+	return func(s *ServerOptions) {
+		s.Middlewares = middlewares
+	}
+}
+
+func WithErrorHandler(handler func(w http.ResponseWriter, r *http.Request, err error)) ServerOption {
+	return func(s *ServerOptions) {
+		s.ErrorHandlerFunc = handler
+	}
 }
 
 // Base64 encoded, gzipped, json marshaled Swagger object

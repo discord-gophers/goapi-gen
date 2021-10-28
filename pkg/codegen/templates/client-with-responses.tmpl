@@ -14,7 +14,7 @@ func NewClientWithResponses(server string, opts ...ClientOption) (*ClientWithRes
 }
 
 // WithBaseURL overrides the baseURL.
-func WithBaseURL(baseURL string) ClientOption {
+func WithClientBaseURL(baseURL string) ClientOption {
 	return func(c *Client) error {
 		newBaseURL, err := url.Parse(baseURL)
 		if err != nil {
@@ -99,7 +99,7 @@ func (c *ClientWithResponses) {{$opid}}{{.Suffix}}WithResponse(ctx context.Conte
 
 // Parse{{genResponseTypeName $opid | ucFirst}} parses an HTTP response from a {{$opid}}WithResponse call
 func Parse{{genResponseTypeName $opid | ucFirst}}(rsp *http.Response) (*{{genResponseTypeName $opid}}, error) {
-	bodyBytes, err := ioutil.ReadAll(rsp.Body)
+	bodyBytes, err := io.ReadAll(rsp.Body)
 	defer func() { _ = rsp.Body.Close() }()
 	if err != nil {
 		return nil, err

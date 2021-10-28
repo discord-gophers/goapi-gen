@@ -1,0 +1,70 @@
+type ServerOptions struct {
+	BaseURL string
+	BaseRouter chi.Router
+	Middlewares map[string]func(http.Handler) http.Handler
+	ErrorHandlerFunc   func(w http.ResponseWriter, r *http.Request, err error)
+}
+
+type ServerOption func(*ServerOptions)
+
+// Handler creates http.Handler with routing matching OpenAPI spec.
+func Handler(si ServerInterface, opts ...ServerOption) http.Handler {
+	options := &ServerOptions {
+		BaseURL: "/",
+		BaseRouter: chi.NewRouter(),
+		Middlewares: make(map[string]func(http.Handler) http.Handler),
+		ErrorHandlerFunc: func(w http.ResponseWriter, r *http.Request, err error) {
+			http.Error(w, err.Error(), http.StatusBadRequest)
+		},
+	}
+
+	for _, f := range opts {
+		f(options)
+	}
+
+	r := options.BaseRouter
+	{{if . -}}
+	wrapper := ServerInterfaceWrapper{
+		Handler: si,
+		Middlewares: options.Middlewares,
+		ErrorHandlerFunc: options.ErrorHandlerFunc,
+	}
+	{{ end }}
+	r.Route(options.BaseURL, func(r chi.Router) {
+	{{range . -}}
+		r.{{.Method | lower | title }}("{{.Path | swaggerUriToChiUri}}", wrapper.{{.OperationId}})
+	{{ end }}
+	})
+	return r
+}
+
+func WithRouter(r chi.Router) ServerOption {
+	return func(s *ServerOptions) {
+		s.BaseRouter = r
+	}
+}
+
+func WithServerBaseURL(url string) ServerOption {
+	return func(s *ServerOptions) {
+		s.BaseURL = url
+	}
+}
+
+func WithMiddleware(key string, middleware func(http.Handler) http.Handler) ServerOption {
+	return func(s *ServerOptions) {
+		s.Middlewares[key] = middleware
+	}
+}
+
+func WithMiddlewares(middlewares map[string]func(http.Handler) http.Handler) ServerOption {
+	return func(s *ServerOptions) {
+		s.Middlewares = middlewares
+	}
+}
+
+func WithErrorHandler(handler func(w http.ResponseWriter, r *http.Request, err error)) ServerOption {
+	return func(s *ServerOptions) {
+		s.ErrorHandlerFunc = handler
+	}
+}
+

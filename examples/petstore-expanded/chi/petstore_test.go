@@ -40,7 +40,7 @@ func TestPetStore(t *testing.T) {
 	r.Use(middleware.OapiRequestValidator(swagger))
 
 	store := api.NewPetStore()
-	api.HandlerFromMux(store, r)
+	api.Handler(store, api.WithRouter(r))
 
 	t.Run("Add pet", func(t *testing.T) {
 		tag := "TagOfSpot"

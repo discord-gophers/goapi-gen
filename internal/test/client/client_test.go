@@ -7,7 +7,6 @@ import (
 )
 
 func TestTemp(t *testing.T) {
-
 	var (
 		withTrailingSlash    string = "https://my-api.com/some-base-url/v1/"
 		withoutTrailingSlash string = "https://my-api.com/some-base-url/v1"
@@ -25,13 +24,13 @@ func TestTemp(t *testing.T) {
 
 	client3, err := NewClient(
 		"",
-		WithBaseURL(withTrailingSlash),
+		WithClientBaseURL(withTrailingSlash),
 	)
 	assert.NoError(t, err)
 
 	client4, err := NewClient(
 		"",
-		WithBaseURL(withoutTrailingSlash),
+		WithClientBaseURL(withoutTrailingSlash),
 	)
 	assert.NoError(t, err)
 
