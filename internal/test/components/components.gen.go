@@ -9,6 +9,7 @@ import (
 	"context"
 	"encoding/base64"
 	"encoding/json"
+	"encoding/xml"
 	"fmt"
 	"io"
 	"net/http"
@@ -19,6 +20,7 @@ import (
 	"github.com/discord-gophers/goapi-gen/pkg/runtime"
 	"github.com/getkin/kin-openapi/openapi3"
 	"github.com/go-chi/chi/v5"
+	"github.com/go-chi/render"
 )
 
 // Has additional properties of type int
@@ -121,6 +123,70 @@ type EnsureEverythingIsReferencedJSONRequestBody RequestBody
 
 // BodyWithAddPropsJSONRequestBody defines body for BodyWithAddProps for application/json ContentType.
 type BodyWithAddPropsJSONRequestBody BodyWithAddPropsJSONBody
+
+type Response struct {
+	body        interface{}
+	statusCode  int
+	contentType string
+}
+
+func (resp *Response) Render(w http.ResponseWriter, r *http.Request) error {
+	w.Header().Set("Content-Type", resp.contentType)
+	render.Status(r, resp.statusCode)
+	return nil
+}
+
+func (resp *Response) Status(statusCode int) *Response {
+	resp.statusCode = statusCode
+	return resp
+}
+
+func (resp *Response) ContentType(contentType string) *Response {
+	resp.contentType = contentType
+	return resp
+}
+
+func (resp *Response) MarshalJSON() ([]byte, error) {
+	return json.Marshal(resp.body)
+}
+
+func (resp *Response) MarshalXML(e *xml.Encoder, start xml.StartElement) error {
+	return e.Encode(resp.body)
+}
+
+func NewEnsureEverythingIsReferenced200Response(body struct {
+	// Has additional properties with schema for dictionaries
+	Five *AdditionalPropertiesObject5 `json:"five,omitempty"`
+
+	// Has anonymous field which has additional properties
+	Four      *AdditionalPropertiesObject4 `json:"four,omitempty"`
+	JSONField *ObjectWithJSONField         `json:"jsonField,omitempty"`
+
+	// Has additional properties of type int
+	One *AdditionalPropertiesObject1 `json:"one,omitempty"`
+
+	// Allows any additional property
+	Three *AdditionalPropertiesObject3 `json:"three,omitempty"`
+
+	// Does not allow additional properties
+	Two *AdditionalPropertiesObject2 `json:"two,omitempty"`
+}) *Response {
+	return &Response{
+		body:        body,
+		statusCode:  200,
+		contentType: "application/json",
+	}
+}
+
+func NewEnsureEverythingIsReferencedDefaultResponse(body struct {
+	Field SchemaObject `json:"Field"`
+}) *Response {
+	return &Response{
+		body:        body,
+		statusCode:  200,
+		contentType: "application/json",
+	}
+}
 
 // Getter for additional properties for ParamsWithAddPropsParams_P1. Returns the specified
 // element and whether it was found

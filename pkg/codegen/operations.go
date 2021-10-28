@@ -642,7 +642,7 @@ func GenerateTypesForOperations(t *template.Template, ops []OperationDefinition)
 	var buf bytes.Buffer
 	w := bufio.NewWriter(&buf)
 
-	addTypes, err := GenerateTemplates([]string{"param-types.tmpl", "request-bodies.tmpl"}, t, ops)
+	addTypes, err := GenerateTemplates([]string{"param-types.tmpl", "request-bodies.tmpl", "response-bodies.tmpl"}, t, ops)
 	if err != nil {
 		return "", fmt.Errorf("error generating type boilerplate for operations: %w", err)
 	}

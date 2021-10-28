@@ -67,7 +67,7 @@ paths:
             schema:
               $ref: '#/components/schemas/NewPet'
       responses:
-        '200':
+        '201':
           description: pet response
           content:
             application/json:

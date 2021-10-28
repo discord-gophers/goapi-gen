@@ -4,6 +4,8 @@
 package server
 
 import (
+	"encoding/json"
+	"encoding/xml"
 	"fmt"
 	"net/http"
 	"time"
@@ -11,6 +13,7 @@ import (
 	"github.com/discord-gophers/goapi-gen/pkg/runtime"
 	openapi_types "github.com/discord-gophers/goapi-gen/pkg/types"
 	"github.com/go-chi/chi/v5"
+	"github.com/go-chi/render"
 )
 
 // EveryTypeOptional defines model for EveryTypeOptional.
@@ -126,6 +129,146 @@ type CreateResource2JSONRequestBody CreateResource2JSONBody
 
 // UpdateResource3JSONRequestBody defines body for UpdateResource3 for application/json ContentType.
 type UpdateResource3JSONRequestBody UpdateResource3JSONBody
+
+type Response struct {
+	body        interface{}
+	statusCode  int
+	contentType string
+}
+
+func (resp *Response) Render(w http.ResponseWriter, r *http.Request) error {
+	w.Header().Set("Content-Type", resp.contentType)
+	render.Status(r, resp.statusCode)
+	return nil
+}
+
+func (resp *Response) Status(statusCode int) *Response {
+	resp.statusCode = statusCode
+	return resp
+}
+
+func (resp *Response) ContentType(contentType string) *Response {
+	resp.contentType = contentType
+	return resp
+}
+
+func (resp *Response) MarshalJSON() ([]byte, error) {
+	return json.Marshal(resp.body)
+}
+
+func (resp *Response) MarshalXML(e *xml.Encoder, start xml.StartElement) error {
+	return e.Encode(resp.body)
+}
+
+func NewGetEveryTypeOptional200Response(body EveryTypeOptional) *Response {
+	return &Response{
+		body:        body,
+		statusCode:  200,
+		contentType: "application/json",
+	}
+}
+
+func NewGetSimple200Response(body SomeObject) *Response {
+	return &Response{
+		body:        body,
+		statusCode:  200,
+		contentType: "application/json",
+	}
+}
+
+func NewGetWithArgs200Response(body struct {
+	Name string `json:"name"`
+}) *Response {
+	return &Response{
+		body:        body,
+		statusCode:  200,
+		contentType: "application/json",
+	}
+}
+
+func NewGetWithReferences200Response(body struct {
+	Name string `json:"name"`
+}) *Response {
+	return &Response{
+		body:        body,
+		statusCode:  200,
+		contentType: "application/json",
+	}
+}
+
+func NewGetWithContentType200Response(body SomeObject) *Response {
+	return &Response{
+		body:        body,
+		statusCode:  200,
+		contentType: "application/json",
+	}
+}
+
+func NewGetReservedKeyword200Response(body ReservedKeyword) *Response {
+	return &Response{
+		body:        body,
+		statusCode:  200,
+		contentType: "application/json",
+	}
+}
+
+func NewCreateResource200Response(body struct {
+	Name string `json:"name"`
+}) *Response {
+	return &Response{
+		body:        body,
+		statusCode:  200,
+		contentType: "application/json",
+	}
+}
+
+func NewCreateResource2200Response(body struct {
+	Name string `json:"name"`
+}) *Response {
+	return &Response{
+		body:        body,
+		statusCode:  200,
+		contentType: "application/json",
+	}
+}
+
+func NewUpdateResource3200Response(body struct {
+	Name string `json:"name"`
+}) *Response {
+	return &Response{
+		body:        body,
+		statusCode:  200,
+		contentType: "application/json",
+	}
+}
+
+func NewGetResponseWithReference200Response(body SomeObject) *Response {
+	return &Response{
+		body:        body,
+		statusCode:  200,
+		contentType: "application/json",
+	}
+}
+
+func NewGetWithTaggedMiddleware200Response(body struct {
+	Name string `json:"name"`
+}) *Response {
+	return &Response{
+		body:        body,
+		statusCode:  200,
+		contentType: "application/json",
+	}
+}
+
+func NewPostWithTaggedMiddleware200Response(body struct {
+	Name string `json:"name"`
+}) *Response {
+	return &Response{
+		body:        body,
+		statusCode:  200,
+		contentType: "application/json",
+	}
+}
 
 // ServerInterface represents all server handlers.
 type ServerInterface interface {

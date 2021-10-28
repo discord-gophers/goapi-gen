@@ -7,6 +7,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"encoding/xml"
 	"fmt"
 	"io"
 	"net/http"
@@ -14,6 +15,7 @@ import (
 	"strings"
 
 	"github.com/discord-gophers/goapi-gen/pkg/runtime"
+	"github.com/go-chi/render"
 )
 
 // Error defines model for Error.
@@ -57,6 +59,92 @@ type AddPetJSONBody NewPet
 
 // AddPetJSONRequestBody defines body for AddPet for application/json ContentType.
 type AddPetJSONRequestBody AddPetJSONBody
+
+type Response struct {
+	body        interface{}
+	statusCode  int
+	contentType string
+}
+
+func (resp *Response) Render(w http.ResponseWriter, r *http.Request) error {
+	w.Header().Set("Content-Type", resp.contentType)
+	render.Status(r, resp.statusCode)
+	return nil
+}
+
+func (resp *Response) Status(statusCode int) *Response {
+	resp.statusCode = statusCode
+	return resp
+}
+
+func (resp *Response) ContentType(contentType string) *Response {
+	resp.contentType = contentType
+	return resp
+}
+
+func (resp *Response) MarshalJSON() ([]byte, error) {
+	return json.Marshal(resp.body)
+}
+
+func (resp *Response) MarshalXML(e *xml.Encoder, start xml.StartElement) error {
+	return e.Encode(resp.body)
+}
+
+func NewFindPets200Response(body []Pet) *Response {
+	return &Response{
+		body:        body,
+		statusCode:  200,
+		contentType: "application/json",
+	}
+}
+
+func NewFindPetsDefaultResponse(body Error) *Response {
+	return &Response{
+		body:        body,
+		statusCode:  200,
+		contentType: "application/json",
+	}
+}
+
+func NewAddPet201Response(body Pet) *Response {
+	return &Response{
+		body:        body,
+		statusCode:  201,
+		contentType: "application/json",
+	}
+}
+
+func NewAddPetDefaultResponse(body Error) *Response {
+	return &Response{
+		body:        body,
+		statusCode:  200,
+		contentType: "application/json",
+	}
+}
+
+func NewDeletePetDefaultResponse(body Error) *Response {
+	return &Response{
+		body:        body,
+		statusCode:  200,
+		contentType: "application/json",
+	}
+}
+
+func NewFindPetByID200Response(body Pet) *Response {
+	return &Response{
+		body:        body,
+		statusCode:  200,
+		contentType: "application/json",
+	}
+}
+
+func NewFindPetByIDDefaultResponse(body Error) *Response {
+	return &Response{
+		body:        body,
+		statusCode:  200,
+		contentType: "application/json",
+	}
+}
 
 // RequestEditorFn  is the function signature for the RequestEditor callback function
 type RequestEditorFn func(ctx context.Context, req *http.Request) error
@@ -458,7 +546,7 @@ func (r FindPetsResponse) StatusCode() int {
 type AddPetResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
-	JSON200      *Pet
+	JSON201      *Pet
 	JSONDefault  *Error
 }
 
@@ -614,12 +702,12 @@ func ParseAddPetResponse(rsp *http.Response) (*AddPetResponse, error) {
 	}
 
 	switch {
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 201:
 		var dest Pet
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
 			return nil, err
 		}
-		response.JSON200 = &dest
+		response.JSON201 = &dest
 
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
 		var dest Error

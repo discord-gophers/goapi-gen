@@ -22,6 +22,7 @@ import (
 	"github.com/discord-gophers/goapi-gen/pkg/runtime"
 	"github.com/getkin/kin-openapi/openapi3"
 	"github.com/go-chi/chi/v5"
+	"github.com/go-chi/render"
 )
 
 const (
@@ -87,6 +88,92 @@ type Issue185JSONRequestBody Issue185JSONBody
 
 // Issue9JSONRequestBody defines body for Issue9 for application/json ContentType.
 type Issue9JSONRequestBody Issue9JSONBody
+
+type Response struct {
+	body        interface{}
+	statusCode  int
+	contentType string
+}
+
+func (resp *Response) Render(w http.ResponseWriter, r *http.Request) error {
+	w.Header().Set("Content-Type", resp.contentType)
+	render.Status(r, resp.statusCode)
+	return nil
+}
+
+func (resp *Response) Status(statusCode int) *Response {
+	resp.statusCode = statusCode
+	return resp
+}
+
+func (resp *Response) ContentType(contentType string) *Response {
+	resp.contentType = contentType
+	return resp
+}
+
+func (resp *Response) MarshalJSON() ([]byte, error) {
+	return json.Marshal(resp.body)
+}
+
+func (resp *Response) MarshalXML(e *xml.Encoder, start xml.StartElement) error {
+	return e.Encode(resp.body)
+}
+
+func NewEnsureEverythingIsReferenced200Response(body struct {
+	AnyType1 *AnyType1 `json:"anyType1,omitempty"`
+
+	// AnyType2 represents any type.
+	//
+	// This should be an interface{}
+	AnyType2         *AnyType2         `json:"anyType2,omitempty"`
+	CustomStringType *CustomStringType `foo:"bar" json:"customStringType,omitempty"`
+}) *Response {
+	return &Response{
+		body:        body,
+		statusCode:  200,
+		contentType: "application/json",
+	}
+}
+
+func NewIssue127200Response(body GenericObject) *Response {
+	return &Response{
+		body:        body,
+		statusCode:  200,
+		contentType: "application/json",
+	}
+}
+
+func NewIssue127200Response(body GenericObject) *Response {
+	return &Response{
+		body:        body,
+		statusCode:  200,
+		contentType: "application/xml",
+	}
+}
+
+func NewIssue127200Response(body GenericObject) *Response {
+	return &Response{
+		body:        body,
+		statusCode:  200,
+		contentType: "text/yaml",
+	}
+}
+
+func NewIssue127DefaultResponse(body GenericObject) *Response {
+	return &Response{
+		body:        body,
+		statusCode:  200,
+		contentType: "application/json",
+	}
+}
+
+func NewGetIssues375200Response(body EnumInObjInArray) *Response {
+	return &Response{
+		body:        body,
+		statusCode:  200,
+		contentType: "application/json",
+	}
+}
 
 // RequestEditorFn  is the function signature for the RequestEditor callback function
 type RequestEditorFn func(ctx context.Context, req *http.Request) error

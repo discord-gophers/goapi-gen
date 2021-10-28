@@ -279,6 +279,17 @@ func getConditionOfResponseName(statusCodeVar, responseName string) string {
 	}
 }
 
+func responseNameToStatusCode(responseName string) string {
+	switch strings.ToUpper(responseName) {
+	case "DEFAULT":
+		return "200"
+	case "1XX", "2XX", "3XX", "4XX", "5XX":
+		return fmt.Sprintf("%s00", responseName[:1])
+	default:
+		return responseName
+	}
+}
+
 // This function map is passed to the template engine, and we can call each
 // function here by keyName from the template code.
 var TemplateFunctions = template.FuncMap{
@@ -296,6 +307,8 @@ var TemplateFunctions = template.FuncMap{
 	"genParamFmtString":  ReplacePathParamsWithStr,
 	"swaggerUriToChiUri": SwaggerUriToChiUri,
 	"sanitizeGoIdentity": SanitizeGoIdentity,
+
+	"statusCode": responseNameToStatusCode,
 
 	"lcFirst":   snaker.ForceLowerCamelIdentifier,
 	"ucFirst":   snaker.ForceCamelIdentifier,

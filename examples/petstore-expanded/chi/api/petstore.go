@@ -7,6 +7,8 @@ import (
 	"fmt"
 	"net/http"
 	"sync"
+
+	"github.com/go-chi/render"
 )
 
 type PetStore struct {
@@ -66,8 +68,7 @@ func (p *PetStore) FindPets(w http.ResponseWriter, r *http.Request, params FindP
 		}
 	}
 
-	w.WriteHeader(http.StatusOK)
-	json.NewEncoder(w).Encode(result)
+	render.Render(w, r, NewFindPets200Response(result))
 }
 
 func (p *PetStore) AddPet(w http.ResponseWriter, r *http.Request) {
@@ -95,8 +96,7 @@ func (p *PetStore) AddPet(w http.ResponseWriter, r *http.Request) {
 	p.Pets[pet.ID] = pet
 
 	// Now, we have to return the NewPet
-	w.WriteHeader(http.StatusCreated)
-	json.NewEncoder(w).Encode(pet)
+	render.Render(w, r, NewAddPet201Response(pet))
 }
 
 func (p *PetStore) FindPetByID(w http.ResponseWriter, r *http.Request, id int64) {
@@ -109,8 +109,7 @@ func (p *PetStore) FindPetByID(w http.ResponseWriter, r *http.Request, id int64)
 		return
 	}
 
-	w.WriteHeader(http.StatusOK)
-	json.NewEncoder(w).Encode(pet)
+	render.Render(w, r, NewFindPetByID200Response(pet))
 }
 
 func (p *PetStore) DeletePet(w http.ResponseWriter, r *http.Request, id int64) {
@@ -124,5 +123,5 @@ func (p *PetStore) DeletePet(w http.ResponseWriter, r *http.Request, id int64) {
 	}
 	delete(p.Pets, id)
 
-	w.WriteHeader(http.StatusNoContent)
+	render.Status(r, http.StatusNoContent)
 }
