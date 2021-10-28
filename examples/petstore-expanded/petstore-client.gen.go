@@ -94,6 +94,7 @@ func NewClient(server string, opts ...ClientOption) (*Client, error) {
 	// create a client with sane default values
 	client := Client{
 		Server: server,
+		Client: &http.Client{},
 	}
 	// mutate client and add all optional params
 	for _, o := range opts {
@@ -104,10 +105,6 @@ func NewClient(server string, opts ...ClientOption) (*Client, error) {
 	// ensure the server URL always has a trailing slash
 	if !strings.HasSuffix(client.Server, "/") {
 		client.Server += "/"
-	}
-	// create httpClient, if not already present
-	if client.Client == nil {
-		client.Client = &http.Client{}
 	}
 	return &client, nil
 }
@@ -408,7 +405,7 @@ func NewClientWithResponses(server string, opts ...ClientOption) (*ClientWithRes
 }
 
 // WithBaseURL overrides the baseURL.
-func WithBaseURL(baseURL string) ClientOption {
+func WithClientBaseURL(baseURL string) ClientOption {
 	return func(c *Client) error {
 		newBaseURL, err := url.Parse(baseURL)
 		if err != nil {

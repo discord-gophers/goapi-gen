@@ -42,7 +42,7 @@ func main() {
 	r.Use(middleware.OapiRequestValidator(swagger))
 
 	// We now register our petStore above as the handler for the interface
-	api.HandlerFromMux(petStore, r)
+	api.Handler(petStore, api.WithRouter(r))
 
 	s := &http.Server{
 		Handler: r,
