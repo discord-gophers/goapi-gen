@@ -29,7 +29,18 @@ func Handler(si ServerInterface, opts ...ServerOption) http.Handler {
 		Middlewares: options.Middlewares,
 		ErrorHandlerFunc: options.ErrorHandlerFunc,
 	}
-	{{ end }}
+	{{- end }}
+
+	{{ $middlewares := genTaggedMiddleware . }}
+	{{- with $middlewares }} 
+	middlewares := {{ printf "%#v" . }}
+	for _, m := range middlewares {
+		if _, ok := wrapper.Middlewares[m]; !ok {
+			panic("goapi-gen: could not find tagged middleware " + m)
+		}
+	}
+	{{end}}
+
 	r.Route(options.BaseURL, func(r chi.Router) {
 	{{range . -}}
 		r.{{.Method | lower | title }}("{{.Path | swaggerUriToChiUri}}", wrapper.{{.OperationId}})

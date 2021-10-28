@@ -287,9 +287,7 @@ func (siw *ServerInterfaceWrapper) GetWithTaggedMiddleware(w http.ResponseWriter
 	})
 
 	// Operation specific middleware
-	if middleware, ok := siw.Middlewares["pathMiddleware"]; ok {
-		handler = middleware(handler).ServeHTTP
-	}
+	handler = siw.Middlewares["pathMiddleware"](handler).ServeHTTP
 
 	handler(w, r.WithContext(ctx))
 }
@@ -303,12 +301,8 @@ func (siw *ServerInterfaceWrapper) PostWithTaggedMiddleware(w http.ResponseWrite
 	})
 
 	// Operation specific middleware
-	if middleware, ok := siw.Middlewares["pathMiddleware"]; ok {
-		handler = middleware(handler).ServeHTTP
-	}
-	if middleware, ok := siw.Middlewares["operationMiddleware"]; ok {
-		handler = middleware(handler).ServeHTTP
-	}
+	handler = siw.Middlewares["pathMiddleware"](handler).ServeHTTP
+	handler = siw.Middlewares["operationMiddleware"](handler).ServeHTTP
 
 	handler(w, r.WithContext(ctx))
 }
@@ -474,6 +468,13 @@ func Handler(si ServerInterface, opts ...ServerOption) http.Handler {
 		Handler:          si,
 		Middlewares:      options.Middlewares,
 		ErrorHandlerFunc: options.ErrorHandlerFunc,
+	}
+
+	middlewares := []string{"operationMiddleware", "pathMiddleware"}
+	for _, m := range middlewares {
+		if _, ok := wrapper.Middlewares[m]; !ok {
+			panic("goapi-gen: could not find tagged middleware " + m)
+		}
 	}
 
 	r.Route(options.BaseURL, func(r chi.Router) {

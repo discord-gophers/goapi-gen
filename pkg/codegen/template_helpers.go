@@ -17,6 +17,7 @@ import (
 	"bytes"
 	"fmt"
 	"os"
+	"sort"
 	"strings"
 	"text/template"
 
@@ -239,16 +240,21 @@ func getResponseTypeDefinitions(op *OperationDefinition) []ResponseTypeDefinitio
 	return td
 }
 
-// Return the statusCode comparison clause from the response name.
-func getConditionOfResponseName(statusCodeVar, responseName string) string {
-	switch responseName {
-	case "default":
-		return "true"
-	case "1XX", "2XX", "3XX", "4XX", "5XX":
-		return fmt.Sprintf("%s / 100 == %s", statusCodeVar, responseName[:1])
-	default:
-		return fmt.Sprintf("%s == %s", statusCodeVar, responseName)
+func getTaggedMiddlewares(ops []OperationDefinition) []string {
+	middlewares := make(map[string]struct{})
+	for _, op := range ops {
+		for _, m := range op.Middlewares {
+			middlewares[m] = struct{}{}
+		}
 	}
+
+	keys := make([]string, 0, len(middlewares))
+	for k := range middlewares {
+		keys = append(keys, k)
+	}
+	sort.Strings(keys)
+
+	return keys
 }
 
 // This outputs a string array
@@ -261,24 +267,39 @@ func stripNewLines(s string) string {
 	return r.Replace(s)
 }
 
+// Return the statusCode comparison clause from the response name.
+func getConditionOfResponseName(statusCodeVar, responseName string) string {
+	switch responseName {
+	case "default":
+		return "true"
+	case "1XX", "2XX", "3XX", "4XX", "5XX":
+		return fmt.Sprintf("%s / 100 == %s", statusCodeVar, responseName[:1])
+	default:
+		return fmt.Sprintf("%s == %s", statusCodeVar, responseName)
+	}
+}
+
 // This function map is passed to the template engine, and we can call each
 // function here by keyName from the template code.
 var TemplateFunctions = template.FuncMap{
 	"genParamArgs":               genParamArgs,
 	"genParamTypes":              genParamTypes,
 	"genParamNames":              genParamNames,
-	"genParamFmtString":          ReplacePathParamsWithStr,
-	"swaggerUriToChiUri":         SwaggerUriToChiUri,
-	"lcFirst":                    snaker.ForceLowerCamelIdentifier,
-	"ucFirst":                    snaker.ForceCamelIdentifier,
-	"camelCase":                  snaker.SnakeToCamel,
 	"genResponsePayload":         genResponsePayload,
 	"genResponseTypeName":        genResponseTypeName,
 	"genResponseUnmarshal":       genResponseUnmarshal,
 	"getResponseTypeDefinitions": getResponseTypeDefinitions,
+	"genTaggedMiddleware":        getTaggedMiddlewares,
 	"toStringArray":              toStringArray,
-	"lower":                      strings.ToLower,
-	"title":                      strings.Title,
 	"stripNewLines":              stripNewLines,
-	"sanitizeGoIdentity":         SanitizeGoIdentity,
+
+	"genParamFmtString":  ReplacePathParamsWithStr,
+	"swaggerUriToChiUri": SwaggerUriToChiUri,
+	"sanitizeGoIdentity": SanitizeGoIdentity,
+
+	"lcFirst":   snaker.ForceLowerCamelIdentifier,
+	"ucFirst":   snaker.ForceCamelIdentifier,
+	"camelCase": snaker.SnakeToCamel,
+	"lower":     strings.ToLower,
+	"title":     strings.Title,
 }
