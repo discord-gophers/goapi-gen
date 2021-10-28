@@ -93,7 +93,7 @@ func (resp *Response) MarshalXML(e *xml.Encoder, start xml.StartElement) error {
 	return e.Encode(resp.body)
 }
 
-func NewFindPets200Response(body []Pet) *Response {
+func FindPets200Response(body []Pet) *Response {
 	return &Response{
 		body:        body,
 		statusCode:  200,
@@ -101,7 +101,7 @@ func NewFindPets200Response(body []Pet) *Response {
 	}
 }
 
-func NewFindPetsDefaultResponse(body Error) *Response {
+func FindPetsDefaultResponse(body Error) *Response {
 	return &Response{
 		body:        body,
 		statusCode:  200,
@@ -109,7 +109,7 @@ func NewFindPetsDefaultResponse(body Error) *Response {
 	}
 }
 
-func NewAddPet201Response(body Pet) *Response {
+func AddPet201Response(body Pet) *Response {
 	return &Response{
 		body:        body,
 		statusCode:  201,
@@ -117,7 +117,7 @@ func NewAddPet201Response(body Pet) *Response {
 	}
 }
 
-func NewAddPetDefaultResponse(body Error) *Response {
+func AddPetDefaultResponse(body Error) *Response {
 	return &Response{
 		body:        body,
 		statusCode:  200,
@@ -125,7 +125,7 @@ func NewAddPetDefaultResponse(body Error) *Response {
 	}
 }
 
-func NewDeletePetDefaultResponse(body Error) *Response {
+func DeletePetDefaultResponse(body Error) *Response {
 	return &Response{
 		body:        body,
 		statusCode:  200,
@@ -133,7 +133,7 @@ func NewDeletePetDefaultResponse(body Error) *Response {
 	}
 }
 
-func NewFindPetByID200Response(body Pet) *Response {
+func FindPetByID200Response(body Pet) *Response {
 	return &Response{
 		body:        body,
 		statusCode:  200,
@@ -141,7 +141,7 @@ func NewFindPetByID200Response(body Pet) *Response {
 	}
 }
 
-func NewFindPetByIDDefaultResponse(body Error) *Response {
+func FindPetByIDDefaultResponse(body Error) *Response {
 	return &Response{
 		body:        body,
 		statusCode:  200,

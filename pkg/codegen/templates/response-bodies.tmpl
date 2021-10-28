@@ -31,7 +31,7 @@ func (resp *Response) MarshalXML(e *xml.Encoder, start xml.StartElement) error {
 {{range .}}{{$opid := .OperationId}}{{$op := .}}
 {{range getResponseTypeDefinitions .}}
 
-func New{{$opid | ucFirst}}{{.ResponseName | camelCase}}Response(body {{.Schema.TypeDecl}}) *Response {
+func {{$opid | ucFirst}}{{.ResponseName | camelCase}}Response(body {{.Schema.TypeDecl}}) *Response {
     return &Response{
             body: body,
             statusCode: {{.ResponseName | statusCode}},

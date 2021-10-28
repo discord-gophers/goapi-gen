@@ -154,7 +154,7 @@ func (resp *Response) MarshalXML(e *xml.Encoder, start xml.StartElement) error {
 	return e.Encode(resp.body)
 }
 
-func NewEnsureEverythingIsReferenced200Response(body struct {
+func EnsureEverythingIsReferenced200Response(body struct {
 	// Has additional properties with schema for dictionaries
 	Five *AdditionalPropertiesObject5 `json:"five,omitempty"`
 
@@ -178,7 +178,7 @@ func NewEnsureEverythingIsReferenced200Response(body struct {
 	}
 }
 
-func NewEnsureEverythingIsReferencedDefaultResponse(body struct {
+func EnsureEverythingIsReferencedDefaultResponse(body struct {
 	Field SchemaObject `json:"Field"`
 }) *Response {
 	return &Response{

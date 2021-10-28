@@ -160,7 +160,7 @@ func (resp *Response) MarshalXML(e *xml.Encoder, start xml.StartElement) error {
 	return e.Encode(resp.body)
 }
 
-func NewGetEveryTypeOptional200Response(body EveryTypeOptional) *Response {
+func GetEveryTypeOptional200Response(body EveryTypeOptional) *Response {
 	return &Response{
 		body:        body,
 		statusCode:  200,
@@ -168,7 +168,7 @@ func NewGetEveryTypeOptional200Response(body EveryTypeOptional) *Response {
 	}
 }
 
-func NewGetSimple200Response(body SomeObject) *Response {
+func GetSimple200Response(body SomeObject) *Response {
 	return &Response{
 		body:        body,
 		statusCode:  200,
@@ -176,7 +176,7 @@ func NewGetSimple200Response(body SomeObject) *Response {
 	}
 }
 
-func NewGetWithArgs200Response(body struct {
+func GetWithArgs200Response(body struct {
 	Name string `json:"name"`
 }) *Response {
 	return &Response{
@@ -186,7 +186,7 @@ func NewGetWithArgs200Response(body struct {
 	}
 }
 
-func NewGetWithReferences200Response(body struct {
+func GetWithReferences200Response(body struct {
 	Name string `json:"name"`
 }) *Response {
 	return &Response{
@@ -196,7 +196,7 @@ func NewGetWithReferences200Response(body struct {
 	}
 }
 
-func NewGetWithContentType200Response(body SomeObject) *Response {
+func GetWithContentType200Response(body SomeObject) *Response {
 	return &Response{
 		body:        body,
 		statusCode:  200,
@@ -204,7 +204,7 @@ func NewGetWithContentType200Response(body SomeObject) *Response {
 	}
 }
 
-func NewGetReservedKeyword200Response(body ReservedKeyword) *Response {
+func GetReservedKeyword200Response(body ReservedKeyword) *Response {
 	return &Response{
 		body:        body,
 		statusCode:  200,
@@ -212,7 +212,7 @@ func NewGetReservedKeyword200Response(body ReservedKeyword) *Response {
 	}
 }
 
-func NewCreateResource200Response(body struct {
+func CreateResource200Response(body struct {
 	Name string `json:"name"`
 }) *Response {
 	return &Response{
@@ -222,7 +222,7 @@ func NewCreateResource200Response(body struct {
 	}
 }
 
-func NewCreateResource2200Response(body struct {
+func CreateResource2200Response(body struct {
 	Name string `json:"name"`
 }) *Response {
 	return &Response{
@@ -232,7 +232,7 @@ func NewCreateResource2200Response(body struct {
 	}
 }
 
-func NewUpdateResource3200Response(body struct {
+func UpdateResource3200Response(body struct {
 	Name string `json:"name"`
 }) *Response {
 	return &Response{
@@ -242,7 +242,7 @@ func NewUpdateResource3200Response(body struct {
 	}
 }
 
-func NewGetResponseWithReference200Response(body SomeObject) *Response {
+func GetResponseWithReference200Response(body SomeObject) *Response {
 	return &Response{
 		body:        body,
 		statusCode:  200,
@@ -250,7 +250,7 @@ func NewGetResponseWithReference200Response(body SomeObject) *Response {
 	}
 }
 
-func NewGetWithTaggedMiddleware200Response(body struct {
+func GetWithTaggedMiddleware200Response(body struct {
 	Name string `json:"name"`
 }) *Response {
 	return &Response{
@@ -260,7 +260,7 @@ func NewGetWithTaggedMiddleware200Response(body struct {
 	}
 }
 
-func NewPostWithTaggedMiddleware200Response(body struct {
+func PostWithTaggedMiddleware200Response(body struct {
 	Name string `json:"name"`
 }) *Response {
 	return &Response{

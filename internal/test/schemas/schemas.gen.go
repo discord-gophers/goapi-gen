@@ -119,7 +119,7 @@ func (resp *Response) MarshalXML(e *xml.Encoder, start xml.StartElement) error {
 	return e.Encode(resp.body)
 }
 
-func NewEnsureEverythingIsReferenced200Response(body struct {
+func EnsureEverythingIsReferenced200Response(body struct {
 	AnyType1 *AnyType1 `json:"anyType1,omitempty"`
 
 	// AnyType2 represents any type.
@@ -135,7 +135,7 @@ func NewEnsureEverythingIsReferenced200Response(body struct {
 	}
 }
 
-func NewIssue127200Response(body GenericObject) *Response {
+func Issue127200Response(body GenericObject) *Response {
 	return &Response{
 		body:        body,
 		statusCode:  200,
@@ -143,7 +143,7 @@ func NewIssue127200Response(body GenericObject) *Response {
 	}
 }
 
-func NewIssue127200Response(body GenericObject) *Response {
+func Issue127200Response(body GenericObject) *Response {
 	return &Response{
 		body:        body,
 		statusCode:  200,
@@ -151,7 +151,7 @@ func NewIssue127200Response(body GenericObject) *Response {
 	}
 }
 
-func NewIssue127200Response(body GenericObject) *Response {
+func Issue127200Response(body GenericObject) *Response {
 	return &Response{
 		body:        body,
 		statusCode:  200,
@@ -159,7 +159,7 @@ func NewIssue127200Response(body GenericObject) *Response {
 	}
 }
 
-func NewIssue127DefaultResponse(body GenericObject) *Response {
+func Issue127DefaultResponse(body GenericObject) *Response {
 	return &Response{
 		body:        body,
 		statusCode:  200,
@@ -167,7 +167,7 @@ func NewIssue127DefaultResponse(body GenericObject) *Response {
 	}
 }
 
-func NewGetIssues375200Response(body EnumInObjInArray) *Response {
+func GetIssues375200Response(body EnumInObjInArray) *Response {
 	return &Response{
 		body:        body,
 		statusCode:  200,
