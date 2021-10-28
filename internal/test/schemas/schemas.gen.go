@@ -12,7 +12,6 @@ import (
 	"encoding/xml"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"net/http"
 	"net/url"
 	"path"
@@ -931,7 +930,7 @@ func (c *ClientWithResponses) Issue9WithResponse(ctx context.Context, params *Is
 
 // ParseEnsureEverythingIsReferencedResponse parses an HTTP response from a EnsureEverythingIsReferencedWithResponse call
 func ParseEnsureEverythingIsReferencedResponse(rsp *http.Response) (*EnsureEverythingIsReferencedResponse, error) {
-	bodyBytes, err := ioutil.ReadAll(rsp.Body)
+	bodyBytes, err := io.ReadAll(rsp.Body)
 	defer func() { _ = rsp.Body.Close() }()
 	if err != nil {
 		return nil, err
@@ -965,7 +964,7 @@ func ParseEnsureEverythingIsReferencedResponse(rsp *http.Response) (*EnsureEvery
 
 // ParseIssue127response parses an HTTP response from a Issue127WithResponse call
 func ParseIssue127response(rsp *http.Response) (*Issue127Response, error) {
-	bodyBytes, err := ioutil.ReadAll(rsp.Body)
+	bodyBytes, err := io.ReadAll(rsp.Body)
 	defer func() { _ = rsp.Body.Close() }()
 	if err != nil {
 		return nil, err
@@ -1018,7 +1017,7 @@ func ParseIssue127response(rsp *http.Response) (*Issue127Response, error) {
 
 // ParseIssue185response parses an HTTP response from a Issue185WithResponse call
 func ParseIssue185response(rsp *http.Response) (*Issue185Response, error) {
-	bodyBytes, err := ioutil.ReadAll(rsp.Body)
+	bodyBytes, err := io.ReadAll(rsp.Body)
 	defer func() { _ = rsp.Body.Close() }()
 	if err != nil {
 		return nil, err
@@ -1034,7 +1033,7 @@ func ParseIssue185response(rsp *http.Response) (*Issue185Response, error) {
 
 // ParseIssue209response parses an HTTP response from a Issue209WithResponse call
 func ParseIssue209response(rsp *http.Response) (*Issue209Response, error) {
-	bodyBytes, err := ioutil.ReadAll(rsp.Body)
+	bodyBytes, err := io.ReadAll(rsp.Body)
 	defer func() { _ = rsp.Body.Close() }()
 	if err != nil {
 		return nil, err
@@ -1050,7 +1049,7 @@ func ParseIssue209response(rsp *http.Response) (*Issue209Response, error) {
 
 // ParseIssue30response parses an HTTP response from a Issue30WithResponse call
 func ParseIssue30response(rsp *http.Response) (*Issue30Response, error) {
-	bodyBytes, err := ioutil.ReadAll(rsp.Body)
+	bodyBytes, err := io.ReadAll(rsp.Body)
 	defer func() { _ = rsp.Body.Close() }()
 	if err != nil {
 		return nil, err
@@ -1066,7 +1065,7 @@ func ParseIssue30response(rsp *http.Response) (*Issue30Response, error) {
 
 // ParseGetIssues375response parses an HTTP response from a GetIssues375WithResponse call
 func ParseGetIssues375response(rsp *http.Response) (*GetIssues375Response, error) {
-	bodyBytes, err := ioutil.ReadAll(rsp.Body)
+	bodyBytes, err := io.ReadAll(rsp.Body)
 	defer func() { _ = rsp.Body.Close() }()
 	if err != nil {
 		return nil, err
@@ -1092,7 +1091,7 @@ func ParseGetIssues375response(rsp *http.Response) (*GetIssues375Response, error
 
 // ParseIssue41response parses an HTTP response from a Issue41WithResponse call
 func ParseIssue41response(rsp *http.Response) (*Issue41Response, error) {
-	bodyBytes, err := ioutil.ReadAll(rsp.Body)
+	bodyBytes, err := io.ReadAll(rsp.Body)
 	defer func() { _ = rsp.Body.Close() }()
 	if err != nil {
 		return nil, err
@@ -1108,7 +1107,7 @@ func ParseIssue41response(rsp *http.Response) (*Issue41Response, error) {
 
 // ParseIssue9response parses an HTTP response from a Issue9WithResponse call
 func ParseIssue9response(rsp *http.Response) (*Issue9Response, error) {
-	bodyBytes, err := ioutil.ReadAll(rsp.Body)
+	bodyBytes, err := io.ReadAll(rsp.Body)
 	defer func() { _ = rsp.Body.Close() }()
 	if err != nil {
 		return nil, err

@@ -679,7 +679,7 @@ func GenerateTypesForOperations(t *template.Template, ops []OperationDefinition)
 // GenerateChiServer This function generates all the go code for the ServerInterface as well as
 // all the wrapper functions around our handlers.
 func GenerateChiServer(t *template.Template, operations []OperationDefinition) (string, error) {
-	return GenerateTemplates([]string{"chi-interface.tmpl", "chi-middleware.tmpl", "chi-handler.tmpl"}, t, operations)
+	return GenerateTemplates([]string{"interface.tmpl", "middleware.tmpl", "handler.tmpl"}, t, operations)
 }
 
 // Uses the template engine to generate the function which registers our wrappers
