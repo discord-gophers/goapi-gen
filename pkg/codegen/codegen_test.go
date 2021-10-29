@@ -58,6 +58,73 @@ func TestExamplePetStoreCodeGeneration(t *testing.T) {
 	assert.Len(t, problems, 0)
 }
 
+func TestGenerateResponseBodyTypes(t *testing.T) {
+	packageName := "api"
+	opts := Options{
+		GenerateTypes: true,
+	}
+
+	// Get the sample spec:
+	swagger, err := openapi3.NewLoader().LoadFromData([]byte(testOpenAPIDefinition))
+	assert.NoError(t, err)
+
+	// Run our code generation:
+	code, err := Generate(swagger, packageName, opts)
+	assert.NoError(t, err)
+	assert.NotEmpty(t, code)
+
+	// Check that we have valid (formattable) code:
+	_, err = format.Source([]byte(code))
+	assert.NoError(t, err)
+
+	// Check that we have a package:
+	assert.Contains(t, code, "package api")
+
+	// Check for response type
+	assert.Contains(t, code, "type Response struct {")
+
+	// Check for expected response constructors:
+	assert.Contains(t, code, "func GetTestByNameJSON200Response(body []Test) *Response {")
+	assert.Contains(t, code, "func GetTestByNameXML200Response(body []Test) *Response {")
+	assert.Contains(t, code, "func GetTestByNameJSON422Response(body []interface{}) *Response {")
+	assert.Contains(t, code, "func GetTestByNameXML422Response(body []interface{}) *Response {")
+	assert.Contains(t, code, "func GetTestByNameJSONDefaultResponse(body Error) *Response {")
+	assert.Contains(t, code, "func GetCatStatusJSON200Response(body interface{}) *Response {")
+	assert.Contains(t, code, "func GetCatStatusXML200Response(body interface{}) *Response {")
+	assert.Contains(t, code, "func GetCatStatusJSONDefaultResponse(body Error) *Response {")
+}
+
+func TestGenerateRequestBindMethods(t *testing.T) {
+	packageName := "api"
+	opts := Options{
+		GenerateTypes: true,
+	}
+
+	// Get the sample spec:
+	swagger, err := openapi3.NewLoader().LoadFromData([]byte(testOpenAPIDefinition))
+	assert.NoError(t, err)
+
+	// Run our code generation:
+	code, err := Generate(swagger, packageName, opts)
+	assert.NoError(t, err)
+	assert.NotEmpty(t, code)
+
+	// Check that we have valid (formattable) code:
+	_, err = format.Source([]byte(code))
+	assert.NoError(t, err)
+
+	// Check that we have a package:
+	assert.Contains(t, code, "package api")
+
+	// func (AddPetJSONRequestBody) Bind(*http.Request) error {
+
+	// Check for expected request binders:
+	assert.Contains(t, code, "func (CreateLiveCatJSONRequestBody) Bind(*http.Request) error {")
+
+	// Check for unbindable request types:
+	assert.NotContains(t, code, "func (CreateCatJSONRequestBody) Bind(*http.Request) error {")
+}
+
 func TestExamplePetStoreCodeGenerationWithUserTemplates(t *testing.T) {
 	userTemplates := map[string]string{"typedef.tmpl": "//blah"}
 
@@ -251,6 +318,60 @@ paths:
                 allOf:
                 - $ref: '#/components/schemas/CatAlive'
                 - $ref: '#/components/schemas/CatDead'
+        default:
+          description: Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+    post:
+      tags:
+      - cat
+      summary: Create a new cat
+      operationId: createCat
+      requestBody:
+        description: Cat to add to the store
+        required: true
+        content:
+          application/json:
+            schema:
+              oneOf:
+              - $ref: '#/components/schemas/CatAlive'
+              - $ref: '#/components/schemas/CatDead'
+      responses:
+        201:
+          description: Success
+          content:
+            application/json:
+              schema:
+                oneOf:
+                - $ref: '#/components/schemas/CatAlive'
+                - $ref: '#/components/schemas/CatDead'
+        default:
+          description: Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /live-cat:
+    post:
+      summary: Create a new live cat
+      operationId: createLiveCat
+      requestBody:
+        description: Cat to add to the store
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CatAlive'
+      responses:
+        201:
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CatAlive'
         default:
           description: Error
           content:
