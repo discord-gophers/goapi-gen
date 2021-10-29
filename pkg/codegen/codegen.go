@@ -299,7 +299,7 @@ func GenerateTypeDefinitions(t *template.Template, swagger *openapi3.T, ops []Op
 		return "", fmt.Errorf("error generating allOf boilerplate: %w", err)
 	}
 
-	typeDefinitions := strings.Join([]string{enumsOut, typesOut, enumTypesOut, paramTypesOut, allOfBoilerplate}, "")
+	typeDefinitions := enumsOut + typesOut + enumTypesOut + paramTypesOut + allOfBoilerplate
 	return typeDefinitions, nil
 }
 
