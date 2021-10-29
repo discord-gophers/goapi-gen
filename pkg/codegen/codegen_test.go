@@ -7,8 +7,8 @@ import (
 	"net/http"
 	"testing"
 
-	examplePetstoreClient "github.com/discord-gophers/goapi-gen/examples/petstore-expanded"
-	examplePetstore "github.com/discord-gophers/goapi-gen/examples/petstore-expanded/chi/api"
+	examplePetstore "github.com/discord-gophers/goapi-gen/examples/petstore-expanded/api"
+	examplePetstoreClient "github.com/discord-gophers/goapi-gen/examples/petstore-expanded/client"
 	"github.com/getkin/kin-openapi/openapi3"
 	"github.com/golangci/lint-1"
 	"github.com/stretchr/testify/assert"
