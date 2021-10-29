@@ -23,6 +23,7 @@ type Schema struct {
 	AdditionalTypes          []TypeDefinition // We may need to generate auxiliary helper types, stored here
 
 	SkipOptionalPointer bool // Some types don't need a * in front when they're optional
+	Bindable            bool // Indicates whether this type can implement render.Binder
 
 	Description string // The description of the element
 
@@ -160,22 +161,26 @@ func GenerateGoSchema(sref *openapi3.SchemaRef, path []string) (Schema, error) {
 		return Schema{
 			GoType:      refType,
 			Description: StringToGoComment(schema.Description),
+			Bindable:    true,
 		}, nil
 	}
 
 	outSchema := Schema{
 		Description: StringToGoComment(schema.Description),
 		OAPISchema:  schema,
+		Bindable:    true,
 	}
 
 	// We can't support this in any meaningful way
 	if schema.AnyOf != nil {
 		outSchema.GoType = "interface{}"
+		outSchema.Bindable = false
 		return outSchema, nil
 	}
 	// We can't support this in any meaningful way
 	if schema.OneOf != nil {
 		outSchema.GoType = "interface{}"
+		outSchema.Bindable = false
 		return outSchema, nil
 	}
 
@@ -219,6 +224,7 @@ func GenerateGoSchema(sref *openapi3.SchemaRef, path []string) (Schema, error) {
 				// If we don't even have the object designator, we're a completely
 				// generic type.
 				outType = "interface{}"
+				outSchema.Bindable = false
 			}
 			outSchema.GoType = outType
 		} else {
