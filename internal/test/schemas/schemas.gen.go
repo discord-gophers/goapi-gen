@@ -30,10 +30,12 @@ const (
 )
 
 // Defines values for EnumInObjInArrayVal.
-const (
-	EnumInObjInArrayValFirst EnumInObjInArrayVal = "first"
+var (
+	UnknownEnumInObjInArrayVal = EnumInObjInArrayVal{}
 
-	EnumInObjInArrayValSecond EnumInObjInArrayVal = "second"
+	EnumInObjInArrayValFirst = EnumInObjInArrayVal{"first"}
+
+	EnumInObjInArrayValSecond = EnumInObjInArrayVal{"second"}
 )
 
 // This schema name starts with a number
@@ -55,9 +57,6 @@ type EnumInObjInArray []struct {
 	Val *EnumInObjInArrayVal `json:"val,omitempty"`
 }
 
-// EnumInObjInArrayVal defines model for EnumInObjInArray.Val.
-type EnumInObjInArrayVal string
-
 // GenericObject defines model for GenericObject.
 type GenericObject map[string]interface{}
 
@@ -71,6 +70,39 @@ type NullableProperties struct {
 
 // StringInPath defines model for StringInPath.
 type StringInPath string
+
+// EnumInObjInArrayVal defines model for EnumInObjInArray.Val.
+type EnumInObjInArrayVal struct {
+	value string
+}
+
+func (t EnumInObjInArrayVal) ToValue() string {
+	return t.value
+}
+func (t EnumInObjInArrayVal) MarshalJSON() ([]byte, error) {
+	return json.Marshal(t.value)
+}
+func (t EnumInObjInArrayVal) UnmarshalJSON(data []byte) error {
+	var value string
+	if err := json.Unmarshal(data, &value); err != nil {
+		return err
+	}
+	return nil
+}
+func (t EnumInObjInArrayVal) FromValue(value string) error {
+	switch value {
+
+	case EnumInObjInArrayValFirst.value:
+		t.value = value
+		return nil
+
+	case EnumInObjInArrayValSecond.value:
+		t.value = value
+		return nil
+
+	}
+	return fmt.Errorf("unknown enum value: %v", value)
+}
 
 // Issue185JSONBody defines parameters for Issue185.
 type Issue185JSONBody NullableProperties
