@@ -92,6 +92,10 @@ func TestGenerateResponseBodyTypes(t *testing.T) {
 	assert.Contains(t, code, "func GetCatStatusJSON200Response(body interface{}) *Response {")
 	assert.Contains(t, code, "func GetCatStatusXML200Response(body interface{}) *Response {")
 	assert.Contains(t, code, "func GetCatStatusJSONDefaultResponse(body Error) *Response {")
+	assert.Contains(t, code, "func CreateCatJSON201Response(body interface{}) *Response {")
+	assert.Contains(t, code, "func CreateCatJSONDefaultResponse(body Error) *Response {")
+	assert.Contains(t, code, "func CreateLiveCatJSON201Response(body CatAlive) *Response {")
+	assert.Contains(t, code, "func CreateLiveCatJSONDefaultResponse(body Error) *Response {")
 }
 
 func TestGenerateRequestBindMethods(t *testing.T) {
