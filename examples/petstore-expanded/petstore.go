@@ -13,7 +13,7 @@ import (
 
 	"github.com/go-chi/chi/v5"
 
-	api "github.com/discord-gophers/goapi-gen/examples/petstore-expanded/chi/api"
+	"github.com/discord-gophers/goapi-gen/examples/petstore-expanded/api"
 	"github.com/discord-gophers/goapi-gen/pkg/middleware"
 )
 

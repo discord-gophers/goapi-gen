@@ -11,7 +11,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/discord-gophers/goapi-gen/examples/petstore-expanded/chi/api"
+	"github.com/discord-gophers/goapi-gen/examples/petstore-expanded/api"
 	"github.com/discord-gophers/goapi-gen/pkg/middleware"
 	"github.com/discord-gophers/goapi-gen/pkg/testutil"
 )
