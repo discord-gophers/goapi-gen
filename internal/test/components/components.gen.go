@@ -121,8 +121,18 @@ type BodyWithAddPropsJSONBody_Inner struct {
 // EnsureEverythingIsReferencedJSONRequestBody defines body for EnsureEverythingIsReferenced for application/json ContentType.
 type EnsureEverythingIsReferencedJSONRequestBody RequestBody
 
+// Bind implements render.Binder.
+func (EnsureEverythingIsReferencedJSONRequestBody) Bind(*http.Request) error {
+	return nil
+}
+
 // BodyWithAddPropsJSONRequestBody defines body for BodyWithAddProps for application/json ContentType.
 type BodyWithAddPropsJSONRequestBody BodyWithAddPropsJSONBody
+
+// Bind implements render.Binder.
+func (BodyWithAddPropsJSONRequestBody) Bind(*http.Request) error {
+	return nil
+}
 
 // Response is a common response struct for all the API calls.
 // A Response object may be instantiated via functions for specific operation responses.

@@ -60,6 +60,11 @@ type AddPetJSONBody NewPet
 // AddPetJSONRequestBody defines body for AddPet for application/json ContentType.
 type AddPetJSONRequestBody AddPetJSONBody
 
+// Bind implements render.Binder.
+func (AddPetJSONRequestBody) Bind(*http.Request) error {
+	return nil
+}
+
 // Response is a common response struct for all the API calls.
 // A Response object may be instantiated via functions for specific operation responses.
 type Response struct {

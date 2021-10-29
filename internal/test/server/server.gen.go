@@ -124,11 +124,26 @@ type UpdateResource3JSONBody struct {
 // CreateResourceJSONRequestBody defines body for CreateResource for application/json ContentType.
 type CreateResourceJSONRequestBody CreateResourceJSONBody
 
+// Bind implements render.Binder.
+func (CreateResourceJSONRequestBody) Bind(*http.Request) error {
+	return nil
+}
+
 // CreateResource2JSONRequestBody defines body for CreateResource2 for application/json ContentType.
 type CreateResource2JSONRequestBody CreateResource2JSONBody
 
+// Bind implements render.Binder.
+func (CreateResource2JSONRequestBody) Bind(*http.Request) error {
+	return nil
+}
+
 // UpdateResource3JSONRequestBody defines body for UpdateResource3 for application/json ContentType.
 type UpdateResource3JSONRequestBody UpdateResource3JSONBody
+
+// Bind implements render.Binder.
+func (UpdateResource3JSONRequestBody) Bind(*http.Request) error {
+	return nil
+}
 
 // Response is a common response struct for all the API calls.
 // A Response object may be instantiated via functions for specific operation responses.

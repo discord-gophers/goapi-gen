@@ -86,8 +86,18 @@ type Issue9Params struct {
 // Issue185JSONRequestBody defines body for Issue185 for application/json ContentType.
 type Issue185JSONRequestBody Issue185JSONBody
 
+// Bind implements render.Binder.
+func (Issue185JSONRequestBody) Bind(*http.Request) error {
+	return nil
+}
+
 // Issue9JSONRequestBody defines body for Issue9 for application/json ContentType.
 type Issue9JSONRequestBody Issue9JSONBody
+
+// Bind implements render.Binder.
+func (Issue9JSONRequestBody) Bind(*http.Request) error {
+	return nil
+}
 
 // Response is a common response struct for all the API calls.
 // A Response object may be instantiated via functions for specific operation responses.

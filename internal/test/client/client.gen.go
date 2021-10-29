@@ -41,8 +41,18 @@ type PostJSONJSONBody SchemaObject
 // PostBothJSONRequestBody defines body for PostBoth for application/json ContentType.
 type PostBothJSONRequestBody PostBothJSONBody
 
+// Bind implements render.Binder.
+func (PostBothJSONRequestBody) Bind(*http.Request) error {
+	return nil
+}
+
 // PostJSONJSONRequestBody defines body for PostJSON for application/json ContentType.
 type PostJSONJSONRequestBody PostJSONJSONBody
+
+// Bind implements render.Binder.
+func (PostJSONJSONRequestBody) Bind(*http.Request) error {
+	return nil
+}
 
 // Response is a common response struct for all the API calls.
 // A Response object may be instantiated via functions for specific operation responses.
