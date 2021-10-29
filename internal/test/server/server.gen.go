@@ -130,37 +130,49 @@ type CreateResource2JSONRequestBody CreateResource2JSONBody
 // UpdateResource3JSONRequestBody defines body for UpdateResource3 for application/json ContentType.
 type UpdateResource3JSONRequestBody UpdateResource3JSONBody
 
+// Response is a common response struct for all the API calls.
+// A Response object may be instantiated via functions for specific operation responses.
 type Response struct {
 	body        interface{}
 	statusCode  int
 	contentType string
 }
 
+// Render implements the render.Renderer interface. It sets the Content-Type header
+// and status code based on the response definition.
 func (resp *Response) Render(w http.ResponseWriter, r *http.Request) error {
 	w.Header().Set("Content-Type", resp.contentType)
 	render.Status(r, resp.statusCode)
 	return nil
 }
 
+// Status is a builder method to override the default status code for a response.
 func (resp *Response) Status(statusCode int) *Response {
 	resp.statusCode = statusCode
 	return resp
 }
 
+// ContentType is a builder method to override the default content type for a response.
 func (resp *Response) ContentType(contentType string) *Response {
 	resp.contentType = contentType
 	return resp
 }
 
+// MarshalJSON implements the json.Marshaler interface.
+// This is used to only marshal the body of the response.
 func (resp *Response) MarshalJSON() ([]byte, error) {
 	return json.Marshal(resp.body)
 }
 
+// MarshalXML implements the xml.Marshaler interface.
+// This is used to only marshal the body of the response.
 func (resp *Response) MarshalXML(e *xml.Encoder, start xml.StartElement) error {
 	return e.Encode(resp.body)
 }
 
-func GetEveryTypeOptional200Response(body EveryTypeOptional) *Response {
+// GetEveryTypeOptionalJSON200Response is a constructor method for a GetEveryTypeOptional response.
+// A *Response is returned with the configured status code and content type from the spec.
+func GetEveryTypeOptionalJSON200Response(body EveryTypeOptional) *Response {
 	return &Response{
 		body:        body,
 		statusCode:  200,
@@ -168,7 +180,9 @@ func GetEveryTypeOptional200Response(body EveryTypeOptional) *Response {
 	}
 }
 
-func GetSimple200Response(body SomeObject) *Response {
+// GetSimpleJSON200Response is a constructor method for a GetSimple response.
+// A *Response is returned with the configured status code and content type from the spec.
+func GetSimpleJSON200Response(body SomeObject) *Response {
 	return &Response{
 		body:        body,
 		statusCode:  200,
@@ -176,7 +190,9 @@ func GetSimple200Response(body SomeObject) *Response {
 	}
 }
 
-func GetWithArgs200Response(body struct {
+// GetWithArgsJSON200Response is a constructor method for a GetWithArgs response.
+// A *Response is returned with the configured status code and content type from the spec.
+func GetWithArgsJSON200Response(body struct {
 	Name string `json:"name"`
 }) *Response {
 	return &Response{
@@ -186,7 +202,9 @@ func GetWithArgs200Response(body struct {
 	}
 }
 
-func GetWithReferences200Response(body struct {
+// GetWithReferencesJSON200Response is a constructor method for a GetWithReferences response.
+// A *Response is returned with the configured status code and content type from the spec.
+func GetWithReferencesJSON200Response(body struct {
 	Name string `json:"name"`
 }) *Response {
 	return &Response{
@@ -196,7 +214,9 @@ func GetWithReferences200Response(body struct {
 	}
 }
 
-func GetWithContentType200Response(body SomeObject) *Response {
+// GetWithContentTypeJSON200Response is a constructor method for a GetWithContentType response.
+// A *Response is returned with the configured status code and content type from the spec.
+func GetWithContentTypeJSON200Response(body SomeObject) *Response {
 	return &Response{
 		body:        body,
 		statusCode:  200,
@@ -204,7 +224,9 @@ func GetWithContentType200Response(body SomeObject) *Response {
 	}
 }
 
-func GetReservedKeyword200Response(body ReservedKeyword) *Response {
+// GetReservedKeywordJSON200Response is a constructor method for a GetReservedKeyword response.
+// A *Response is returned with the configured status code and content type from the spec.
+func GetReservedKeywordJSON200Response(body ReservedKeyword) *Response {
 	return &Response{
 		body:        body,
 		statusCode:  200,
@@ -212,7 +234,9 @@ func GetReservedKeyword200Response(body ReservedKeyword) *Response {
 	}
 }
 
-func CreateResource200Response(body struct {
+// CreateResourceJSON200Response is a constructor method for a CreateResource response.
+// A *Response is returned with the configured status code and content type from the spec.
+func CreateResourceJSON200Response(body struct {
 	Name string `json:"name"`
 }) *Response {
 	return &Response{
@@ -222,7 +246,9 @@ func CreateResource200Response(body struct {
 	}
 }
 
-func CreateResource2200Response(body struct {
+// CreateResource2JSON200Response is a constructor method for a CreateResource2 response.
+// A *Response is returned with the configured status code and content type from the spec.
+func CreateResource2JSON200Response(body struct {
 	Name string `json:"name"`
 }) *Response {
 	return &Response{
@@ -232,7 +258,9 @@ func CreateResource2200Response(body struct {
 	}
 }
 
-func UpdateResource3200Response(body struct {
+// UpdateResource3JSON200Response is a constructor method for a UpdateResource3 response.
+// A *Response is returned with the configured status code and content type from the spec.
+func UpdateResource3JSON200Response(body struct {
 	Name string `json:"name"`
 }) *Response {
 	return &Response{
@@ -242,7 +270,9 @@ func UpdateResource3200Response(body struct {
 	}
 }
 
-func GetResponseWithReference200Response(body SomeObject) *Response {
+// GetResponseWithReferenceJSON200Response is a constructor method for a GetResponseWithReference response.
+// A *Response is returned with the configured status code and content type from the spec.
+func GetResponseWithReferenceJSON200Response(body SomeObject) *Response {
 	return &Response{
 		body:        body,
 		statusCode:  200,
@@ -250,7 +280,9 @@ func GetResponseWithReference200Response(body SomeObject) *Response {
 	}
 }
 
-func GetWithTaggedMiddleware200Response(body struct {
+// GetWithTaggedMiddlewareJSON200Response is a constructor method for a GetWithTaggedMiddleware response.
+// A *Response is returned with the configured status code and content type from the spec.
+func GetWithTaggedMiddlewareJSON200Response(body struct {
 	Name string `json:"name"`
 }) *Response {
 	return &Response{
@@ -260,7 +292,9 @@ func GetWithTaggedMiddleware200Response(body struct {
 	}
 }
 
-func PostWithTaggedMiddleware200Response(body struct {
+// PostWithTaggedMiddlewareJSON200Response is a constructor method for a PostWithTaggedMiddleware response.
+// A *Response is returned with the configured status code and content type from the spec.
+func PostWithTaggedMiddlewareJSON200Response(body struct {
 	Name string `json:"name"`
 }) *Response {
 	return &Response{

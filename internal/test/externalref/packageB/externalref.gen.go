@@ -7,51 +7,17 @@ import (
 	"bytes"
 	"compress/gzip"
 	"encoding/base64"
-	"encoding/json"
-	"encoding/xml"
 	"fmt"
-	"net/http"
 	"net/url"
 	"path"
 	"strings"
 
 	"github.com/getkin/kin-openapi/openapi3"
-	"github.com/go-chi/render"
 )
 
 // ObjectB defines model for ObjectB.
 type ObjectB struct {
 	Name *string `json:"name,omitempty"`
-}
-
-type Response struct {
-	body        interface{}
-	statusCode  int
-	contentType string
-}
-
-func (resp *Response) Render(w http.ResponseWriter, r *http.Request) error {
-	w.Header().Set("Content-Type", resp.contentType)
-	render.Status(r, resp.statusCode)
-	return nil
-}
-
-func (resp *Response) Status(statusCode int) *Response {
-	resp.statusCode = statusCode
-	return resp
-}
-
-func (resp *Response) ContentType(contentType string) *Response {
-	resp.contentType = contentType
-	return resp
-}
-
-func (resp *Response) MarshalJSON() ([]byte, error) {
-	return json.Marshal(resp.body)
-}
-
-func (resp *Response) MarshalXML(e *xml.Encoder, start xml.StartElement) error {
-	return e.Encode(resp.body)
 }
 
 // Base64 encoded, gzipped, json marshaled Swagger object

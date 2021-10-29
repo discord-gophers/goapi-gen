@@ -89,37 +89,49 @@ type Issue185JSONRequestBody Issue185JSONBody
 // Issue9JSONRequestBody defines body for Issue9 for application/json ContentType.
 type Issue9JSONRequestBody Issue9JSONBody
 
+// Response is a common response struct for all the API calls.
+// A Response object may be instantiated via functions for specific operation responses.
 type Response struct {
 	body        interface{}
 	statusCode  int
 	contentType string
 }
 
+// Render implements the render.Renderer interface. It sets the Content-Type header
+// and status code based on the response definition.
 func (resp *Response) Render(w http.ResponseWriter, r *http.Request) error {
 	w.Header().Set("Content-Type", resp.contentType)
 	render.Status(r, resp.statusCode)
 	return nil
 }
 
+// Status is a builder method to override the default status code for a response.
 func (resp *Response) Status(statusCode int) *Response {
 	resp.statusCode = statusCode
 	return resp
 }
 
+// ContentType is a builder method to override the default content type for a response.
 func (resp *Response) ContentType(contentType string) *Response {
 	resp.contentType = contentType
 	return resp
 }
 
+// MarshalJSON implements the json.Marshaler interface.
+// This is used to only marshal the body of the response.
 func (resp *Response) MarshalJSON() ([]byte, error) {
 	return json.Marshal(resp.body)
 }
 
+// MarshalXML implements the xml.Marshaler interface.
+// This is used to only marshal the body of the response.
 func (resp *Response) MarshalXML(e *xml.Encoder, start xml.StartElement) error {
 	return e.Encode(resp.body)
 }
 
-func EnsureEverythingIsReferenced200Response(body struct {
+// EnsureEverythingIsReferencedJSON200Response is a constructor method for a EnsureEverythingIsReferenced response.
+// A *Response is returned with the configured status code and content type from the spec.
+func EnsureEverythingIsReferencedJSON200Response(body struct {
 	AnyType1 *AnyType1 `json:"anyType1,omitempty"`
 
 	// AnyType2 represents any type.
@@ -135,7 +147,9 @@ func EnsureEverythingIsReferenced200Response(body struct {
 	}
 }
 
-func Issue127200Response(body GenericObject) *Response {
+// Issue127JSON200Response is a constructor method for a Issue127 response.
+// A *Response is returned with the configured status code and content type from the spec.
+func Issue127JSON200Response(body GenericObject) *Response {
 	return &Response{
 		body:        body,
 		statusCode:  200,
@@ -143,7 +157,9 @@ func Issue127200Response(body GenericObject) *Response {
 	}
 }
 
-func Issue127200Response(body GenericObject) *Response {
+// Issue127XML200Response is a constructor method for a Issue127 response.
+// A *Response is returned with the configured status code and content type from the spec.
+func Issue127XML200Response(body GenericObject) *Response {
 	return &Response{
 		body:        body,
 		statusCode:  200,
@@ -151,7 +167,9 @@ func Issue127200Response(body GenericObject) *Response {
 	}
 }
 
-func Issue127200Response(body GenericObject) *Response {
+// Issue127YAML200Response is a constructor method for a Issue127 response.
+// A *Response is returned with the configured status code and content type from the spec.
+func Issue127YAML200Response(body GenericObject) *Response {
 	return &Response{
 		body:        body,
 		statusCode:  200,
@@ -159,7 +177,9 @@ func Issue127200Response(body GenericObject) *Response {
 	}
 }
 
-func Issue127DefaultResponse(body GenericObject) *Response {
+// Issue127JSONDefaultResponse is a constructor method for a Issue127 response.
+// A *Response is returned with the configured status code and content type from the spec.
+func Issue127JSONDefaultResponse(body GenericObject) *Response {
 	return &Response{
 		body:        body,
 		statusCode:  200,
@@ -167,7 +187,9 @@ func Issue127DefaultResponse(body GenericObject) *Response {
 	}
 }
 
-func GetIssues375200Response(body EnumInObjInArray) *Response {
+// GetIssues375JSON200Response is a constructor method for a GetIssues375 response.
+// A *Response is returned with the configured status code and content type from the spec.
+func GetIssues375JSON200Response(body EnumInObjInArray) *Response {
 	return &Response{
 		body:        body,
 		statusCode:  200,

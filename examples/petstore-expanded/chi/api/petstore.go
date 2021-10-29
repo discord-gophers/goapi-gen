@@ -68,7 +68,7 @@ func (p *PetStore) FindPets(w http.ResponseWriter, r *http.Request, params FindP
 		}
 	}
 
-	render.Render(w, r, FindPets200Response(result))
+	render.Render(w, r, FindPetsJSON200Response(result))
 }
 
 func (p *PetStore) AddPet(w http.ResponseWriter, r *http.Request) {
@@ -96,7 +96,7 @@ func (p *PetStore) AddPet(w http.ResponseWriter, r *http.Request) {
 	p.Pets[pet.ID] = pet
 
 	// Now, we have to return the NewPet
-	render.Render(w, r, AddPet201Response(pet))
+	render.Render(w, r, AddPetJSON201Response(pet))
 }
 
 func (p *PetStore) FindPetByID(w http.ResponseWriter, r *http.Request, id int64) {
@@ -109,7 +109,7 @@ func (p *PetStore) FindPetByID(w http.ResponseWriter, r *http.Request, id int64)
 		return
 	}
 
-	render.Render(w, r, FindPetByID200Response(pet))
+	render.Render(w, r, FindPetByIDJSON200Response(pet))
 }
 
 func (p *PetStore) DeletePet(w http.ResponseWriter, r *http.Request, id int64) {

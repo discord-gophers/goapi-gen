@@ -63,37 +63,49 @@ type AddPetJSONBody NewPet
 // AddPetJSONRequestBody defines body for AddPet for application/json ContentType.
 type AddPetJSONRequestBody AddPetJSONBody
 
+// Response is a common response struct for all the API calls.
+// A Response object may be instantiated via functions for specific operation responses.
 type Response struct {
 	body        interface{}
 	statusCode  int
 	contentType string
 }
 
+// Render implements the render.Renderer interface. It sets the Content-Type header
+// and status code based on the response definition.
 func (resp *Response) Render(w http.ResponseWriter, r *http.Request) error {
 	w.Header().Set("Content-Type", resp.contentType)
 	render.Status(r, resp.statusCode)
 	return nil
 }
 
+// Status is a builder method to override the default status code for a response.
 func (resp *Response) Status(statusCode int) *Response {
 	resp.statusCode = statusCode
 	return resp
 }
 
+// ContentType is a builder method to override the default content type for a response.
 func (resp *Response) ContentType(contentType string) *Response {
 	resp.contentType = contentType
 	return resp
 }
 
+// MarshalJSON implements the json.Marshaler interface.
+// This is used to only marshal the body of the response.
 func (resp *Response) MarshalJSON() ([]byte, error) {
 	return json.Marshal(resp.body)
 }
 
+// MarshalXML implements the xml.Marshaler interface.
+// This is used to only marshal the body of the response.
 func (resp *Response) MarshalXML(e *xml.Encoder, start xml.StartElement) error {
 	return e.Encode(resp.body)
 }
 
-func FindPets200Response(body []Pet) *Response {
+// FindPetsJSON200Response is a constructor method for a FindPets response.
+// A *Response is returned with the configured status code and content type from the spec.
+func FindPetsJSON200Response(body []Pet) *Response {
 	return &Response{
 		body:        body,
 		statusCode:  200,
@@ -101,7 +113,9 @@ func FindPets200Response(body []Pet) *Response {
 	}
 }
 
-func FindPetsDefaultResponse(body Error) *Response {
+// FindPetsJSONDefaultResponse is a constructor method for a FindPets response.
+// A *Response is returned with the configured status code and content type from the spec.
+func FindPetsJSONDefaultResponse(body Error) *Response {
 	return &Response{
 		body:        body,
 		statusCode:  200,
@@ -109,7 +123,9 @@ func FindPetsDefaultResponse(body Error) *Response {
 	}
 }
 
-func AddPet201Response(body Pet) *Response {
+// AddPetJSON201Response is a constructor method for a AddPet response.
+// A *Response is returned with the configured status code and content type from the spec.
+func AddPetJSON201Response(body Pet) *Response {
 	return &Response{
 		body:        body,
 		statusCode:  201,
@@ -117,7 +133,9 @@ func AddPet201Response(body Pet) *Response {
 	}
 }
 
-func AddPetDefaultResponse(body Error) *Response {
+// AddPetJSONDefaultResponse is a constructor method for a AddPet response.
+// A *Response is returned with the configured status code and content type from the spec.
+func AddPetJSONDefaultResponse(body Error) *Response {
 	return &Response{
 		body:        body,
 		statusCode:  200,
@@ -125,7 +143,9 @@ func AddPetDefaultResponse(body Error) *Response {
 	}
 }
 
-func DeletePetDefaultResponse(body Error) *Response {
+// DeletePetJSONDefaultResponse is a constructor method for a DeletePet response.
+// A *Response is returned with the configured status code and content type from the spec.
+func DeletePetJSONDefaultResponse(body Error) *Response {
 	return &Response{
 		body:        body,
 		statusCode:  200,
@@ -133,7 +153,9 @@ func DeletePetDefaultResponse(body Error) *Response {
 	}
 }
 
-func FindPetByID200Response(body Pet) *Response {
+// FindPetByIDJSON200Response is a constructor method for a FindPetByID response.
+// A *Response is returned with the configured status code and content type from the spec.
+func FindPetByIDJSON200Response(body Pet) *Response {
 	return &Response{
 		body:        body,
 		statusCode:  200,
@@ -141,7 +163,9 @@ func FindPetByID200Response(body Pet) *Response {
 	}
 }
 
-func FindPetByIDDefaultResponse(body Error) *Response {
+// FindPetByIDJSONDefaultResponse is a constructor method for a FindPetByID response.
+// A *Response is returned with the configured status code and content type from the spec.
+func FindPetByIDJSONDefaultResponse(body Error) *Response {
 	return &Response{
 		body:        body,
 		statusCode:  200,

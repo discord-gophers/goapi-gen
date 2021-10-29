@@ -7,10 +7,7 @@ import (
 	"bytes"
 	"compress/gzip"
 	"encoding/base64"
-	"encoding/json"
-	"encoding/xml"
 	"fmt"
-	"net/http"
 	"net/url"
 	"path"
 	"strings"
@@ -18,43 +15,12 @@ import (
 	externalRef0 "github.com/discord-gophers/goapi-gen/internal/test/externalref/packageA"
 	externalRef1 "github.com/discord-gophers/goapi-gen/internal/test/externalref/packageB"
 	"github.com/getkin/kin-openapi/openapi3"
-	"github.com/go-chi/render"
 )
 
 // Container defines model for Container.
 type Container struct {
 	ObjectA *externalRef0.ObjectA `json:"object_a,omitempty"`
 	ObjectB *externalRef1.ObjectB `json:"object_b,omitempty"`
-}
-
-type Response struct {
-	body        interface{}
-	statusCode  int
-	contentType string
-}
-
-func (resp *Response) Render(w http.ResponseWriter, r *http.Request) error {
-	w.Header().Set("Content-Type", resp.contentType)
-	render.Status(r, resp.statusCode)
-	return nil
-}
-
-func (resp *Response) Status(statusCode int) *Response {
-	resp.statusCode = statusCode
-	return resp
-}
-
-func (resp *Response) ContentType(contentType string) *Response {
-	resp.contentType = contentType
-	return resp
-}
-
-func (resp *Response) MarshalJSON() ([]byte, error) {
-	return json.Marshal(resp.body)
-}
-
-func (resp *Response) MarshalXML(e *xml.Encoder, start xml.StartElement) error {
-	return e.Encode(resp.body)
 }
 
 // Base64 encoded, gzipped, json marshaled Swagger object

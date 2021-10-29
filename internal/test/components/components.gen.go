@@ -124,37 +124,49 @@ type EnsureEverythingIsReferencedJSONRequestBody RequestBody
 // BodyWithAddPropsJSONRequestBody defines body for BodyWithAddProps for application/json ContentType.
 type BodyWithAddPropsJSONRequestBody BodyWithAddPropsJSONBody
 
+// Response is a common response struct for all the API calls.
+// A Response object may be instantiated via functions for specific operation responses.
 type Response struct {
 	body        interface{}
 	statusCode  int
 	contentType string
 }
 
+// Render implements the render.Renderer interface. It sets the Content-Type header
+// and status code based on the response definition.
 func (resp *Response) Render(w http.ResponseWriter, r *http.Request) error {
 	w.Header().Set("Content-Type", resp.contentType)
 	render.Status(r, resp.statusCode)
 	return nil
 }
 
+// Status is a builder method to override the default status code for a response.
 func (resp *Response) Status(statusCode int) *Response {
 	resp.statusCode = statusCode
 	return resp
 }
 
+// ContentType is a builder method to override the default content type for a response.
 func (resp *Response) ContentType(contentType string) *Response {
 	resp.contentType = contentType
 	return resp
 }
 
+// MarshalJSON implements the json.Marshaler interface.
+// This is used to only marshal the body of the response.
 func (resp *Response) MarshalJSON() ([]byte, error) {
 	return json.Marshal(resp.body)
 }
 
+// MarshalXML implements the xml.Marshaler interface.
+// This is used to only marshal the body of the response.
 func (resp *Response) MarshalXML(e *xml.Encoder, start xml.StartElement) error {
 	return e.Encode(resp.body)
 }
 
-func EnsureEverythingIsReferenced200Response(body struct {
+// EnsureEverythingIsReferencedJSON200Response is a constructor method for a EnsureEverythingIsReferenced response.
+// A *Response is returned with the configured status code and content type from the spec.
+func EnsureEverythingIsReferencedJSON200Response(body struct {
 	// Has additional properties with schema for dictionaries
 	Five *AdditionalPropertiesObject5 `json:"five,omitempty"`
 
@@ -178,7 +190,9 @@ func EnsureEverythingIsReferenced200Response(body struct {
 	}
 }
 
-func EnsureEverythingIsReferencedDefaultResponse(body struct {
+// EnsureEverythingIsReferencedJSONDefaultResponse is a constructor method for a EnsureEverythingIsReferenced response.
+// A *Response is returned with the configured status code and content type from the spec.
+func EnsureEverythingIsReferencedJSONDefaultResponse(body struct {
 	Field SchemaObject `json:"Field"`
 }) *Response {
 	return &Response{
