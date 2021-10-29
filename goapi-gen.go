@@ -99,6 +99,17 @@ func run(c *cli.Context, cfg *config) error {
 	if err != nil {
 		return fmt.Errorf("could not load spec: %v", err)
 	}
+
+	// NOTE(hhhapz): This might need to be changed in the future.
+	// We might want to be more nitpicky about which minor versions we support,
+	// however, limiting the spec to this should be good enough to indicate to
+	// the end user that the thing causing their OpenAPI spec to fail is the
+	// version number.
+	split := strings.Split(swagger.OpenAPI, ".")
+	if split[0] != "3" {
+		return fmt.Errorf("unsupported OpenAPI version %s: only v3 is supported", split[0])
+	}
+
 	code, err := codegen.Generate(swagger, cfg.Package, opts)
 	if err != nil {
 		return fmt.Errorf("could not generate code: %v", err)

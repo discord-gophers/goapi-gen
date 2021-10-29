@@ -16,7 +16,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-var testSchema = `openapi: "3.0.0"
+var testSchema = `openapi: "3.0.3"
 info:
   version: 1.0.0
   title: TestServer
