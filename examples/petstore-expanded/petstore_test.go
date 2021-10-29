@@ -80,7 +80,7 @@ func TestPetStore(t *testing.T) {
 		var petError api.Error
 		err = json.NewDecoder(rr.Body).Decode(&petError)
 		assert.NoError(t, err, "error getting response", err)
-		assert.Equal(t, int32(http.StatusNotFound), petError.Code)
+		assert.Equal(t, http.StatusNotFound, rr.Code)
 	})
 
 	t.Run("List all pets", func(t *testing.T) {
@@ -150,7 +150,7 @@ func TestPetStore(t *testing.T) {
 		var petError api.Error
 		err = json.NewDecoder(rr.Body).Decode(&petError)
 		assert.NoError(t, err, "error unmarshaling PetError")
-		assert.Equal(t, int32(http.StatusNotFound), petError.Code)
+		assert.Equal(t, http.StatusNotFound, rr.Code)
 
 		// Now, delete both real pets
 		rr = testutil.NewRequest().Delete("/pets/1").GoWithHTTPHandler(t, r).Recorder

@@ -152,13 +152,8 @@ components:
 
     Error:
       required:
-        - code
         - message
       properties:
-        code:
-          type: integer
-          format: int32
-          description: Error code
         message:
           type: string
           description: Error message
