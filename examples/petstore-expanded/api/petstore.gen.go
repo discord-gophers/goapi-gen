@@ -7,6 +7,8 @@ import (
 	"bytes"
 	"compress/gzip"
 	"encoding/base64"
+	"encoding/json"
+	"encoding/xml"
 	"fmt"
 	"net/http"
 	"net/url"
@@ -16,13 +18,11 @@ import (
 	"github.com/discord-gophers/goapi-gen/pkg/runtime"
 	"github.com/getkin/kin-openapi/openapi3"
 	"github.com/go-chi/chi/v5"
+	"github.com/go-chi/render"
 )
 
 // Error defines model for Error.
 type Error struct {
-	// Error code
-	Code int32 `json:"code"`
-
 	// Error message
 	Message string `json:"message"`
 }
@@ -59,6 +59,121 @@ type AddPetJSONBody NewPet
 
 // AddPetJSONRequestBody defines body for AddPet for application/json ContentType.
 type AddPetJSONRequestBody AddPetJSONBody
+
+// Bind implements render.Binder.
+func (AddPetJSONRequestBody) Bind(*http.Request) error {
+	return nil
+}
+
+// Response is a common response struct for all the API calls.
+// A Response object may be instantiated via functions for specific operation responses.
+type Response struct {
+	body        interface{}
+	statusCode  int
+	contentType string
+}
+
+// Render implements the render.Renderer interface. It sets the Content-Type header
+// and status code based on the response definition.
+func (resp *Response) Render(w http.ResponseWriter, r *http.Request) error {
+	w.Header().Set("Content-Type", resp.contentType)
+	render.Status(r, resp.statusCode)
+	return nil
+}
+
+// Status is a builder method to override the default status code for a response.
+func (resp *Response) Status(statusCode int) *Response {
+	resp.statusCode = statusCode
+	return resp
+}
+
+// ContentType is a builder method to override the default content type for a response.
+func (resp *Response) ContentType(contentType string) *Response {
+	resp.contentType = contentType
+	return resp
+}
+
+// MarshalJSON implements the json.Marshaler interface.
+// This is used to only marshal the body of the response.
+func (resp *Response) MarshalJSON() ([]byte, error) {
+	return json.Marshal(resp.body)
+}
+
+// MarshalXML implements the xml.Marshaler interface.
+// This is used to only marshal the body of the response.
+func (resp *Response) MarshalXML(e *xml.Encoder, start xml.StartElement) error {
+	return e.Encode(resp.body)
+}
+
+// FindPetsJSON200Response is a constructor method for a FindPets response.
+// A *Response is returned with the configured status code and content type from the spec.
+func FindPetsJSON200Response(body []Pet) *Response {
+	return &Response{
+		body:        body,
+		statusCode:  200,
+		contentType: "application/json",
+	}
+}
+
+// FindPetsJSONDefaultResponse is a constructor method for a FindPets response.
+// A *Response is returned with the configured status code and content type from the spec.
+func FindPetsJSONDefaultResponse(body Error) *Response {
+	return &Response{
+		body:        body,
+		statusCode:  200,
+		contentType: "application/json",
+	}
+}
+
+// AddPetJSON201Response is a constructor method for a AddPet response.
+// A *Response is returned with the configured status code and content type from the spec.
+func AddPetJSON201Response(body Pet) *Response {
+	return &Response{
+		body:        body,
+		statusCode:  201,
+		contentType: "application/json",
+	}
+}
+
+// AddPetJSONDefaultResponse is a constructor method for a AddPet response.
+// A *Response is returned with the configured status code and content type from the spec.
+func AddPetJSONDefaultResponse(body Error) *Response {
+	return &Response{
+		body:        body,
+		statusCode:  200,
+		contentType: "application/json",
+	}
+}
+
+// DeletePetJSONDefaultResponse is a constructor method for a DeletePet response.
+// A *Response is returned with the configured status code and content type from the spec.
+func DeletePetJSONDefaultResponse(body Error) *Response {
+	return &Response{
+		body:        body,
+		statusCode:  200,
+		contentType: "application/json",
+	}
+}
+
+// FindPetByIDJSON200Response is a constructor method for a FindPetByID response.
+// A *Response is returned with the configured status code and content type from the spec.
+func FindPetByIDJSON200Response(body Pet) *Response {
+	return &Response{
+		body:        body,
+		statusCode:  200,
+		contentType: "application/json",
+	}
+}
+
+// FindPetByIDJSONDefaultResponse is a constructor method for a FindPetByID response.
+// A *Response is returned with the configured status code and content type from the spec.
+func FindPetByIDJSONDefaultResponse(body Error) *Response {
+	return &Response{
+		body:        body,
+		statusCode:  200,
+		contentType: "application/json",
+	}
+}
 
 // ServerInterface represents all server handlers.
 type ServerInterface interface {
@@ -257,34 +372,34 @@ func WithErrorHandler(handler func(w http.ResponseWriter, r *http.Request, err e
 // Base64 encoded, gzipped, json marshaled Swagger object
 var swaggerSpec = []string{
 
-	"H4sIAAAAAAAC/+RXW48budH9KwV+32OnNbEXedBTvB4vICBrT+LdvKznoYZdkmrBSw9Z1FgY6L8HRbZu",
-	"I3k2QYIgQV506WY1T51zqlj9bGz0YwwUJJv5s8l2TR7rzw8pxaQ/xhRHSsJUL9s4kH4PlG3iUTgGM2+L",
-	"od7rzDImj2LmhoO8fWM6I9uR2l9aUTK7znjKGVfffND+9iE0S+KwMrtdZxI9Fk40mPkvZtpwv/x+15mP",
-	"9HRHcok7oL+y3Uf0BHEJsiYYSS437Izg6jLup+34etwLoHV3hTdhQ+c+Lc38l2fz/4mWZm7+b3YUYjap",
-	"MJty2XUvk+HhEtLPgR8LAQ/nuE7F+MN3V8R4gZQHc7+73+llDsvYJA+CtuImj+zM3ODIQuj/mJ9wtaLU",
-	"czTdRLH53K7Bu7sF/EToTWdK0qC1yDifzU5idt2LJN5BRj86qsGyRoGSKQNqMlliIsAMGIC+tmUSYSAf",
-	"Q5aEQrAklJIoA4dKwaeRgj7pbX8DeSTLS7ZYt+qMY0sh09Eb5t2Idk3wpr85g5zns9nT01OP9XYf02o2",
-	"xebZnxbvP3z8/OF3b/qbfi3eVcNQ8vnT8jOlDVu6lvesLpmpGCzulLO7KU3TmQ2l3Ej5fX/T3+iT40gB",
-	"RzZz87Ze6syIsq6OmClB+mPVDHZO619ISgoZ0LnKJCxT9JWhvM1CvlGt/0umBGsl2VrKGSR+CR/RQ6YB",
-	"bAwDewpSPFCWHn5EshQwg5AfY4KMKxbhDBlHptBBIAtpHYMtGTL5kwUsgJ6kh3cUCAOgwCrhhgcELKtC",
-	"HaAFRlsc19Ae3peEDywlQRw4gouJfAcxBUwEtCIBcjShC2Q7sCXlkrUgHFkpuYfbwhk8g5Q0cu5gLG7D",
-	"AZPuRSlq0h0IB8tDCQIbTFwy/FqyxB4WAdZoYa0gMGeC0aEQwsBWilc6Fq2kNBcceORsOawAg2g2x9wd",
-	"r4rDQ+bjGhNJwj2Juh58dJSFCdiPlAZWpv7KG/QtIXT8WNDDwKjMJMzwqLltyLFAiAEkJolJKeElheGw",
-	"ew93CSlTEIVJgf0RQEkBYRNdkREFNhQooAJu5OqHx5L0GYtwfPKS0sT6Ei07zmeb1B30ozvqayHHAR2p",
-	"sEOnPFpKKJqYfvfwueSRwsDKskM1zxBdTJ06MJMVdXPNslpFs+5gQ2u2xSFoY0tD8eD4gVLs4ceYHhio",
-	"cPZxOJVBb1djO7QcGPsv4Uv4TENVomRYkprPxYeYagDFo2NSkVR8D1obHusDJ/I5uw6onFVLkxxcUR+q",
-	"O3u4W2Mm51phjJSm8EpzlZcEllgsP5RGOO730XWn8Rtyk3S8oZSwO99a6wR46A6FGPhh3cPPAiM5R0Eo",
-	"67kxxlxIK2lfRD0oFbivAi26PZf7J+3Tqkx2FcjBFqEEC5I4Sz2WNixIPfxQsiUgqd1gKHyoAu0U2ZKj",
-	"xBVO8+8+wKtbClbz2OIzBvC40pTJTWr18OfSQn10qltTj0rzzhFKd2g+gMVqkbSVkz1b2pM5piZzqEY1",
-	"iwoMHLojlKlwA2feA86KwbKUgRVqzghF9j6bhGw7nZFW9+vh7lSYytyEcUwkXPxJ52qmKd2Jv7X19l/0",
-	"iNORoR53i8HMzQ8cBj1f6rGRlABKuc4g54eF4Er7PizZCSV42BodBczcPBZK2+M5r+tMN42MdSoR8vUM",
-	"upyh2gVMCbf6P8u2Hns6nNTx5hyBx6/stY0X/0BJ55lEuTipsFI9y76BybFnOQP1m8Po7l4HoDxqa6no",
-	"39zc7KceCm1aG0c3DQ6zX7NCfL6W9mujXJvjXhCxu5h/RhLYg2nT0RKLk38Iz2sw2lB/ZeMS6OuorVV7",
-	"cFvTmVy8x7S9MkAotjHmK6PG+0QodWQL9KRr97NYnWv0DG7YdYmOc87FJxouzPpuUK+aNptSlu/jsP2X",
-	"sbCfqy9puCNRj+Ew6NcBtjmdkSUV2v2TnvlNq/z3WONC8Hq/zqOzZx52zSKO5MrrV7uusZnDytV3FnhA",
-	"bbOxuWZxC7loTlc8clujm01e7WiLW+0hY9N2wjL1Dx2gj+2Dhwulv9VLrr9LXfaS7y6zViANxfCfJOTt",
-	"QYyqwhYWtwrv9ReKc8UOOi5uv3X8fL+t9/5+vZYkdv1vk+t/toxfKNrUr0sobfYynb3H71/J+5MXW307",
-	"3d3v/hYAAP//wO3O5VcSAAA=",
+	"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",
+	"KAoSAAA=",
 }
 
 // GetSwagger returns the content of the embedded swagger specification file

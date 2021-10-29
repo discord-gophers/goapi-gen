@@ -1,8 +1,19 @@
 {{range .}}{{$opid := .OperationId}}
 {{range .Bodies}}
 {{with .TypeDef $opid}}
+
 // {{.TypeName}} defines body for {{$opid}} for application/json ContentType.
 type {{.TypeName}} {{if and (opts.AliasTypes) (.CanAlias)}}={{end}} {{.Schema.TypeDecl}}
+
+{{if .Schema.Bindable}}
+
+// Bind implements render.Binder.
+func ({{.TypeName}}) Bind(*http.Request) error {
+    return nil
+}
+
+{{end}}
+
 {{end}}
 {{end}}
 {{end}}

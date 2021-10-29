@@ -22,6 +22,7 @@ import (
 	"github.com/discord-gophers/goapi-gen/pkg/runtime"
 	"github.com/getkin/kin-openapi/openapi3"
 	"github.com/go-chi/chi/v5"
+	"github.com/go-chi/render"
 )
 
 const (
@@ -85,8 +86,121 @@ type Issue9Params struct {
 // Issue185JSONRequestBody defines body for Issue185 for application/json ContentType.
 type Issue185JSONRequestBody Issue185JSONBody
 
+// Bind implements render.Binder.
+func (Issue185JSONRequestBody) Bind(*http.Request) error {
+	return nil
+}
+
 // Issue9JSONRequestBody defines body for Issue9 for application/json ContentType.
 type Issue9JSONRequestBody Issue9JSONBody
+
+// Response is a common response struct for all the API calls.
+// A Response object may be instantiated via functions for specific operation responses.
+type Response struct {
+	body        interface{}
+	statusCode  int
+	contentType string
+}
+
+// Render implements the render.Renderer interface. It sets the Content-Type header
+// and status code based on the response definition.
+func (resp *Response) Render(w http.ResponseWriter, r *http.Request) error {
+	w.Header().Set("Content-Type", resp.contentType)
+	render.Status(r, resp.statusCode)
+	return nil
+}
+
+// Status is a builder method to override the default status code for a response.
+func (resp *Response) Status(statusCode int) *Response {
+	resp.statusCode = statusCode
+	return resp
+}
+
+// ContentType is a builder method to override the default content type for a response.
+func (resp *Response) ContentType(contentType string) *Response {
+	resp.contentType = contentType
+	return resp
+}
+
+// MarshalJSON implements the json.Marshaler interface.
+// This is used to only marshal the body of the response.
+func (resp *Response) MarshalJSON() ([]byte, error) {
+	return json.Marshal(resp.body)
+}
+
+// MarshalXML implements the xml.Marshaler interface.
+// This is used to only marshal the body of the response.
+func (resp *Response) MarshalXML(e *xml.Encoder, start xml.StartElement) error {
+	return e.Encode(resp.body)
+}
+
+// EnsureEverythingIsReferencedJSON200Response is a constructor method for a EnsureEverythingIsReferenced response.
+// A *Response is returned with the configured status code and content type from the spec.
+func EnsureEverythingIsReferencedJSON200Response(body struct {
+	AnyType1 *AnyType1 `json:"anyType1,omitempty"`
+
+	// AnyType2 represents any type.
+	//
+	// This should be an interface{}
+	AnyType2         *AnyType2         `json:"anyType2,omitempty"`
+	CustomStringType *CustomStringType `foo:"bar" json:"customStringType,omitempty"`
+}) *Response {
+	return &Response{
+		body:        body,
+		statusCode:  200,
+		contentType: "application/json",
+	}
+}
+
+// Issue127JSON200Response is a constructor method for a Issue127 response.
+// A *Response is returned with the configured status code and content type from the spec.
+func Issue127JSON200Response(body GenericObject) *Response {
+	return &Response{
+		body:        body,
+		statusCode:  200,
+		contentType: "application/json",
+	}
+}
+
+// Issue127XML200Response is a constructor method for a Issue127 response.
+// A *Response is returned with the configured status code and content type from the spec.
+func Issue127XML200Response(body GenericObject) *Response {
+	return &Response{
+		body:        body,
+		statusCode:  200,
+		contentType: "application/xml",
+	}
+}
+
+// Issue127YAML200Response is a constructor method for a Issue127 response.
+// A *Response is returned with the configured status code and content type from the spec.
+func Issue127YAML200Response(body GenericObject) *Response {
+	return &Response{
+		body:        body,
+		statusCode:  200,
+		contentType: "text/yaml",
+	}
+}
+
+// Issue127JSONDefaultResponse is a constructor method for a Issue127 response.
+// A *Response is returned with the configured status code and content type from the spec.
+func Issue127JSONDefaultResponse(body GenericObject) *Response {
+	return &Response{
+		body:        body,
+		statusCode:  200,
+		contentType: "application/json",
+	}
+}
+
+// GetIssues375JSON200Response is a constructor method for a GetIssues375 response.
+// A *Response is returned with the configured status code and content type from the spec.
+func GetIssues375JSON200Response(body EnumInObjInArray) *Response {
+	return &Response{
+		body:        body,
+		statusCode:  200,
+		contentType: "application/json",
+	}
+}
 
 // RequestEditorFn  is the function signature for the RequestEditor callback function
 type RequestEditorFn func(ctx context.Context, req *http.Request) error

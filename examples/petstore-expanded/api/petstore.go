@@ -1,12 +1,13 @@
-//go:generate go run github.com/discord-gophers/goapi-gen --package=api --generate types,server,spec -o petstore.gen.go ../../petstore-expanded.yaml
+//go:generate go run github.com/discord-gophers/goapi-gen --package=api --generate types,server,spec -o petstore.gen.go ../petstore-expanded.yaml
 
 package api
 
 import (
-	"encoding/json"
 	"fmt"
 	"net/http"
 	"sync"
+
+	"github.com/go-chi/render"
 )
 
 type PetStore struct {
@@ -26,16 +27,7 @@ func NewPetStore() *PetStore {
 	}
 }
 
-// This function wraps sending of an error in the Error format, and
-// handling the failure to marshal that.
-func sendPetstoreError(w http.ResponseWriter, code int, message string) {
-	petErr := Error{
-		Code:    int32(code),
-		Message: message,
-	}
-	w.WriteHeader(code)
-	json.NewEncoder(w).Encode(petErr)
-}
+const petNotFoundMsg = "Could not find pet with ID %d"
 
 // Here, we implement all of the handlers in the ServerInterface
 func (p *PetStore) FindPets(w http.ResponseWriter, r *http.Request, params FindPetsParams) {
@@ -66,15 +58,17 @@ func (p *PetStore) FindPets(w http.ResponseWriter, r *http.Request, params FindP
 		}
 	}
 
-	w.WriteHeader(http.StatusOK)
-	json.NewEncoder(w).Encode(result)
+	render.Render(w, r, FindPetsJSON200Response(result))
 }
 
 func (p *PetStore) AddPet(w http.ResponseWriter, r *http.Request) {
 	// We expect a NewPet object in the request body.
-	var newPet NewPet
-	if err := json.NewDecoder(r.Body).Decode(&newPet); err != nil {
-		sendPetstoreError(w, http.StatusBadRequest, "Invalid format for NewPet")
+	var newPet AddPetJSONRequestBody
+	if err := render.Bind(r, &newPet); err != nil {
+		render.Render(
+			w, r,
+			AddPetJSONDefaultResponse(Error{"Invalid format for NewPet"}).Status(http.StatusBadRequest),
+		)
 		return
 	}
 
@@ -95,8 +89,7 @@ func (p *PetStore) AddPet(w http.ResponseWriter, r *http.Request) {
 	p.Pets[pet.ID] = pet
 
 	// Now, we have to return the NewPet
-	w.WriteHeader(http.StatusCreated)
-	json.NewEncoder(w).Encode(pet)
+	render.Render(w, r, AddPetJSON201Response(pet))
 }
 
 func (p *PetStore) FindPetByID(w http.ResponseWriter, r *http.Request, id int64) {
@@ -105,12 +98,14 @@ func (p *PetStore) FindPetByID(w http.ResponseWriter, r *http.Request, id int64)
 
 	pet, found := p.Pets[id]
 	if !found {
-		sendPetstoreError(w, http.StatusNotFound, fmt.Sprintf("Could not find pet with ID %d", id))
+		render.Render(
+			w, r,
+			FindPetByIDJSONDefaultResponse(Error{fmt.Sprintf(petNotFoundMsg, id)}).Status(http.StatusNotFound),
+		)
 		return
 	}
 
-	w.WriteHeader(http.StatusOK)
-	json.NewEncoder(w).Encode(pet)
+	render.Render(w, r, FindPetByIDJSON200Response(pet))
 }
 
 func (p *PetStore) DeletePet(w http.ResponseWriter, r *http.Request, id int64) {
@@ -119,7 +114,10 @@ func (p *PetStore) DeletePet(w http.ResponseWriter, r *http.Request, id int64) {
 
 	_, found := p.Pets[id]
 	if !found {
-		sendPetstoreError(w, http.StatusNotFound, fmt.Sprintf("Could not find pet with ID %d", id))
+		render.Render(
+			w, r,
+			DeletePetJSONDefaultResponse(Error{fmt.Sprintf(petNotFoundMsg, id)}).Status(http.StatusNotFound),
+		)
 		return
 	}
 	delete(p.Pets, id)
