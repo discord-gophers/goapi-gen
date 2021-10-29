@@ -123,5 +123,5 @@ func (p *PetStore) DeletePet(w http.ResponseWriter, r *http.Request, id int64) {
 	}
 	delete(p.Pets, id)
 
-	render.Status(r, http.StatusNoContent)
+	w.WriteHeader(http.StatusNoContent)
 }
