@@ -1,0 +1,28 @@
+{{range .Types}}
+{{ with .Schema.Description }}{{ . }}{{ else }}// {{.TypeName}} defines model for {{.JsonName}}.{{ end }}
+type {{.TypeName}} struct {
+    value {{.Schema.TypeDecl}}
+}
+func (t {{.TypeName}}) ToValue() {{.Schema.TypeDecl}} {
+    return t.value
+}
+func (t {{.TypeName}}) MarshalJSON() ([]byte, error) {
+    return json.Marshal(t.value)
+}
+func (t {{.TypeName}}) UnmarshalJSON(data []byte) error {
+    var value {{.Schema.TypeDecl}}
+    if err := json.Unmarshal(data, &value); err != nil {
+        return err
+    }
+    return nil
+}
+func (t {{.TypeName}}) FromValue(value {{.Schema.TypeDecl}}) error {
+    switch value {
+    {{range $valueName, $value := .Schema.EnumValues}}
+    case {{$valueName}}.value:
+        t.value = value
+        return nil
+    {{end}}
+    }
+    return fmt.Errorf("unknown enum value: %v", value)
+}{{end}}

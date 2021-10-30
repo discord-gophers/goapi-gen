@@ -6,9 +6,12 @@ import (
 	"io"
 	"net/http"
 	"testing"
+	"text/template"
 
 	examplePetstore "github.com/discord-gophers/goapi-gen/examples/petstore-expanded/api"
 	examplePetstoreClient "github.com/discord-gophers/goapi-gen/examples/petstore-expanded/client"
+
+	"github.com/discord-gophers/goapi-gen/pkg/codegen/templates"
 	"github.com/getkin/kin-openapi/openapi3"
 	"github.com/golangci/lint-1"
 	"github.com/stretchr/testify/assert"
@@ -432,3 +435,56 @@ components:
           type: string
           enum: [car, dog, oldage]
 `
+
+func TestGenerateEnumTypes(t *testing.T) {
+	tests := []struct {
+		name    string
+		types   []TypeDefinition
+		want    string
+		wantErr bool
+	}{
+		{
+			name: "string",
+
+			types: []TypeDefinition{{
+				JsonName: "my_type",
+				TypeName: "MyType",
+				Schema: Schema{
+					GoType:     "string",
+					RefType:    "string",
+					EnumValues: map[string]string{"some": "value"},
+				},
+			}},
+			want: "\n// MyType defines model for my_type.\ntype MyType struct {\n    value string\n}\nfunc (t MyType) ToValue() string {\n    return t.value\n}\nfunc (t MyType) MarshalJSON() ([]byte, error) {\n    return json.Marshal(t.value)\n}\nfunc (t MyType) UnmarshalJSON(data []byte) error {\n    var value string\n    if err := json.Unmarshal(data, &value); err != nil {\n        return err\n    }\n    return nil\n}\nfunc (t MyType) FromValue(value string) error {\n    switch value {\n    \n    case some.value:\n        t.value = value\n        return nil\n    \n    }\n    return fmt.Errorf(\"unknown enum value: %v\", value)\n}",
+		},
+		{
+			name: "int64",
+
+			types: []TypeDefinition{{
+				JsonName: "my_type",
+				TypeName: "MyType",
+				Schema: Schema{
+					GoType:     "int64",
+					RefType:    "int64",
+					EnumValues: map[string]string{"some": "value"},
+				},
+			}},
+			want: "\n// MyType defines model for my_type.\ntype MyType struct {\n    value int64\n}\nfunc (t MyType) ToValue() int64 {\n    return t.value\n}\nfunc (t MyType) MarshalJSON() ([]byte, error) {\n    return json.Marshal(t.value)\n}\nfunc (t MyType) UnmarshalJSON(data []byte) error {\n    var value int64\n    if err := json.Unmarshal(data, &value); err != nil {\n        return err\n    }\n    return nil\n}\nfunc (t MyType) FromValue(value int64) error {\n    switch value {\n    \n    case some.value:\n        t.value = value\n        return nil\n    \n    }\n    return fmt.Errorf(\"unknown enum value: %v\", value)\n}",
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			TemplateFunctions["opts"] = func() Options { return Options{} }
+			tmpl := template.New("goapi-gen").Funcs(TemplateFunctions)
+			// This parses all of our own template files into the template object
+			// above
+			tmpl, _ = templates.Parse(tmpl)
+
+			got, err := GenerateEnumTypes(tmpl, tt.types)
+			if (err != nil) != tt.wantErr {
+				assert.NotNil(t, err)
+			}
+			assert.Equal(t, tt.want, got)
+		})
+	}
+}

@@ -284,6 +284,11 @@ func GenerateTypeDefinitions(t *template.Template, swagger *openapi3.T, ops []Op
 		return "", fmt.Errorf("error generating code for type enums: %w", err)
 	}
 
+	enumTypesOut, err := GenerateEnumTypes(t, allTypes)
+	if err != nil {
+		return "", fmt.Errorf("error generating code for enum type definitions: %w", err)
+	}
+
 	typesOut, err := GenerateTypes(t, allTypes)
 	if err != nil {
 		return "", fmt.Errorf("error generating code for type definitions: %w", err)
@@ -294,7 +299,7 @@ func GenerateTypeDefinitions(t *template.Template, swagger *openapi3.T, ops []Op
 		return "", fmt.Errorf("error generating allOf boilerplate: %w", err)
 	}
 
-	typeDefinitions := strings.Join([]string{enumsOut, typesOut, paramTypesOut, allOfBoilerplate}, "")
+	typeDefinitions := enumsOut + typesOut + enumTypesOut + paramTypesOut + allOfBoilerplate
 	return typeDefinitions, nil
 }
 
@@ -477,6 +482,10 @@ func GenerateTypes(t *template.Template, types []TypeDefinition) (string, error)
 
 		m[t.TypeName] = true
 
+		if len(t.Schema.EnumValues) > 0 {
+			continue
+		}
+
 		ts = append(ts, t)
 	}
 
@@ -487,6 +496,35 @@ func GenerateTypes(t *template.Template, types []TypeDefinition) (string, error)
 	}
 
 	return GenerateTemplates([]string{"typedef.tmpl"}, t, context)
+}
+
+// Helper function to pass enum types to the template engine, and buffer
+// its output into a string.
+func GenerateEnumTypes(t *template.Template, types []TypeDefinition) (string, error) {
+	m := map[string]bool{}
+	ts := []TypeDefinition{}
+
+	for _, t := range types {
+		if found := m[t.TypeName]; found {
+			continue
+		}
+
+		m[t.TypeName] = true
+
+		if len(t.Schema.EnumValues) <= 0 {
+			continue
+		}
+
+		ts = append(ts, t)
+	}
+
+	context := struct {
+		Types []TypeDefinition
+	}{
+		Types: ts,
+	}
+
+	return GenerateTemplates([]string{"enum-typedef.tmpl"}, t, context)
 }
 
 func GenerateEnums(t *template.Template, types []TypeDefinition) (string, error) {
@@ -516,7 +554,7 @@ func GenerateEnums(t *template.Template, types []TypeDefinition) (string, error)
 		}
 	}
 
-	return GenerateTemplates([]string{"constants.tmpl"}, t, c)
+	return GenerateTemplates([]string{"enum-values.tmpl"}, t, c)
 }
 
 // Generate our import statements and package definition.
