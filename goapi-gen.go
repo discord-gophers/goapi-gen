@@ -24,6 +24,7 @@ import (
 	"strings"
 
 	"github.com/discord-gophers/goapi-gen/pkg/codegen"
+	"github.com/kenshaw/snaker"
 	"github.com/urfave/cli/v2"
 )
 
@@ -39,6 +40,7 @@ const (
 	ImportMappingKey  = "import-mapping"
 	ExcludeSchemasKey = "exclude-schemas"
 	AliasKey          = "alias"
+	InitialismsKey    = "initialisms"
 	ConfigKey         = "config"
 )
 
@@ -111,6 +113,15 @@ func run(c *cli.Context, cfg *config) error {
 		return fmt.Errorf("unsupported OpenAPI version %s: only v3 is supported", split[0])
 	}
 
+	// Add any custom defined initialisms.
+	// This helps generated mode idiomatic code; i.e Isbn => ISBN
+	for _, ini := range cfg.Initialisms {
+		ini = strings.ToUpper(ini)
+		if err := snaker.DefaultInitialisms.Add(ini); err != nil {
+			return fmt.Errorf("could not add initialism %q: %v", ini, err)
+		}
+	}
+
 	code, err := codegen.Generate(swagger, cfg.Package, opts)
 	if err != nil {
 		return fmt.Errorf("could not generate code: %v", err)
@@ -140,6 +151,7 @@ func main() {
 		ExcludeTags:     &cli.StringSlice{},
 		ImportMapping:   &cli.StringSlice{},
 		ExcludeSchemas:  &cli.StringSlice{},
+		Initialisms:     &cli.StringSlice{},
 	}
 	app := &cli.App{
 		Name: "goapi-gen",
@@ -205,6 +217,11 @@ func main() {
 				Aliases:     []string{"a"},
 				Usage:       "Alias type declerations when possible",
 				Destination: &f.AliasTypes,
+			},
+			&cli.StringSliceFlag{
+				Name:        InitialismsKey,
+				Usage:       "Add custom initialisms (i.e ID, API, URI)",
+				Destination: f.Initialisms,
 			},
 			&cli.StringFlag{
 				Name:        ConfigKey,

@@ -15,6 +15,7 @@ goapi-gen
 [--help|-h]
 [--import-mapping|-i]=[value]
 [--include-tags|-t]=[value]
+[--initialisms]=[value]
 [--out|-o]=[value]
 [--package|-p]=[value]
 [--templates|-s]=[value]
@@ -44,6 +45,8 @@ goapi-gen [GLOBAL OPTIONS] command [COMMAND OPTIONS] [ARGUMENTS...]
 **--import-mapping, -i**="": A dict from the external reference to golang package path (default: [])
 
 **--include-tags, -t**="": Only include matching operations in the given tags. (default: [])
+
+**--initialisms**="": Add custom initialisms (i.e ID, API, URI) (default: [])
 
 **--out, -o**="": Output file
 
