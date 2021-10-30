@@ -1,5 +1,5 @@
 {{range .Types}}
-{{ with .Schema.Description }}{{ . }}{{ else }}// {{.TypeName}} defines model for {{.JsonName}}.{{ end }}
+{{ with .Schema.Description }}{{ . }}{{ else }}// {{.TypeName}} defines model for {{.JSONName}}.{{ end }}
 type {{.TypeName}} struct {
     value {{.Schema.TypeDecl}}
 }

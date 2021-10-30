@@ -11,6 +11,7 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+
 package testutil
 
 // This is a set of fluent request builders for tests, which help us to
@@ -34,13 +35,14 @@ import (
 	"testing"
 )
 
+// NewRequest makes a new request.
 func NewRequest() *RequestBuilder {
 	return &RequestBuilder{
 		Headers: make(map[string]string),
 	}
 }
 
-// This structure caches request settings as we build up the request.
+// RequestBuilder caches request settings as we build up the request.
 type RequestBuilder struct {
 	Method  string
 	Path    string
@@ -50,88 +52,102 @@ type RequestBuilder struct {
 	Cookies []*http.Cookie
 }
 
-// Path operations
+// WithMethod sets the method and path for an operation.
 func (r *RequestBuilder) WithMethod(method string, path string) *RequestBuilder {
 	r.Method = method
 	r.Path = path
 	return r
 }
 
+// Get does the request with the GET Method.
 func (r *RequestBuilder) Get(path string) *RequestBuilder {
 	return r.WithMethod("GET", path)
 }
 
+// Post does the request with the POST Method.
 func (r *RequestBuilder) Post(path string) *RequestBuilder {
 	return r.WithMethod("POST", path)
 }
 
+// Put does the request with the PUT method.
 func (r *RequestBuilder) Put(path string) *RequestBuilder {
 	return r.WithMethod("PUT", path)
 }
 
+// Patch does the request method with the PATCH method.
 func (r *RequestBuilder) Patch(path string) *RequestBuilder {
 	return r.WithMethod("PATCH", path)
 }
 
+// Delete does the request with the DELETE method.
 func (r *RequestBuilder) Delete(path string) *RequestBuilder {
 	return r.WithMethod("DELETE", path)
 }
 
-// Header operations
+// WithHeader sets the header on r.
 func (r *RequestBuilder) WithHeader(header, value string) *RequestBuilder {
 	r.Headers[header] = value
 	return r
 }
 
+// WithJWSAuth sets the authorization token on r.
 func (r *RequestBuilder) WithJWSAuth(jws string) *RequestBuilder {
 	r.Headers["Authorization"] = "Bearer " + jws
 	return r
 }
 
+// WithHost sets the Host header on r.
 func (r *RequestBuilder) WithHost(value string) *RequestBuilder {
 	return r.WithHeader("Host", value)
 }
 
+// WithContentType sets the Content Type on r.
 func (r *RequestBuilder) WithContentType(value string) *RequestBuilder {
 	return r.WithHeader("Content-Type", value)
 }
 
-func (r *RequestBuilder) WithJsonContentType() *RequestBuilder {
+// WithJSONContentType sets the content type to json on r.
+func (r *RequestBuilder) WithJSONContentType() *RequestBuilder {
 	return r.WithContentType("application/json")
 }
 
+// WithAccept sets teh accept header on r.
 func (r *RequestBuilder) WithAccept(value string) *RequestBuilder {
 	return r.WithHeader("Accept", value)
 }
 
-func (r *RequestBuilder) WithAcceptJson() *RequestBuilder {
+// WithAcceptJSON sets the accept header to accept json on r.
+func (r *RequestBuilder) WithAcceptJSON() *RequestBuilder {
 	return r.WithAccept("application/json")
 }
 
 // Request body operations
 
+// WithBody sets the body on r.
 func (r *RequestBuilder) WithBody(body []byte) *RequestBuilder {
 	r.Body = body
 	return r
 }
 
-// This function takes an object as input, marshals it to JSON, and sends it
-// as the body with Content-Type: application/json
-func (r *RequestBuilder) WithJsonBody(obj interface{}) *RequestBuilder {
+// WithJSONBody sets the body content and marshals obj as JSON.
+func (r *RequestBuilder) WithJSONBody(obj interface{}) *RequestBuilder {
 	var err error
 	r.Body, err = json.Marshal(obj)
 	if err != nil {
 		r.Error = fmt.Errorf("failed to marshal json object: %s", err)
 	}
-	return r.WithJsonContentType()
+	return r.WithJSONContentType()
 }
 
 // Cookie operations
+
+// WithCookie sets the cookie on r.
 func (r *RequestBuilder) WithCookie(c *http.Cookie) *RequestBuilder {
 	r.Cookies = append(r.Cookies, c)
 	return r
 }
 
+// WithCookieNameValue builds a cookie and adds it to r.
 func (r *RequestBuilder) WithCookieNameValue(name, value string) *RequestBuilder {
 	return r.WithCookie(&http.Cookie{Name: name, Value: value})
 }
@@ -168,8 +184,7 @@ func (r *RequestBuilder) GoWithHTTPHandler(t *testing.T, handler http.Handler) *
 	}
 }
 
-// This is the result of calling Go() on the request builder. We're wrapping the
-// ResponseRecorder with some nice helper functions.
+// CompletedRequest represents the returned request with some helper functions.
 type CompletedRequest struct {
 	Recorder *httptest.ResponseRecorder
 
@@ -178,12 +193,12 @@ type CompletedRequest struct {
 	Strict bool
 }
 
+// DisallowUnknownFields makes the unmarshaler strict.
 func (c *CompletedRequest) DisallowUnknownFields() {
 	c.Strict = true
 }
 
-// This function takes a destination object as input, and unmarshals the object
-// in the response based on the Content-Type header.
+// UnmarshalBodyToObject unmarshales the response body.
 func (c *CompletedRequest) UnmarshalBodyToObject(obj interface{}) error {
 	ctype := c.Recorder.Header().Get("Content-Type")
 
@@ -198,13 +213,12 @@ func (c *CompletedRequest) UnmarshalBodyToObject(obj interface{}) error {
 	return handler(ctype, c.Recorder.Body, obj, c.Strict)
 }
 
-// This function assumes that the response contains JSON and unmarshals it
-// into the specified object.
-func (c *CompletedRequest) UnmarshalJsonToObject(obj interface{}) error {
+// UnmarshalJSONToObject unmarshals the resposne body.
+func (c *CompletedRequest) UnmarshalJSONToObject(obj interface{}) error {
 	return json.Unmarshal(c.Recorder.Body.Bytes(), obj)
 }
 
-// Shortcut for response code
+// Code returns the response code.
 func (c *CompletedRequest) Code() int {
 	return c.Recorder.Code
 }

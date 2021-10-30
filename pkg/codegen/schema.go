@@ -8,7 +8,7 @@ import (
 	"github.com/getkin/kin-openapi/openapi3"
 )
 
-// This describes a Schema, a type definition.
+// Schema represents an OpenAPI type definition.
 type Schema struct {
 	GoType  string // The Go type needed to represent the schema
 	RefType string // If the type has a type name, this is set
@@ -31,10 +31,13 @@ type Schema struct {
 	OAPISchema *openapi3.Schema
 }
 
+// IsRef returns if s references another type.
 func (s Schema) IsRef() bool {
 	return s.RefType != ""
 }
 
+// TypeDecl returns the Go type needed to represent the schema. If s has
+// a reference, it returns the type of the reference.
 func (s Schema) TypeDecl() string {
 	if s.IsRef() {
 		return s.RefType
@@ -42,39 +45,46 @@ func (s Schema) TypeDecl() string {
 	return s.GoType
 }
 
+// MergeProperty adds p to the properties of s. p must not already be a property
+// in the schema.
 func (s *Schema) MergeProperty(p Property) error {
 	// Scan all existing properties for a conflict
 	for _, e := range s.Properties {
-		if e.JsonFieldName == p.JsonFieldName && !PropertiesEqual(e, p) {
-			return fmt.Errorf("property '%s' already exists with a different type", e.JsonFieldName)
+		if e.JSONFieldName == p.JSONFieldName && !PropertiesEqual(e, p) {
+			return fmt.Errorf("property '%s' already exists with a different type", e.JSONFieldName)
 		}
 	}
 	s.Properties = append(s.Properties, p)
 	return nil
 }
 
-func (s Schema) GetAdditionalTypeDefs() []TypeDefinition {
+// AdditionalTypeDefs returns all type definitions of the properties of s,
+// and then any additional types in s.
+func (s Schema) AdditionalTypeDefs() []TypeDefinition {
 	var result []TypeDefinition
 	for _, p := range s.Properties {
-		result = append(result, p.Schema.GetAdditionalTypeDefs()...)
+		result = append(result, p.Schema.AdditionalTypeDefs()...)
 	}
 	result = append(result, s.AdditionalTypes...)
 	return result
 }
 
+// Property represents an OpenAPI property.
 type Property struct {
 	Description    string
-	JsonFieldName  string
+	JSONFieldName  string
 	Schema         Schema
 	Required       bool
 	Nullable       bool
 	ExtensionProps *openapi3.ExtensionProps
 }
 
+// GoFieldName returns the Go name of p.
 func (p Property) GoFieldName() string {
-	return SchemaNameToTypeName(p.JsonFieldName)
+	return SchemaNameToTypeName(p.JSONFieldName)
 }
 
+// GoTypeDef returns the go type of p.
 func (p Property) GoTypeDef() string {
 	typeDef := p.Schema.TypeDecl()
 	if !p.Schema.SkipOptionalPointer && (!p.Required || p.Nullable) {
@@ -90,6 +100,7 @@ type EnumDefinition struct {
 	ValueWrapper string
 }
 
+// Constants holds the list of definitions that will be defined as constants.
 type Constants struct {
 	// SecuritySchemeProviderNames holds all provider names for security schemes.
 	SecuritySchemeProviderNames []string
@@ -113,7 +124,7 @@ type TypeDefinition struct {
 
 	// The name of the corresponding JSON description, as it will sometimes
 	// differ due to invalid characters.
-	JsonName string
+	JSONName string
 
 	// This is the Schema wrapper is used to populate the type description
 	Schema Schema
@@ -130,15 +141,22 @@ type ResponseTypeDefinition struct {
 	ResponseName string
 }
 
+// CanAlias returns whether the name of the type can be aliased.
+// It can be aliased if t's Schema is a reference or an array to a reference.
 func (t *TypeDefinition) CanAlias() bool {
-	return t.Schema.IsRef() || /* actual reference */
-		(t.Schema.ArrayType != nil && t.Schema.ArrayType.IsRef()) /* array to ref */
+	return t.Schema.IsRef() || (t.Schema.ArrayType != nil && t.Schema.ArrayType.IsRef())
 }
 
+// PropertiesEqual returns if a and b can be considered to be the same.
+// a and b are the same if they have the same field name, same type, and are
+// both required (or not).
 func PropertiesEqual(a, b Property) bool {
-	return a.JsonFieldName == b.JsonFieldName && a.Schema.TypeDecl() == b.Schema.TypeDecl() && a.Required == b.Required
+	return a.JSONFieldName == b.JSONFieldName && a.Schema.TypeDecl() == b.Schema.TypeDecl() && a.Required == b.Required
 }
 
+// GenerateGoSchema generates the schema for sref.
+// If it cannot properly resolve the type of sref, it returns
+// map[string]interface{} or interface{}.
 func GenerateGoSchema(sref *openapi3.SchemaRef, path []string) (Schema, error) {
 	// Add a fallback value in case the sref is nil.
 	// i.e. the parent schema defines a type:array, but the array has
@@ -171,23 +189,14 @@ func GenerateGoSchema(sref *openapi3.SchemaRef, path []string) (Schema, error) {
 		Bindable:    true,
 	}
 
+	// FIXME(hhhapz): We can probably support this in a meaningful way.
 	// We can't support this in any meaningful way
-	if schema.AnyOf != nil {
-		outSchema.GoType = "interface{}"
-		outSchema.Bindable = false
-		return outSchema, nil
-	}
-	// We can't support this in any meaningful way
-	if schema.OneOf != nil {
+	if schema.AnyOf != nil || schema.OneOf != nil {
 		outSchema.GoType = "interface{}"
 		outSchema.Bindable = false
 		return outSchema, nil
 	}
 
-	// AllOf is interesting, and useful. It's the union of a number of other
-	// schemas. A common usage is to create a union of an object with an ID,
-	// so that in a RESTful paradigm, the Create operation can return
-	// (object, id), so that other operations can refer to (id)
 	if schema.AllOf != nil {
 		mergedSchema, err := MergeSchemas(schema.AllOf, path)
 		if err != nil {
@@ -248,7 +257,7 @@ func GenerateGoSchema(sref *openapi3.SchemaRef, path []string) (Schema, error) {
 
 					typeDef := TypeDefinition{
 						TypeName: typeName,
-						JsonName: strings.Join(propertyPath, "."),
+						JSONName: strings.Join(propertyPath, "."),
 						Schema:   pSchema,
 					}
 					pSchema.AdditionalTypes = append(pSchema.AdditionalTypes, typeDef)
@@ -260,7 +269,7 @@ func GenerateGoSchema(sref *openapi3.SchemaRef, path []string) (Schema, error) {
 					description = p.Value.Description
 				}
 				prop := Property{
-					JsonFieldName:  pName,
+					JSONFieldName:  pName,
 					Schema:         pSchema,
 					Required:       required,
 					Description:    description,
@@ -310,7 +319,7 @@ func GenerateGoSchema(sref *openapi3.SchemaRef, path []string) (Schema, error) {
 			typeName := SchemaNameToTypeName(PathToTypeName(path))
 			typeDef := TypeDefinition{
 				TypeName: typeName,
-				JsonName: strings.Join(path, "."),
+				JSONName: strings.Join(path, "."),
 				Schema:   outSchema,
 			}
 			outSchema.AdditionalTypes = append(outSchema.AdditionalTypes, typeDef)
@@ -410,23 +419,24 @@ func resolveType(schema *openapi3.Schema, path []string, outSchema *Schema) erro
 	return nil
 }
 
-// This describes a Schema, a type definition.
+// SchemaDescriptor describes a Schema, a type definition.
 type SchemaDescriptor struct {
 	Fields                   []FieldDescriptor
 	HasAdditionalProperties  bool
 	AdditionalPropertiesType string
 }
 
+// FieldDescriptor describes a field.
 type FieldDescriptor struct {
 	Required bool   // Is the schema required? If not, we'll pass by pointer
 	GoType   string // The Go type needed to represent the json type.
 	GoName   string // The Go compatible type name for the type
-	JsonName string // The json type name for the type
+	JSONName string // The json type name for the type
 	IsRef    bool   // Is this schema a reference to predefined object?
 }
 
-// Given a list of schema descriptors, produce corresponding field names with
-// JSON annotations
+// GenFieldsFromProperties produces corresponding field names with JSON
+// annotations
 func GenFieldsFromProperties(props []Property) []string {
 	var fields []string
 	for i, p := range props {
@@ -453,9 +463,9 @@ func GenFieldsFromProperties(props []Property) []string {
 		fieldTags := make(map[string]string)
 
 		if p.Required || p.Nullable || !omitEmpty {
-			fieldTags["json"] = p.JsonFieldName
+			fieldTags["json"] = p.JSONFieldName
 		} else {
-			fieldTags["json"] = p.JsonFieldName + ",omitempty"
+			fieldTags["json"] = p.JSONFieldName + ",omitempty"
 		}
 		if extension, ok := p.ExtensionProps.Extensions[extPropExtraTags]; ok {
 			if tags, err := extExtraTags(extension); err == nil {
@@ -477,6 +487,8 @@ func GenFieldsFromProperties(props []Property) []string {
 	return fields
 }
 
+// GenStructFromSchema creates a struct definition from the given Schema.
+// If the schema has additional properties, it is defined as a map[string]Type.
 func GenStructFromSchema(schema Schema) string {
 	// Start out with struct {
 	objectParts := []string{"struct {"}
@@ -496,7 +508,7 @@ func GenStructFromSchema(schema Schema) string {
 	return strings.Join(objectParts, "\n")
 }
 
-// Merge all the fields in the schemas supplied into one giant schema.
+// MergeSchemas merges all the fields in the schemas supplied together.
 func MergeSchemas(allOf []*openapi3.SchemaRef, path []string) (Schema, error) {
 	var outSchema Schema
 	for _, schemaOrRef := range allOf {
@@ -549,7 +561,7 @@ func MergeSchemas(allOf []*openapi3.SchemaRef, path []string) (Schema, error) {
 	return outSchema, nil
 }
 
-// This function generates an object that is the union of the objects in the
+// GenStructFromAllOf function generates an object that is the union of the objects in the
 // input array. In the case of Ref objects, we use an embedded struct, otherwise,
 // we inline the fields.
 func GenStructFromAllOf(allOf []*openapi3.SchemaRef, path []string) (string, error) {

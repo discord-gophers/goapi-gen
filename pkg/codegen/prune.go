@@ -15,6 +15,7 @@ func stringInSlice(a string, list []string) bool {
 	return false
 }
 
+// RefWrapper represents a ref wrapped with more information.
 type RefWrapper struct {
 	Ref       string
 	HasValue  bool

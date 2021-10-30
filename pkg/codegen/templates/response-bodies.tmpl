@@ -42,7 +42,7 @@ func (resp *Response) MarshalXML(e *xml.Encoder, start xml.StartElement) error {
 
 {{end}}
 
-{{range .}}{{$opid := .OperationId}}
+{{range .}}{{$opid := .OperationID}}
 {{range getResponseTypeDefinitions .}}
 
 // {{$opid | ucFirst}}{{.TypeName | title}}Response is a constructor method for a {{$opid | ucFirst}} response.

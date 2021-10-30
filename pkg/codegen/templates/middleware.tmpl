@@ -5,7 +5,7 @@ type ServerInterfaceWrapper struct {
 	ErrorHandlerFunc func(w http.ResponseWriter, r *http.Request, err error)
 }
 
-{{range .}}{{$opid := .OperationId}}
+{{range .}}{{$opid := .OperationID}}
 
 // {{$opid}} operation middleware
 func (siw *ServerInterfaceWrapper) {{$opid}}(w http.ResponseWriter, r *http.Request) {
@@ -17,7 +17,7 @@ func (siw *ServerInterfaceWrapper) {{$opid}}(w http.ResponseWriter, r *http.Requ
 	{{if .IsPassThrough}}
 	{{$varName}} = chi.URLParam(r, "{{.ParamName}}")
 	{{end}}
-	{{if .IsJson}}
+	{{if .IsJSON}}
 	if err := json.Unmarshal([]byte(chi.URLParam(r, "{{.ParamName}}")), &{{$varName}}); err != nil {
 		err = fmt.Errorf("error unmarshaling parameter '{{.ParamName}}' as JSON: %w", err)
 		siw.ErrorHandlerFunc(w, r, &UnmarshalingParamError{err})
@@ -40,7 +40,7 @@ func (siw *ServerInterfaceWrapper) {{$opid}}(w http.ResponseWriter, r *http.Requ
 
 	{{if .RequiresParamObject}}
 		// Parameter object where we will unmarshal all parameters from the context
-		var params {{.OperationId}}Params
+		var params {{.OperationID}}Params
 
 		{{range $paramIdx, $param := .QueryParams}}// ------------- {{if .Required}}Required{{else}}Optional{{end}} query parameter "{{.ParamName}}" -------------
 			{{if .IsStyled}}
@@ -54,7 +54,7 @@ func (siw *ServerInterfaceWrapper) {{$opid}}(w http.ResponseWriter, r *http.Requ
 			{{if .IsPassThrough}}
 				params.{{.GoName}} = {{if not .Required}}&{{end}}paramValue
 			{{end}}
-			{{if .IsJson}}
+			{{if .IsJSON}}
 				var value {{.TypeDef}}
 				if err := json.Unmarshal([]byte(paramValue), &value); err != nil {
 					err = fmt.Errorf("error unmarshaling parameter '{{.ParamName}}' as JSON: %w", err)
@@ -88,7 +88,7 @@ func (siw *ServerInterfaceWrapper) {{$opid}}(w http.ResponseWriter, r *http.Requ
 					params.{{.GoName}} = {{if not .Required}}&{{end}}valueList[0]
 				{{end}}
 
-				{{if .IsJson}}
+				{{if .IsJSON}}
 					if err := json.Unmarshal([]byte(valueList[0]), &{{.GoName}}); err != nil {
 						err = fmt.Errorf("error unmarshaling parameter '{{.ParamName}}' as JSON: %w", err)
 						siw.ErrorHandlerFunc(w, r, &UnmarshalingParamError{err})
@@ -122,7 +122,7 @@ func (siw *ServerInterfaceWrapper) {{$opid}}(w http.ResponseWriter, r *http.Requ
 				params.{{.GoName}} = {{if not .Required}}&{{end}}cookie.Value
 			{{end}}
 
-			{{- if .IsJson}}
+			{{- if .IsJSON}}
 				var value {{.TypeDef}}
 				var decoded string
 				decoded, err := url.QueryUnescape(cookie.Value)
@@ -164,7 +164,7 @@ func (siw *ServerInterfaceWrapper) {{$opid}}(w http.ResponseWriter, r *http.Requ
 	{{end}}
 
 	var handler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.{{.OperationId}}(w, r{{genParamNames .PathParams}}{{if .RequiresParamObject}}, params{{end}})
+		siw.Handler.{{.OperationID}}(w, r{{genParamNames .PathParams}}{{if .RequiresParamObject}}, params{{end}})
 	})
 
 	{{ with .Middlewares -}}

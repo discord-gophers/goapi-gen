@@ -360,21 +360,21 @@ which help you to use the various OpenAPI 3 Authentication mechanism.
     func CreateSampleProviders() error {
         // Example BasicAuth
         // See: https://swagger.io/docs/specification/authentication/basic-authentication/
-        basicAuthProvider, basicAuthProviderErr := securityprovider.NewSecurityProviderBasicAuth("MY_USER", "MY_PASS")
+        basicAuthProvider, basicAuthProviderErr := securityprovider.NewBasicAuth("MY_USER", "MY_PASS")
         if basicAuthProviderErr != nil {
             panic(basicAuthProviderErr)
         }
 
         // Example BearerToken
         // See: https://swagger.io/docs/specification/authentication/bearer-authentication/
-        bearerTokenProvider, bearerTokenProviderErr := securityprovider.NewSecurityProviderBearerToken("MY_TOKEN")
+        bearerTokenProvider, bearerTokenProviderErr := securityprovider.NewBearerToken("MY_TOKEN")
         if bearerTokenProviderErr != nil {
             panic(bearerTokenProviderErr)
         }
 
         // Example ApiKey provider
         // See: https://swagger.io/docs/specification/authentication/api-keys/
-        apiKeyProvider, apiKeyProviderErr := securityprovider.NewSecurityProviderApiKey("query", "myApiKeyParam", "MY_API_KEY")
+        apiKeyProvider, apiKeyProviderErr := securityprovider.NewApiKey("query", "myApiKeyParam", "MY_API_KEY")
         if apiKeyProviderErr != nil {
             panic(apiKeyProviderErr)
         }

@@ -11,6 +11,7 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+
 package runtime
 
 import (
@@ -26,18 +27,17 @@ import (
 	"github.com/discord-gophers/goapi-gen/pkg/types"
 )
 
-// This function binds a parameter as described in the Path Parameters
+// BindStyledParameter binds a parameter as described in the Path Parameters
 // section here to a Go object:
 // https://swagger.io/docs/specification/serialization/
 // It is a backward compatible function to clients generated with codegen
 // up to version v1.5.5. v1.5.6+ calls the function below.
-func BindStyledParameter(style string, explode bool, paramName string,
-	value string, dest interface{}) error {
+func BindStyledParameter(style string, explode bool, paramName string, value string, dest interface{}) error {
 	return BindStyledParameterWithLocation(style, explode, paramName, ParamLocationUndefined, value, dest)
 }
 
-// This function binds a parameter as described in the Path Parameters
-// section here to a Go object:
+// BindStyledParameterWithLocation parameter as described in the Path
+// Parameters section here to a Go object:
 // https://swagger.io/docs/specification/serialization/
 func BindStyledParameterWithLocation(style string, explode bool, paramName string,
 	paramLocation ParamLocation, value string, dest interface{}) error {
@@ -105,11 +105,12 @@ func BindStyledParameterWithLocation(style string, explode bool, paramName strin
 	return BindStringToObject(value, dest)
 }
 
-// This is a complex set of operations, but each given parameter style can be
-// packed together in multiple ways, using different styles of separators, and
-// different packing strategies based on the explode flag. This function takes
-// as input any parameter format, and unpacks it to a simple list of strings
-// or key-values which we can then treat generically.
+// splitStyledParameter is a complex set of operations, but each given
+// parameter style can be packed together in multiple ways, using different
+// styles of separators, and different packing strategies based on the explode
+// flag. This function takes as input any parameter format, and unpacks it to a
+// simple list of strings or key-values which we can then treat generically.
+//
 // Why, oh why, great Swagger gods, did you have to make this so complicated?
 func splitStyledParameter(style string, explode bool, object bool, paramName string, value string) ([]string, error) {
 	switch style {
@@ -133,15 +134,13 @@ func splitStyledParameter(style string, explode bool, object bool, paramName str
 				return nil, fmt.Errorf("invalid format for label parameter '%s', should start with '.'", paramName)
 			}
 			return parts[1:], nil
-
-		} else {
-			// In the unexploded case, we strip off the leading period.
-			if value[0] != '.' {
-				return nil, fmt.Errorf("invalid format for label parameter '%s', should start with '.'", paramName)
-			}
-			// The rest is comma separated.
-			return strings.Split(value[1:], ","), nil
 		}
+		// In the unexploded case, we strip off the leading period.
+		if value[0] != '.' {
+			return nil, fmt.Errorf("invalid format for label parameter '%s', should start with '.'", paramName)
+		}
+		// The rest is comma separated.
+		return strings.Split(value[1:], ","), nil
 
 	case "matrix":
 		if explode {
@@ -163,15 +162,14 @@ func splitStyledParameter(style string, explode bool, object bool, paramName str
 				}
 			}
 			return parts, nil
-		} else {
-			// In the unexploded case, parameters will start with ;paramName=
-			prefix := ";" + paramName + "="
-			if !strings.HasPrefix(value, prefix) {
-				return nil, fmt.Errorf("expected parameter '%s' to start with %s", paramName, prefix)
-			}
-			str := strings.TrimPrefix(value, prefix)
-			return strings.Split(str, ","), nil
 		}
+		// In the unexploded case, parameters will start with ;paramName=
+		prefix := ";" + paramName + "="
+		if !strings.HasPrefix(value, prefix) {
+			return nil, fmt.Errorf("expected parameter '%s' to start with %s", paramName, prefix)
+		}
+		str := strings.TrimPrefix(value, prefix)
+		return strings.Split(str, ","), nil
 	case "form":
 		var parts []string
 		if explode {
@@ -183,12 +181,11 @@ func splitStyledParameter(style string, explode bool, object bool, paramName str
 				}
 			}
 			return parts, nil
-		} else {
-			parts = strings.Split(value, ",")
-			prefix := paramName + "="
-			for i := range parts {
-				parts[i] = strings.TrimPrefix(parts[i], prefix)
-			}
+		}
+		parts = strings.Split(value, ",")
+		prefix := paramName + "="
+		for i := range parts {
+			parts[i] = strings.TrimPrefix(parts[i], prefix)
 		}
 		return parts, nil
 	}

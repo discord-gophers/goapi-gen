@@ -11,6 +11,7 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+
 package codegen
 
 import (
@@ -26,6 +27,7 @@ import (
 	"github.com/getkin/kin-openapi/openapi3"
 )
 
+// ParameterDefinition is a definition for a parameter.
 type ParameterDefinition struct {
 	ParamName string // The original json parameter name, eg param_name
 	In        string // Where the parameter is defined - path, header, cookie, query
@@ -34,50 +36,52 @@ type ParameterDefinition struct {
 	Schema    Schema
 }
 
-// This function is here as an adapter after a large refactoring so that I don't
-// have to update all the templates. It returns the type definition for a parameter,
-// without the leading '*' for optional ones.
+// TypeDef returns the type definition for a parameter without the leading '*'
+// for optionl types.
 func (pd ParameterDefinition) TypeDef() string {
 	typeDecl := pd.Schema.TypeDecl()
 	return typeDecl
 }
 
-// Generate the JSON annotation to map GoType to json type name. If Parameter
-// Foo is marshaled to json as "foo", this will create the annotation
-// 'json:"foo"'
-func (pd *ParameterDefinition) JsonTag() string {
+// JSONTag returns the tag for pd. It includes omitempty if it is
+// required.
+func (pd *ParameterDefinition) JSONTag() string {
 	if pd.Required {
 		return fmt.Sprintf("`json:\"%s\"`", pd.ParamName)
-	} else {
-		return fmt.Sprintf("`json:\"%s,omitempty\"`", pd.ParamName)
 	}
+	return fmt.Sprintf("`json:\"%s,omitempty\"`", pd.ParamName)
 }
 
-func (pd *ParameterDefinition) IsJson() bool {
+// IsJSON returns if pd.Spec.Content contains application/json.
+func (pd *ParameterDefinition) IsJSON() bool {
 	p := pd.Spec
 	if len(p.Content) == 1 {
-		_, found := p.Content["application/json"]
-		return found
+		_, ok := p.Content["application/json"]
+		return ok
 	}
 	return false
 }
 
+// IsPassThrough returns if pd is passthrough.
 func (pd *ParameterDefinition) IsPassThrough() bool {
 	p := pd.Spec
 	if len(p.Content) > 1 {
 		return true
 	}
 	if len(p.Content) == 1 {
-		return !pd.IsJson()
+		return !pd.IsJSON()
 	}
 	return false
 }
 
+// IsStyled returns if pdf.Spec.Schema is not nil.
 func (pd *ParameterDefinition) IsStyled() bool {
 	p := pd.Spec
 	return p.Schema != nil
 }
 
+// Style returns pd.Spec.Style. If not provided, it determines the Style based
+// on pd.Spec.In.
 func (pd *ParameterDefinition) Style() string {
 	style := pd.Spec.Style
 	if style == "" {
@@ -94,6 +98,8 @@ func (pd *ParameterDefinition) Style() string {
 	return style
 }
 
+// Explode returns if pd.Spec is explode.
+// If Explode is nil, it determines Explode based on pd.Spec.In.
 func (pd *ParameterDefinition) Explode() bool {
 	if pd.Spec.Explode == nil {
 		in := pd.Spec.In
@@ -109,6 +115,7 @@ func (pd *ParameterDefinition) Explode() bool {
 	return *pd.Spec.Explode
 }
 
+// GoVariableName returns a safe version of the name of pd's GoName.
 func (pd ParameterDefinition) GoVariableName() string {
 	name := snaker.ForceLowerCamelIdentifier(pd.GoName())
 	if IsGoKeyword(name) {
@@ -120,16 +127,20 @@ func (pd ParameterDefinition) GoVariableName() string {
 	return name
 }
 
+// GoName returns the Go name of pd.ParamName.
 func (pd ParameterDefinition) GoName() string {
 	return SchemaNameToTypeName(pd.ParamName)
 }
 
+// IndirectOptional returns if pd is optiona, directlry or indirectly.
 func (pd ParameterDefinition) IndirectOptional() bool {
 	return !pd.Required && !pd.Schema.SkipOptionalPointer
 }
 
+// ParameterDefinitions is a slice of ParameterDefinition.
 type ParameterDefinitions []ParameterDefinition
 
+// FindByName finds a definition by name.
 func (p ParameterDefinitions) FindByName(name string) *ParameterDefinition {
 	for _, param := range p {
 		if param.ParamName == name {
@@ -139,9 +150,8 @@ func (p ParameterDefinitions) FindByName(name string) *ParameterDefinition {
 	return nil
 }
 
-// This function walks the given parameters dictionary, and generates the above
-// descriptors into a flat list. This makes it a lot easier to traverse the
-// data in the template engine.
+// DescribeParameters generates descriptors based on params and path.
+// This makes it a lot easier to traverse the data in the template engine.
 func DescribeParameters(params openapi3.Parameters, path []string) ([]ParameterDefinition, error) {
 	outParams := make([]ParameterDefinition, 0)
 	for _, paramOrRef := range params {
@@ -177,15 +187,17 @@ func DescribeParameters(params openapi3.Parameters, path []string) ([]ParameterD
 	return outParams, nil
 }
 
+// SecurityDefinition represents an OpenAPI security definition.
 type SecurityDefinition struct {
 	ProviderName string
 	Scopes       []string
 }
 
-func DescribeSecurityDefinition(securityRequirements openapi3.SecurityRequirements) []SecurityDefinition {
+// DescribeSecurityDefinition returns all security definitions in srs.
+func DescribeSecurityDefinition(srs openapi3.SecurityRequirements) []SecurityDefinition {
 	outDefs := make([]SecurityDefinition, 0)
 
-	for _, sr := range securityRequirements {
+	for _, sr := range srs {
 		for _, k := range SortedSecurityRequirementKeys(sr) {
 			v := sr[k]
 			outDefs = append(outDefs, SecurityDefinition{ProviderName: k, Scopes: v})
@@ -195,9 +207,9 @@ func DescribeSecurityDefinition(securityRequirements openapi3.SecurityRequiremen
 	return outDefs
 }
 
-// This structure describes an Operation
+// OperationDefinition represents an Operation.
 type OperationDefinition struct {
-	OperationId string // The operation_id description from Swagger, used to generate function names
+	OperationID string // The operation_id description from Swagger, used to generate function names
 
 	PathParams          []ParameterDefinition // Parameters in the path, eg, /path/:param
 	HeaderParams        []ParameterDefinition // Parameters in HTTP headers
@@ -214,15 +226,16 @@ type OperationDefinition struct {
 	Spec                *openapi3.Operation
 }
 
-// Returns the list of all parameters except Path parameters. Path parameters
-// are handled differently from the rest, since they're mandatory.
+// Params returns the list of all parameters except Path parameters.
+// Path parameters are handled differently from the rest, since they're
+// mandatory.
 func (o *OperationDefinition) Params() []ParameterDefinition {
 	result := append(o.QueryParams, o.HeaderParams...)
 	result = append(result, o.CookieParams...)
 	return result
 }
 
-// Returns all parameters
+// AllParams returns all params.
 func (o *OperationDefinition) AllParams() []ParameterDefinition {
 	result := append(o.QueryParams, o.HeaderParams...)
 	result = append(result, o.CookieParams...)
@@ -230,21 +243,21 @@ func (o *OperationDefinition) AllParams() []ParameterDefinition {
 	return result
 }
 
+// RequiresParamObject returns if any path parameters exist.
 // If we have parameters other than path parameters, they're bundled into an
-// object. Returns true if we have any of those. This is used from the template
-// engine.
+// object.
 func (o *OperationDefinition) RequiresParamObject() bool {
 	return len(o.Params()) > 0
 }
 
-// This is called by the template engine to determine whether to generate body
-// marshaling code on the client. This is true for all body types, whether or
-// not we generate types for them.
+// HasBody returns whether to define a body for the marshaling code on the
+// client. This is true for all body types, whether or not we generate types
+// for them.
 func (o *OperationDefinition) HasBody() bool {
 	return o.Spec.RequestBody != nil
 }
 
-// This returns the Operations summary as a multi line comment
+// SummaryAsComment returns the summary as a multiline comment for o.
 func (o *OperationDefinition) SummaryAsComment() string {
 	if o.Summary == "" {
 		return ""
@@ -257,10 +270,10 @@ func (o *OperationDefinition) SummaryAsComment() string {
 	return strings.Join(parts, "\n")
 }
 
-// Produces a list of type definitions for a given Operation for the response
-// types which we know how to parse. These will be turned into fields on a
-// response object for automatic deserialization of responses in the generated
-// Client code. See "client-with-responses.tmpl".
+// GetResponseTypeDefinitions produces a list of type definitions for a given
+// Operation for the response types which we know how to parse. These will be
+// turned into fields on a response object for automatic deserialization of
+// responses in the generated Client code. See "client-with-responses.tmpl".
 func (o *OperationDefinition) GetResponseTypeDefinitions() ([]ResponseTypeDefinition, error) {
 	var tds []ResponseTypeDefinition
 
@@ -278,7 +291,7 @@ func (o *OperationDefinition) GetResponseTypeDefinitions() ([]ResponseTypeDefini
 				if contentType.Schema != nil {
 					responseSchema, err := GenerateGoSchema(contentType.Schema, []string{responseName})
 					if err != nil {
-						return nil, fmt.Errorf("unable to determine Go type for %s.%s: %w", o.OperationId, contentTypeName, err)
+						return nil, fmt.Errorf("unable to determine Go type for %s.%s: %w", o.OperationID, contentTypeName, err)
 					}
 
 					var typeName string
@@ -318,13 +331,10 @@ func (o *OperationDefinition) GetResponseTypeDefinitions() ([]ResponseTypeDefini
 	return tds, nil
 }
 
-// This describes a request body
+// RequestBodyDefinition describes a request body
 type RequestBodyDefinition struct {
-	// Is this body required, or optional?
 	Required bool
-
-	// This is the schema describing this body
-	Schema Schema
+	Schema   Schema
 
 	// When we generate type names, we need a Tag for it, such as JSON, in
 	// which case we will produce "JSONBody".
@@ -338,7 +348,7 @@ type RequestBodyDefinition struct {
 	Default bool
 }
 
-// Returns the Go type definition for a request body
+// TypeDef returns the Go type definition for a request body
 func (r RequestBodyDefinition) TypeDef(opID string) *TypeDefinition {
 	return &TypeDefinition{
 		TypeName: fmt.Sprintf("%s%sRequestBody", opID, r.NameTag),
@@ -346,16 +356,14 @@ func (r RequestBodyDefinition) TypeDef(opID string) *TypeDefinition {
 	}
 }
 
-// Returns whether the body is a custom inline type, or pre-defined. This is
-// poorly named, but it's here for compatibility reasons post-refactoring
+// CustomType returns if body is a custom inline type, or pre-defined.
 // TODO: clean up the templates code, it can be simpler.
 func (r RequestBodyDefinition) CustomType() bool {
 	return r.Schema.RefType == ""
 }
 
-// When we're generating multiple functions which relate to request bodies,
-// this generates the suffix. Such as Operation DoFoo would be suffixed with
-// DoFooWithXMLBody.
+// Suffix returns "With{r.nameTag}Body"
+// Operation DoFoo would be suffixed with DoFooWithXMLBody.
 func (r RequestBodyDefinition) Suffix() string {
 	// The default response is never suffixed.
 	if r.Default {
@@ -364,8 +372,8 @@ func (r RequestBodyDefinition) Suffix() string {
 	return "With" + r.NameTag + "Body"
 }
 
-// This function returns the subset of the specified parameters which are of the
-// specified type.
+// FilterParameterDefinitionByType returns params which match the the type with
+// in.
 func FilterParameterDefinitionByType(params []ParameterDefinition, in string) []ParameterDefinition {
 	var out []ParameterDefinition
 	for _, p := range params {
@@ -456,7 +464,7 @@ func OperationDefinitions(swagger *openapi3.T) ([]OperationDefinition, error) {
 				HeaderParams: FilterParameterDefinitionByType(allParams, "header"),
 				QueryParams:  FilterParameterDefinitionByType(allParams, "query"),
 				CookieParams: FilterParameterDefinitionByType(allParams, "cookie"),
-				OperationId:  ToCamelCase(op.OperationID),
+				OperationID:  ToCamelCase(op.OperationID),
 				// Replace newlines in summary.
 				Summary:         op.Summary,
 				Method:          opName,
@@ -494,7 +502,7 @@ func OperationDefinitions(swagger *openapi3.T) ([]OperationDefinition, error) {
 }
 
 func generateDefaultOperationID(opName string, requestPath string) (string, error) {
-	var operationId string = strings.ToLower(opName)
+	operationID := strings.ToLower(opName)
 
 	if opName == "" {
 		return "", fmt.Errorf("operation name cannot be an empty string")
@@ -506,15 +514,15 @@ func generateDefaultOperationID(opName string, requestPath string) (string, erro
 
 	for _, part := range strings.Split(requestPath, "/") {
 		if part != "" {
-			operationId = operationId + "-" + part
+			operationID = operationID + "-" + part
 		}
 	}
 
-	return ToCamelCase(operationId), nil
+	return ToCamelCase(operationID), nil
 }
 
-// This function turns the Swagger body definitions into a list of our body
-// definitions which will be used for code generation.
+// GenerateBodyDefinitions returns  the Swagger body definitions into a list of
+// our body definitions which will be used for code generation.
 func GenerateBodyDefinitions(operationID string, bodyOrRef *openapi3.RequestBodyRef) ([]RequestBodyDefinition, []TypeDefinition, error) {
 	if bodyOrRef == nil {
 		return nil, nil, nil
@@ -577,6 +585,7 @@ func GenerateBodyDefinitions(operationID string, bodyOrRef *openapi3.RequestBody
 	return bodyDefinitions, typeDefinitions, nil
 }
 
+// GenerateTypeDefsForOperation returns the type definitions for op.
 func GenerateTypeDefsForOperation(op OperationDefinition) []TypeDefinition {
 	var typeDefs []TypeDefinition
 	// Start with the params object itself
@@ -586,17 +595,18 @@ func GenerateTypeDefsForOperation(op OperationDefinition) []TypeDefinition {
 
 	// Now, go through all the additional types we need to declare.
 	for _, param := range op.AllParams() {
-		typeDefs = append(typeDefs, param.Schema.GetAdditionalTypeDefs()...)
+		typeDefs = append(typeDefs, param.Schema.AdditionalTypeDefs()...)
 	}
 
 	for _, body := range op.Bodies {
-		typeDefs = append(typeDefs, body.Schema.GetAdditionalTypeDefs()...)
+		typeDefs = append(typeDefs, body.Schema.AdditionalTypeDefs()...)
 	}
 	return typeDefs
 }
 
-// This defines the schema for a parameters definition object which encapsulates
-// all the query, header and cookie parameters for an operation.
+// GenerateParamsTypes defines the schema for a parameters definition object
+// which encapsulates all the query, header and cookie parameters for an
+// operation.
 func GenerateParamsTypes(op OperationDefinition) []TypeDefinition {
 	var typeDefs []TypeDefinition
 
@@ -604,7 +614,7 @@ func GenerateParamsTypes(op OperationDefinition) []TypeDefinition {
 	objectParams = append(objectParams, op.HeaderParams...)
 	objectParams = append(objectParams, op.CookieParams...)
 
-	typeName := op.OperationId + "Params"
+	typeName := op.OperationID + "Params"
 
 	s := Schema{}
 	for _, param := range objectParams {
@@ -619,7 +629,7 @@ func GenerateParamsTypes(op OperationDefinition) []TypeDefinition {
 		}
 		prop := Property{
 			Description:    param.Spec.Description,
-			JsonFieldName:  param.ParamName,
+			JSONFieldName:  param.ParamName,
 			Required:       param.Required,
 			Schema:         pSchema,
 			ExtensionProps: &param.Spec.ExtensionProps,
@@ -637,7 +647,7 @@ func GenerateParamsTypes(op OperationDefinition) []TypeDefinition {
 	return append(typeDefs, td)
 }
 
-// Generates code for all types produced
+// GenerateTypesForOperations prooduces code all types used by ops.
 func GenerateTypesForOperations(t *template.Template, ops []OperationDefinition) (string, error) {
 	var buf bytes.Buffer
 	w := bufio.NewWriter(&buf)
@@ -676,25 +686,23 @@ func GenerateTypesForOperations(t *template.Template, ops []OperationDefinition)
 	return buf.String(), nil
 }
 
-// GenerateChiServer This function generates all the go code for the ServerInterface as well as
-// all the wrapper functions around our handlers.
+// GenerateChiServer generates codee for the chi server for ops.
 func GenerateChiServer(t *template.Template, operations []OperationDefinition) (string, error) {
 	return GenerateTemplates([]string{"interface.tmpl", "middleware.tmpl", "handler.tmpl"}, t, operations)
 }
 
-// Uses the template engine to generate the function which registers our wrappers
-// as chi path handlers.
+// GenerateClient generates code for the client for ops.
 func GenerateClient(t *template.Template, ops []OperationDefinition) (string, error) {
 	return GenerateTemplates([]string{"client.tmpl"}, t, ops)
 }
 
-// This generates a client which extends the basic client which does response
+// GenerateClientWithResponses generates client code alongside response
 // unmarshaling.
 func GenerateClientWithResponses(t *template.Template, ops []OperationDefinition) (string, error) {
 	return GenerateTemplates([]string{"client-with-responses.tmpl"}, t, ops)
 }
 
-// GenerateTemplates used to generate templates
+// GenerateTemplates generates templates
 func GenerateTemplates(templates []string, t *template.Template, ops interface{}) (string, error) {
 	var generatedTemplates []string
 	for _, tmpl := range templates {

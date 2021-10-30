@@ -7,12 +7,10 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-var (
-	withTrailingSlash string = "https://my-api.com/some-base-url/v1/"
-)
+var withTrailingSlash = "https://my-api.com/some-base-url/v1/"
 
 func TestSecurityProviders(t *testing.T) {
-	bearer, err := NewSecurityProviderBearerToken("mytoken")
+	bearer, err := NewBearerToken("mytoken")
 	assert.NoError(t, err)
 	client1, err := client.NewClient(
 		withTrailingSlash,
@@ -20,7 +18,7 @@ func TestSecurityProviders(t *testing.T) {
 	)
 	assert.NoError(t, err)
 
-	apiKey, err := NewSecurityProviderApiKey("cookie", "apikey", "mykey")
+	apiKey, err := NewAPIKey("cookie", "apikey", "mykey")
 	assert.NoError(t, err)
 	client2, err := client.NewClient(
 		withTrailingSlash,
@@ -28,7 +26,7 @@ func TestSecurityProviders(t *testing.T) {
 	)
 	assert.NoError(t, err)
 
-	basicAuth, err := NewSecurityProviderBasicAuth("username", "password")
+	basicAuth, err := NewBasicAuth("username", "password")
 	assert.NoError(t, err)
 	client3, err := client.NewClient(
 		withTrailingSlash,

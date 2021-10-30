@@ -61,6 +61,7 @@ func marshalDeepObject(in interface{}, path []string) ([]string, error) {
 	return result, nil
 }
 
+// MarshalDeepObject marshals i deeply using paramName.
 func MarshalDeepObject(i interface{}, paramName string) (string, error) {
 	// We're going to marshal to JSON and unmarshal into an interface{},
 	// which will use the json pkg to deal with all the field annotations. We
@@ -111,7 +112,6 @@ func (f *fieldOrValue) appendPathValue(path []string, value string) {
 }
 
 func makeFieldOrValue(paths [][]string, values []string) fieldOrValue {
-
 	f := fieldOrValue{
 		fields: make(map[string]fieldOrValue),
 	}
@@ -123,6 +123,7 @@ func makeFieldOrValue(paths [][]string, values []string) fieldOrValue {
 	return f
 }
 
+// UnmarshalDeepObject unmarshals into dst from the given params.
 func UnmarshalDeepObject(dst interface{}, paramName string, params url.Values) error {
 	// Params are all the query args, so we need those that look like
 	// "paramName["...
@@ -174,8 +175,8 @@ func getFieldName(f reflect.StructField) string {
 	return n
 }
 
-// Create a map of field names that we'll see in the deepObject to reflect
-// field indices on the given type.
+// fieldIndicesByJsonTag creates a map of field names that we'll see in the
+// deepObject to reflect field indices on the given type.
 func fieldIndicesByJsonTag(i interface{}) (map[string]int, error) {
 	t := reflect.TypeOf(i)
 	if t.Kind() != reflect.Struct {
@@ -193,7 +194,7 @@ func fieldIndicesByJsonTag(i interface{}) (map[string]int, error) {
 }
 
 func assignPathValues(dst interface{}, pathValues fieldOrValue) error {
-	//t := reflect.TypeOf(dst)
+	// t := reflect.TypeOf(dst)
 	v := reflect.ValueOf(dst)
 
 	iv := reflect.Indirect(v)

@@ -25,12 +25,12 @@ func (a *{{.TypeName}}) UnmarshalJSON(b []byte) error {
 		return err
 	}
 {{range .Schema.Properties}}
-	if raw, found := object["{{.JsonFieldName}}"]; found {
+	if raw, found := object["{{.JSONFieldName}}"]; found {
 		err = json.Unmarshal(raw, &a.{{.GoFieldName}})
 		if err != nil {
-			return fmt.Errorf("error reading '{{.JsonFieldName}}': %w", err)
+			return fmt.Errorf("error reading '{{.JSONFieldName}}': %w", err)
 		}
-		delete(object, "{{.JsonFieldName}}")
+		delete(object, "{{.JSONFieldName}}")
 	}
 {{end}}
 	if len(object) != 0 {
@@ -53,9 +53,9 @@ func (a {{.TypeName}}) MarshalJSON() ([]byte, error) {
 	object := make(map[string]json.RawMessage)
 {{range .Schema.Properties}}
 {{if not .Required}}if a.{{.GoFieldName}} != nil { {{end}}
-	object["{{.JsonFieldName}}"], err = json.Marshal(a.{{.GoFieldName}})
+	object["{{.JSONFieldName}}"], err = json.Marshal(a.{{.GoFieldName}})
 	if err != nil {
-		return nil, fmt.Errorf("error marshaling '{{.JsonFieldName}}': %w", err)
+		return nil, fmt.Errorf("error marshaling '{{.JSONFieldName}}': %w", err)
 	}
 {{if not .Required}} }{{end}}
 {{end}}

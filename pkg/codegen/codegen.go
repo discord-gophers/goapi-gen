@@ -12,6 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+// Package codegen provides functions to generate Go code from OpenAPI
+// specifications.
 package codegen
 
 import (
@@ -30,6 +32,8 @@ import (
 )
 
 // Options defines the optional code to generate.
+//
+// Most callers to this package will use Generate.
 type Options struct {
 	GenerateChiServer bool              // GenerateChiServer specifies whether to generate chi server boilerplate
 	GenerateClient    bool              // GenerateClient specifies whether to generate client boilerplate
@@ -98,9 +102,8 @@ func constructImportMapping(input map[string]string) importMap {
 	return result
 }
 
-// Uses the Go templating engine to generate all of our server wrappers from
+// Generate uses the Go templating engine to generate all of our server wrappers from
 // the descriptions we've built up above from the schema objects.
-// opts defines
 func Generate(swagger *openapi3.T, packageName string, opts Options) (string, error) {
 	importMapping = constructImportMapping(opts.ImportMapping)
 
@@ -250,6 +253,8 @@ func Generate(swagger *openapi3.T, packageName string, opts Options) (string, er
 	return string(outBytes), nil
 }
 
+// GenerateTypeDefinitions produces the type definitions in ops and executes
+// the template.
 func GenerateTypeDefinitions(t *template.Template, swagger *openapi3.T, ops []OperationDefinition, excludeSchemas []string) (string, error) {
 	schemaTypes, err := GenerateTypesForSchemas(t, swagger.Components.Schemas, excludeSchemas)
 	if err != nil {
@@ -303,7 +308,8 @@ func GenerateTypeDefinitions(t *template.Template, swagger *openapi3.T, ops []Op
 	return typeDefinitions, nil
 }
 
-// Generates operation ids, context keys, paths, etc. to be exported as constants
+// GenerateConstants creates operation ids, context keys, paths, etc. to be
+// exported as constants
 func GenerateConstants(t *template.Template, ops []OperationDefinition) (string, error) {
 	constants := Constants{
 		SecuritySchemeProviderNames: []string{},
@@ -329,7 +335,7 @@ func GenerateConstants(t *template.Template, ops []OperationDefinition) (string,
 	return GenerateTemplates([]string{"constants.tmpl"}, t, constants)
 }
 
-// Generates type definitions for any custom types defined in the
+// GenerateTypesForSchemas creates type definitions for any custom types defined in the
 // components/schemas section of the Swagger spec.
 func GenerateTypesForSchemas(t *template.Template, schemas map[string]*openapi3.SchemaRef, excludeSchemas []string) ([]TypeDefinition, error) {
 	excludeSchemasMap := make(map[string]bool)
@@ -350,18 +356,18 @@ func GenerateTypesForSchemas(t *template.Template, schemas map[string]*openapi3.
 		}
 
 		types = append(types, TypeDefinition{
-			JsonName: schemaName,
+			JSONName: schemaName,
 			TypeName: SchemaNameToTypeName(schemaName),
 			Schema:   goSchema,
 		})
 
-		types = append(types, goSchema.GetAdditionalTypeDefs()...)
+		types = append(types, goSchema.AdditionalTypeDefs()...)
 	}
 	return types, nil
 }
 
-// Generates type definitions for any custom types defined in the
-// components/parameters section of the Swagger spec.
+// GenerateTypesForParameters creates type definitions for any custom types defined in
+// the components/parameters section of the Swagger spec.
 func GenerateTypesForParameters(t *template.Template, params map[string]*openapi3.ParameterRef) ([]TypeDefinition, error) {
 	var types []TypeDefinition
 	for _, paramName := range SortedParameterKeys(params) {
@@ -373,7 +379,7 @@ func GenerateTypesForParameters(t *template.Template, params map[string]*openapi
 		}
 
 		typeDef := TypeDefinition{
-			JsonName: paramName,
+			JSONName: paramName,
 			Schema:   goType,
 			TypeName: SchemaNameToTypeName(paramName),
 		}
@@ -392,8 +398,8 @@ func GenerateTypesForParameters(t *template.Template, params map[string]*openapi
 	return types, nil
 }
 
-// Generates type definitions for any custom types defined in the
-// components/responses section of the Swagger spec.
+// GenerateTypesForResponses makes definitions for any custom types defined in
+// the components/responses section of the Swagger spec.
 func GenerateTypesForResponses(t *template.Template, responses openapi3.Responses) ([]TypeDefinition, error) {
 	var types []TypeDefinition
 
@@ -412,7 +418,7 @@ func GenerateTypesForResponses(t *template.Template, responses openapi3.Response
 			}
 
 			typeDef := TypeDefinition{
-				JsonName: responseName,
+				JSONName: responseName,
 				Schema:   goType,
 				TypeName: SchemaNameToTypeName(responseName),
 			}
@@ -431,8 +437,8 @@ func GenerateTypesForResponses(t *template.Template, responses openapi3.Response
 	return types, nil
 }
 
-// Generates type definitions for any custom types defined in the
-// components/requestBodies section of the Swagger spec.
+// GenerateTypesForRequestBodies creates definitions for any custom types
+// defined in the components/requestBodies section of the Swagger spec.
 func GenerateTypesForRequestBodies(t *template.Template, bodies map[string]*openapi3.RequestBodyRef) ([]TypeDefinition, error) {
 	var types []TypeDefinition
 
@@ -450,7 +456,7 @@ func GenerateTypesForRequestBodies(t *template.Template, bodies map[string]*open
 			}
 
 			typeDef := TypeDefinition{
-				JsonName: bodyName,
+				JSONName: bodyName,
 				Schema:   goType,
 				TypeName: SchemaNameToTypeName(bodyName),
 			}
@@ -469,8 +475,7 @@ func GenerateTypesForRequestBodies(t *template.Template, bodies map[string]*open
 	return types, nil
 }
 
-// Helper function to pass a bunch of types to the template engine, and buffer
-// its output into a string.
+// GenerateTypes is a helper function to execute the templates for type defs.
 func GenerateTypes(t *template.Template, types []TypeDefinition) (string, error) {
 	m := map[string]bool{}
 	ts := []TypeDefinition{}
@@ -498,8 +503,7 @@ func GenerateTypes(t *template.Template, types []TypeDefinition) (string, error)
 	return GenerateTemplates([]string{"typedef.tmpl"}, t, context)
 }
 
-// Helper function to pass enum types to the template engine, and buffer
-// its output into a string.
+// GenerateEnumTypes makes types for any enums in types.
 func GenerateEnumTypes(t *template.Template, types []TypeDefinition) (string, error) {
 	m := map[string]bool{}
 	ts := []TypeDefinition{}
@@ -527,6 +531,7 @@ func GenerateEnumTypes(t *template.Template, types []TypeDefinition) (string, er
 	return GenerateTemplates([]string{"enum-typedef.tmpl"}, t, context)
 }
 
+// GenerateEnums makes definitions for any enums defined in types.
 func GenerateEnums(t *template.Template, types []TypeDefinition) (string, error) {
 	c := Constants{
 		EnumDefinitions: []EnumDefinition{},
@@ -557,7 +562,7 @@ func GenerateEnums(t *template.Template, types []TypeDefinition) (string, error)
 	return GenerateTemplates([]string{"enum-values.tmpl"}, t, c)
 }
 
-// Generate our import statements and package definition.
+// GenerateImports creates import statements and the package definition.
 func GenerateImports(t *template.Template, externalImports []string, packageName string) (string, error) {
 	// Read build version for incorporating into generated files
 	var modulePath string
@@ -587,8 +592,8 @@ func GenerateImports(t *template.Template, externalImports []string, packageName
 	return GenerateTemplates([]string{"imports.tmpl"}, t, context)
 }
 
-// Generate all the glue code which provides the API for interacting with
-// additional properties and JSON-ification
+// GenerateAdditionalPropertyBoilerplate creates any glue code for interfacing
+// with additional properties and JSON marshaling.
 func GenerateAdditionalPropertyBoilerplate(t *template.Template, typeDefs []TypeDefinition) (string, error) {
 	var filteredTypes []TypeDefinition
 

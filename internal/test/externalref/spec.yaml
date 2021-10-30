@@ -5,7 +5,7 @@ components:
   schemas:
     Container:
       properties:
-        object_a:
-          $ref: ./packageA/spec.yaml#/components/schemas/ObjectA
-        object_b:
-          $ref: ./packageB/spec.yaml#/components/schemas/ObjectB
+        objectA:
+          $ref: ./package_a/spec.yaml#/components/schemas/ObjectA
+        objectB:
+          $ref: ./package_b/spec.yaml#/components/schemas/ObjectB
