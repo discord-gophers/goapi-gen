@@ -1,0 +1,24 @@
+// Decode is a package-level variable set to our default Decoder. We do this
+// because it allows you to set Decode to another function with the
+// same function signature, while also utilizing the Decoder() function
+// itself. Effectively, allowing you to easily add your own logic to the package
+// defaults. For example, maybe you want to impose a limit on the number of
+// bytes allowed to be read from the request body.
+var ReqDecoder = defaultDecoder
+
+// defaultDecoder detects the correct decoder for use on an HTTP request and
+// marshals into a given interface.
+func defaultDecoder(resp *http.Response, v interface{}) error {
+	var err error
+
+	switch render.GetContentType(resp.Header.Get("Content-Type")) {
+	case render.ContentTypeJSON:
+		err = render.DecodeJSON(resp.Body, v)
+	case render.ContentTypeXML:
+		err = render.DecodeXML(resp.Body, v)
+	default:
+		err = errors.New("defaultDecoder: unable to automatically decode the request content type")
+	}
+
+	return err
+}

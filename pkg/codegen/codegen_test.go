@@ -9,7 +9,6 @@ import (
 	"text/template"
 
 	examplePetstore "github.com/discord-gophers/goapi-gen/examples/petstore-expanded/api"
-	examplePetstoreClient "github.com/discord-gophers/goapi-gen/examples/petstore-expanded/client"
 
 	"github.com/discord-gophers/goapi-gen/pkg/codegen/templates"
 	"github.com/getkin/kin-openapi/openapi3"
@@ -44,7 +43,7 @@ func TestExamplePetStoreCodeGeneration(t *testing.T) {
 	assert.Contains(t, code, "package api")
 
 	// Check that the client method signatures return response structs:
-	assert.Contains(t, code, "func (c *Client) FindPetByID(ctx context.Context, id int64, reqEditors ...RequestEditorFn) (*http.Response, error) {")
+	assert.Contains(t, code, "func (c *Client) FindPetByID(ctx context.Context, params FindPetByIDClientParams, opts ...func(*http.Request) error) error")
 
 	// Check that the property comments were generated
 	assert.Contains(t, code, "// Unique id of the pet")

@@ -1,0 +1,7 @@
+// ClientInterface is implemented by Client
+type ClientInterface interface {
+{{- range . }}
+	// {{ .OperationID }} makes the request to the API endpoint.
+	{{template "method-signature" .}}
+{{- end }}
+}

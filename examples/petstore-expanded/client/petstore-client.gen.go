@@ -4,199 +4,50 @@
 package client
 
 import (
-	"bytes"
 	"context"
-	"encoding/json"
-	"encoding/xml"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
 	"net/url"
 	"strings"
 
-	"github.com/discord-gophers/goapi-gen/pkg/runtime"
 	"github.com/go-chi/render"
 )
 
-// Error defines model for Error.
-type Error struct {
-	// Error message
-	Message string `json:"message"`
+// ClientInterface is implemented by Client
+type ClientInterface interface {
+	// FindPets makes the request to the API endpoint.
+	FindPets(ctx context.Context, params FindPetsClientParams, opts ...func(*http.Request) error) error
+	// AddPet makes the request to the API endpoint.
+	AddPet(ctx context.Context, respBody render.Binder, params AddPetClientParams, opts ...func(*http.Request) error) (*ReqResponse, error)
+	// DeletePet makes the request to the API endpoint.
+	DeletePet(ctx context.Context, params DeletePetClientParams, opts ...func(*http.Request) error) error
+	// FindPetByID makes the request to the API endpoint.
+	FindPetByID(ctx context.Context, params FindPetByIDClientParams, opts ...func(*http.Request) error) error
 }
-
-// NewPet defines model for NewPet.
-type NewPet struct {
-	// Name of the pet
-	Name string `json:"name"`
-
-	// Type of the pet
-	Tag *string `json:"tag,omitempty"`
-}
-
-// Pet defines model for Pet.
-type Pet struct {
-	// Embedded struct due to allOf(#/components/schemas/NewPet)
-	NewPet `yaml:",inline"`
-	// Embedded fields due to inline allOf schema
-	// Unique id of the pet
-	ID int64 `json:"id"`
-}
-
-// FindPetsParams defines parameters for FindPets.
-type FindPetsParams struct {
-	// tags to filter by
-	Tags *[]string `json:"tags,omitempty"`
-
-	// maximum number of results to return
-	Limit *int32 `json:"limit,omitempty"`
-}
-
-// AddPetJSONBody defines parameters for AddPet.
-type AddPetJSONBody NewPet
-
-// AddPetJSONRequestBody defines body for AddPet for application/json ContentType.
-type AddPetJSONRequestBody AddPetJSONBody
-
-// Bind implements render.Binder.
-func (AddPetJSONRequestBody) Bind(*http.Request) error {
-	return nil
-}
-
-// Response is a common response struct for all the API calls.
-// A Response object may be instantiated via functions for specific operation responses.
-type Response struct {
-	body        interface{}
-	statusCode  int
-	contentType string
-}
-
-// Render implements the render.Renderer interface. It sets the Content-Type header
-// and status code based on the response definition.
-func (resp *Response) Render(w http.ResponseWriter, r *http.Request) error {
-	w.Header().Set("Content-Type", resp.contentType)
-	render.Status(r, resp.statusCode)
-	return nil
-}
-
-// Status is a builder method to override the default status code for a response.
-func (resp *Response) Status(statusCode int) *Response {
-	resp.statusCode = statusCode
-	return resp
-}
-
-// ContentType is a builder method to override the default content type for a response.
-func (resp *Response) ContentType(contentType string) *Response {
-	resp.contentType = contentType
-	return resp
-}
-
-// MarshalJSON implements the json.Marshaler interface.
-// This is used to only marshal the body of the response.
-func (resp *Response) MarshalJSON() ([]byte, error) {
-	return json.Marshal(resp.body)
-}
-
-// MarshalXML implements the xml.Marshaler interface.
-// This is used to only marshal the body of the response.
-func (resp *Response) MarshalXML(e *xml.Encoder, start xml.StartElement) error {
-	return e.Encode(resp.body)
-}
-
-// FindPetsJSON200Response is a constructor method for a FindPets response.
-// A *Response is returned with the configured status code and content type from the spec.
-func FindPetsJSON200Response(body []Pet) *Response {
-	return &Response{
-		body:        body,
-		statusCode:  200,
-		contentType: "application/json",
-	}
-}
-
-// FindPetsJSONDefaultResponse is a constructor method for a FindPets response.
-// A *Response is returned with the configured status code and content type from the spec.
-func FindPetsJSONDefaultResponse(body Error) *Response {
-	return &Response{
-		body:        body,
-		statusCode:  200,
-		contentType: "application/json",
-	}
-}
-
-// AddPetJSON201Response is a constructor method for a AddPet response.
-// A *Response is returned with the configured status code and content type from the spec.
-func AddPetJSON201Response(body Pet) *Response {
-	return &Response{
-		body:        body,
-		statusCode:  201,
-		contentType: "application/json",
-	}
-}
-
-// AddPetJSONDefaultResponse is a constructor method for a AddPet response.
-// A *Response is returned with the configured status code and content type from the spec.
-func AddPetJSONDefaultResponse(body Error) *Response {
-	return &Response{
-		body:        body,
-		statusCode:  200,
-		contentType: "application/json",
-	}
-}
-
-// DeletePetJSONDefaultResponse is a constructor method for a DeletePet response.
-// A *Response is returned with the configured status code and content type from the spec.
-func DeletePetJSONDefaultResponse(body Error) *Response {
-	return &Response{
-		body:        body,
-		statusCode:  200,
-		contentType: "application/json",
-	}
-}
-
-// FindPetByIDJSON200Response is a constructor method for a FindPetByID response.
-// A *Response is returned with the configured status code and content type from the spec.
-func FindPetByIDJSON200Response(body Pet) *Response {
-	return &Response{
-		body:        body,
-		statusCode:  200,
-		contentType: "application/json",
-	}
-}
-
-// FindPetByIDJSONDefaultResponse is a constructor method for a FindPetByID response.
-// A *Response is returned with the configured status code and content type from the spec.
-func FindPetByIDJSONDefaultResponse(body Error) *Response {
-	return &Response{
-		body:        body,
-		statusCode:  200,
-		contentType: "application/json",
-	}
-}
-
-// RequestEditorFn  is the function signature for the RequestEditor callback function
-type RequestEditorFn func(ctx context.Context, req *http.Request) error
 
 // Doer performs HTTP requests.
-//
 // The standard http.Client implements this interface.
-type HttpRequestDoer interface {
+type Doer interface {
 	Do(req *http.Request) (*http.Response, error)
 }
 
 // Client which conforms to the OpenAPI3 specification for this service.
 type Client struct {
 	// The endpoint of the server conforming to this interface, with scheme,
-	// https://api.deepmap.com for example. This can contain a path relative
-	// to the server, such as https://api.deepmap.com/dev-test, and all the
+	// https://example.com for example. This can contain a path relative
+	// to the server, such as https://example.com/dev-test, and all the
 	// paths in the swagger spec will be appended to the server.
-	Server string
+	BaseURL string
 
 	// Doer for performing requests, typically a *http.Client with any
 	// customized settings, such as certificate chains.
-	Client HttpRequestDoer
+	client Doer
 
 	// A list of callbacks for modifying requests which are generated before sending over
 	// the network.
-	RequestEditors []RequestEditorFn
+	reqEditors []func(req *http.Request) error
 }
 
 // ClientOption allows setting custom parameters during construction
@@ -206,602 +57,261 @@ type ClientOption func(*Client) error
 func NewClient(server string, opts ...ClientOption) (*Client, error) {
 	// create a client with sane default values
 	client := Client{
-		Server: server,
-		Client: &http.Client{},
+		BaseURL: server,
+		client:  &http.Client{},
 	}
+
 	// mutate client and add all optional params
 	for _, o := range opts {
 		if err := o(&client); err != nil {
 			return nil, err
 		}
 	}
+
 	// ensure the server URL always has a trailing slash
-	if !strings.HasSuffix(client.Server, "/") {
-		client.Server += "/"
+	if !strings.HasSuffix(client.BaseURL, "/") {
+		client.BaseURL += "/"
 	}
+
 	return &client, nil
 }
 
-// WithHTTPClient allows overriding the default Doer, which is
+// WithDoer allows overriding the default Doer, which is
 // automatically created using http.Client. This is useful for tests.
-func WithHTTPClient(doer HttpRequestDoer) ClientOption {
+func WithDoer(doer Doer) ClientOption {
 	return func(c *Client) error {
-		c.Client = doer
+		c.client = doer
 		return nil
 	}
 }
 
-// WithRequestEditorFn allows setting up a callback function, which will be
-// called right before sending the request. This can be used to mutate the request.
-func WithRequestEditorFn(fn RequestEditorFn) ClientOption {
+// WithEditors allows setting up request editors, which are used to modify
+func WithEditors(fns ...func(req *http.Request) error) ClientOption {
 	return func(c *Client) error {
-		c.RequestEditors = append(c.RequestEditors, fn)
+		c.reqEditors = append(c.reqEditors, fns...)
 		return nil
 	}
 }
 
-// The interface specification for the client above.
-type ClientInterface interface {
-	// FindPets request
-	FindPets(ctx context.Context, params *FindPetsParams, reqEditors ...RequestEditorFn) (*http.Response, error)
-
-	// AddPet request with any body
-	AddPetWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
-
-	AddPet(ctx context.Context, body AddPetJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
-
-	// DeletePet request
-	DeletePet(ctx context.Context, id int64, reqEditors ...RequestEditorFn) (*http.Response, error)
-
-	// FindPetByID request
-	FindPetByID(ctx context.Context, id int64, reqEditors ...RequestEditorFn) (*http.Response, error)
+type ReqResponse struct {
+	*http.Response
 }
 
-func (c *Client) FindPets(ctx context.Context, params *FindPetsParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewFindPetsRequest(c.Server, params)
-	if err != nil {
-		return nil, err
-	}
-	req = req.WithContext(ctx)
-	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
-		return nil, err
-	}
-	return c.Client.Do(req)
+type FindPetsClientParams struct {
+	Tags []string
+
+	Limit int32
 }
 
-func (c *Client) AddPetWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewAddPetRequestWithBody(c.Server, contentType, body)
-	if err != nil {
-		return nil, err
-	}
-	req = req.WithContext(ctx)
-	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
-		return nil, err
-	}
-	return c.Client.Do(req)
+type AddPetClientParams struct {
+	Body io.Reader
 }
 
-func (c *Client) AddPet(ctx context.Context, body AddPetJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewAddPetRequest(c.Server, body)
-	if err != nil {
-		return nil, err
-	}
-	req = req.WithContext(ctx)
-	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
-		return nil, err
-	}
-	return c.Client.Do(req)
+type DeletePetClientParams struct {
+	ID int64
 }
 
-func (c *Client) DeletePet(ctx context.Context, id int64, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewDeletePetRequest(c.Server, id)
-	if err != nil {
-		return nil, err
-	}
-	req = req.WithContext(ctx)
-	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
-		return nil, err
-	}
-	return c.Client.Do(req)
+type FindPetByIDClientParams struct {
+	ID int64
 }
 
-func (c *Client) FindPetByID(ctx context.Context, id int64, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewFindPetByIDRequest(c.Server, id)
-	if err != nil {
-		return nil, err
-	}
-	req = req.WithContext(ctx)
-	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
-		return nil, err
-	}
-	return c.Client.Do(req)
-}
+// Decode is a package-level variable set to our default Decoder. We do this
+// because it allows you to set Decode to another function with the
+// same function signature, while also utilizing the Decoder() function
+// itself. Effectively, allowing you to easily add your own logic to the package
+// defaults. For example, maybe you want to impose a limit on the number of
+// bytes allowed to be read from the request body.
+var ReqDecoder = defaultDecoder
 
-// NewFindPetsRequest generates requests for FindPets
-func NewFindPetsRequest(server string, params *FindPetsParams) (*http.Request, error) {
+// defaultDecoder detects the correct decoder for use on an HTTP request and
+// marshals into a given interface.
+func defaultDecoder(resp *http.Response, v interface{}) error {
 	var err error
 
-	serverURL, err := url.Parse(server)
-	if err != nil {
-		return nil, err
+	switch render.GetContentType(resp.Header.Get("Content-Type")) {
+	case render.ContentTypeJSON:
+		err = render.DecodeJSON(resp.Body, v)
+	case render.ContentTypeXML:
+		err = render.DecodeXML(resp.Body, v)
+	default:
+		err = errors.New("defaultDecoder: unable to automatically decode the request content type")
 	}
 
-	operationPath := fmt.Sprintf("/pets")
-	if operationPath[0] == '/' {
-		operationPath = "." + operationPath
-	}
-
-	queryURL, err := serverURL.Parse(operationPath)
-	if err != nil {
-		return nil, err
-	}
-
-	queryValues := queryURL.Query()
-
-	if params.Tags != nil {
-
-		if queryFrag, err := runtime.StyleParamWithLocation("form", true, "tags", runtime.ParamLocationQuery, *params.Tags); err != nil {
-			return nil, err
-		} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
-			return nil, err
-		} else {
-			for k, v := range parsed {
-				for _, v2 := range v {
-					queryValues.Add(k, v2)
-				}
-			}
-		}
-
-	}
-
-	if params.Limit != nil {
-
-		if queryFrag, err := runtime.StyleParamWithLocation("form", true, "limit", runtime.ParamLocationQuery, *params.Limit); err != nil {
-			return nil, err
-		} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
-			return nil, err
-		} else {
-			for k, v := range parsed {
-				for _, v2 := range v {
-					queryValues.Add(k, v2)
-				}
-			}
-		}
-
-	}
-
-	queryURL.RawQuery = queryValues.Encode()
-
-	req, err := http.NewRequest("GET", queryURL.String(), nil)
-	if err != nil {
-		return nil, err
-	}
-
-	return req, nil
+	return err
 }
 
-// NewAddPetRequest calls the generic AddPet builder with application/json body
-func NewAddPetRequest(server string, body AddPetJSONRequestBody) (*http.Request, error) {
-	var bodyReader io.Reader
-	buf, err := json.Marshal(body)
+// FindPets makes the request to the API endpoint.
+func (c *Client) FindPets(ctx context.Context, params FindPetsClientParams, opts ...func(*http.Request) error) error {
+
+	// Create the request
+	req, err := http.NewRequestWithContext(
+		ctx,
+		"GET",
+		buildURL(
+			c.BaseURL,
+			nil,
+			map[string]interface{}{
+				"tags":  params.Tags,
+				"limit": params.Limit,
+			},
+		),
+		nil,
+	)
 	if err != nil {
-		return nil, err
-	}
-	bodyReader = bytes.NewReader(buf)
-	return NewAddPetRequestWithBody(server, "application/json", bodyReader)
-}
-
-// NewAddPetRequestWithBody generates requests for AddPet with any type of body
-func NewAddPetRequestWithBody(server string, contentType string, body io.Reader) (*http.Request, error) {
-	var err error
-
-	serverURL, err := url.Parse(server)
-	if err != nil {
-		return nil, err
+		return fmt.Errorf("failed to build request: %w", err)
 	}
 
-	operationPath := fmt.Sprintf("/pets")
-	if operationPath[0] == '/' {
-		operationPath = "." + operationPath
-	}
-
-	queryURL, err := serverURL.Parse(operationPath)
-	if err != nil {
-		return nil, err
-	}
-
-	req, err := http.NewRequest("POST", queryURL.String(), body)
-	if err != nil {
-		return nil, err
-	}
-
-	req.Header.Add("Content-Type", contentType)
-
-	return req, nil
-}
-
-// NewDeletePetRequest generates requests for DeletePet
-func NewDeletePetRequest(server string, id int64) (*http.Request, error) {
-	var err error
-
-	var pathParam0 string
-
-	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "id", runtime.ParamLocationPath, id)
-	if err != nil {
-		return nil, err
-	}
-
-	serverURL, err := url.Parse(server)
-	if err != nil {
-		return nil, err
-	}
-
-	operationPath := fmt.Sprintf("/pets/%s", pathParam0)
-	if operationPath[0] == '/' {
-		operationPath = "." + operationPath
-	}
-
-	queryURL, err := serverURL.Parse(operationPath)
-	if err != nil {
-		return nil, err
-	}
-
-	req, err := http.NewRequest("DELETE", queryURL.String(), nil)
-	if err != nil {
-		return nil, err
-	}
-
-	return req, nil
-}
-
-// NewFindPetByIDRequest generates requests for FindPetByID
-func NewFindPetByIDRequest(server string, id int64) (*http.Request, error) {
-	var err error
-
-	var pathParam0 string
-
-	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "id", runtime.ParamLocationPath, id)
-	if err != nil {
-		return nil, err
-	}
-
-	serverURL, err := url.Parse(server)
-	if err != nil {
-		return nil, err
-	}
-
-	operationPath := fmt.Sprintf("/pets/%s", pathParam0)
-	if operationPath[0] == '/' {
-		operationPath = "." + operationPath
-	}
-
-	queryURL, err := serverURL.Parse(operationPath)
-	if err != nil {
-		return nil, err
-	}
-
-	req, err := http.NewRequest("GET", queryURL.String(), nil)
-	if err != nil {
-		return nil, err
-	}
-
-	return req, nil
-}
-
-func (c *Client) applyEditors(ctx context.Context, req *http.Request, additionalEditors []RequestEditorFn) error {
-	for _, r := range c.RequestEditors {
-		if err := r(ctx, req); err != nil {
-			return err
+	// Apply any request editors
+	for _, fn := range c.reqEditors {
+		if err := fn(req); err != nil {
+			return fmt.Errorf("failed to apply request editor: %w", err)
 		}
 	}
-	for _, r := range additionalEditors {
-		if err := r(ctx, req); err != nil {
-			return err
-		}
+
+	// Do the request
+	_, errDo := c.client.Do(req)
+	if errDo != nil {
+		return fmt.Errorf("failed to send request: %w", errDo)
 	}
+
 	return nil
 }
 
-// ClientWithResponses builds on ClientInterface to offer response payloads
-type ClientWithResponses struct {
-	ClientInterface
-}
+// AddPet makes the request to the API endpoint.
+func (c *Client) AddPet(ctx context.Context, respBody render.Binder, params AddPetClientParams, opts ...func(*http.Request) error) (*ReqResponse, error) {
 
-// NewClientWithResponses creates a new ClientWithResponses, which wraps
-// Client with return type handling
-func NewClientWithResponses(server string, opts ...ClientOption) (*ClientWithResponses, error) {
-	client, err := NewClient(server, opts...)
+	// Create the request
+	req, err := http.NewRequestWithContext(
+		ctx,
+		"POST",
+		buildURL(
+			c.BaseURL,
+			nil,
+			nil,
+		),
+		params.Body,
+	)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to build request: %w", err)
 	}
-	return &ClientWithResponses{client}, nil
-}
 
-// WithBaseURL overrides the baseURL.
-func WithClientBaseURL(baseURL string) ClientOption {
-	return func(c *Client) error {
-		newBaseURL, err := url.Parse(baseURL)
-		if err != nil {
-			return err
+	// Apply any request editors
+	for _, fn := range c.reqEditors {
+		if err := fn(req); err != nil {
+			return nil, fmt.Errorf("failed to apply request editor: %w", err)
 		}
-		c.Server = newBaseURL.String()
-		return nil
 	}
-}
 
-// ClientWithResponsesInterface is the interface specification for the client with responses above.
-type ClientWithResponsesInterface interface {
-	// FindPets request
-	FindPetsWithResponse(ctx context.Context, params *FindPetsParams, reqEditors ...RequestEditorFn) (*FindPetsResponse, error)
-
-	// AddPet request with any body
-	AddPetWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*AddPetResponse, error)
-
-	AddPetWithResponse(ctx context.Context, body AddPetJSONRequestBody, reqEditors ...RequestEditorFn) (*AddPetResponse, error)
-
-	// DeletePet request
-	DeletePetWithResponse(ctx context.Context, id int64, reqEditors ...RequestEditorFn) (*DeletePetResponse, error)
-
-	// FindPetByID request
-	FindPetByIDWithResponse(ctx context.Context, id int64, reqEditors ...RequestEditorFn) (*FindPetByIDResponse, error)
-}
-
-type FindPetsResponse struct {
-	Body         []byte
-	HTTPResponse *http.Response
-	JSON200      *[]Pet
-	JSONDefault  *Error
-}
-
-// Status returns HTTPResponse.Status
-func (r FindPetsResponse) Status() string {
-	if r.HTTPResponse != nil {
-		return r.HTTPResponse.Status
+	// Do the request
+	resp, errDo := c.client.Do(req)
+	if errDo != nil {
+		return &ReqResponse{
+			Response: resp,
+		}, fmt.Errorf("failed to send request: %w", errDo)
 	}
-	return http.StatusText(0)
-}
 
-// StatusCode returns HTTPResponse.StatusCode
-func (r FindPetsResponse) StatusCode() int {
-	if r.HTTPResponse != nil {
-		return r.HTTPResponse.StatusCode
+	// Bind the response body
+	if err := ReqDecoder(resp, respBody); err != nil {
+		return &ReqResponse{
+				Response: resp,
+			},
+			fmt.Errorf("failed to bind response body: %w", err)
 	}
-	return 0
+
+	return &ReqResponse{
+		Response: resp,
+	}, nil
 }
 
-type AddPetResponse struct {
-	Body         []byte
-	HTTPResponse *http.Response
-	JSON201      *Pet
-	JSONDefault  *Error
-}
+// DeletePet makes the request to the API endpoint.
+func (c *Client) DeletePet(ctx context.Context, params DeletePetClientParams, opts ...func(*http.Request) error) error {
 
-// Status returns HTTPResponse.Status
-func (r AddPetResponse) Status() string {
-	if r.HTTPResponse != nil {
-		return r.HTTPResponse.Status
-	}
-	return http.StatusText(0)
-}
-
-// StatusCode returns HTTPResponse.StatusCode
-func (r AddPetResponse) StatusCode() int {
-	if r.HTTPResponse != nil {
-		return r.HTTPResponse.StatusCode
-	}
-	return 0
-}
-
-type DeletePetResponse struct {
-	Body         []byte
-	HTTPResponse *http.Response
-	JSONDefault  *Error
-}
-
-// Status returns HTTPResponse.Status
-func (r DeletePetResponse) Status() string {
-	if r.HTTPResponse != nil {
-		return r.HTTPResponse.Status
-	}
-	return http.StatusText(0)
-}
-
-// StatusCode returns HTTPResponse.StatusCode
-func (r DeletePetResponse) StatusCode() int {
-	if r.HTTPResponse != nil {
-		return r.HTTPResponse.StatusCode
-	}
-	return 0
-}
-
-type FindPetByIDResponse struct {
-	Body         []byte
-	HTTPResponse *http.Response
-	JSON200      *Pet
-	JSONDefault  *Error
-}
-
-// Status returns HTTPResponse.Status
-func (r FindPetByIDResponse) Status() string {
-	if r.HTTPResponse != nil {
-		return r.HTTPResponse.Status
-	}
-	return http.StatusText(0)
-}
-
-// StatusCode returns HTTPResponse.StatusCode
-func (r FindPetByIDResponse) StatusCode() int {
-	if r.HTTPResponse != nil {
-		return r.HTTPResponse.StatusCode
-	}
-	return 0
-}
-
-// FindPetsWithResponse request returning *FindPetsResponse
-func (c *ClientWithResponses) FindPetsWithResponse(ctx context.Context, params *FindPetsParams, reqEditors ...RequestEditorFn) (*FindPetsResponse, error) {
-	rsp, err := c.FindPets(ctx, params, reqEditors...)
+	// Create the request
+	req, err := http.NewRequestWithContext(
+		ctx,
+		"DELETE",
+		buildURL(
+			c.BaseURL,
+			map[string]interface{}{
+				"id": params.ID,
+			},
+			nil,
+		),
+		nil,
+	)
 	if err != nil {
-		return nil, err
-	}
-	return ParseFindPetsResponse(rsp)
-}
-
-// AddPetWithBodyWithResponse request with arbitrary body returning *AddPetResponse
-func (c *ClientWithResponses) AddPetWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*AddPetResponse, error) {
-	rsp, err := c.AddPetWithBody(ctx, contentType, body, reqEditors...)
-	if err != nil {
-		return nil, err
-	}
-	return ParseAddPetResponse(rsp)
-}
-
-func (c *ClientWithResponses) AddPetWithResponse(ctx context.Context, body AddPetJSONRequestBody, reqEditors ...RequestEditorFn) (*AddPetResponse, error) {
-	rsp, err := c.AddPet(ctx, body, reqEditors...)
-	if err != nil {
-		return nil, err
-	}
-	return ParseAddPetResponse(rsp)
-}
-
-// DeletePetWithResponse request returning *DeletePetResponse
-func (c *ClientWithResponses) DeletePetWithResponse(ctx context.Context, id int64, reqEditors ...RequestEditorFn) (*DeletePetResponse, error) {
-	rsp, err := c.DeletePet(ctx, id, reqEditors...)
-	if err != nil {
-		return nil, err
-	}
-	return ParseDeletePetResponse(rsp)
-}
-
-// FindPetByIDWithResponse request returning *FindPetByIDResponse
-func (c *ClientWithResponses) FindPetByIDWithResponse(ctx context.Context, id int64, reqEditors ...RequestEditorFn) (*FindPetByIDResponse, error) {
-	rsp, err := c.FindPetByID(ctx, id, reqEditors...)
-	if err != nil {
-		return nil, err
-	}
-	return ParseFindPetByIDResponse(rsp)
-}
-
-// ParseFindPetsResponse parses an HTTP response from a FindPetsWithResponse call
-func ParseFindPetsResponse(rsp *http.Response) (*FindPetsResponse, error) {
-	bodyBytes, err := io.ReadAll(rsp.Body)
-	defer func() { _ = rsp.Body.Close() }()
-	if err != nil {
-		return nil, err
+		return fmt.Errorf("failed to build request: %w", err)
 	}
 
-	response := &FindPetsResponse{
-		Body:         bodyBytes,
-		HTTPResponse: rsp,
-	}
-
-	switch {
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
-		var dest []Pet
-		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
-			return nil, err
+	// Apply any request editors
+	for _, fn := range c.reqEditors {
+		if err := fn(req); err != nil {
+			return fmt.Errorf("failed to apply request editor: %w", err)
 		}
-		response.JSON200 = &dest
-
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
-		var dest Error
-		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
-			return nil, err
-		}
-		response.JSONDefault = &dest
-
 	}
 
-	return response, nil
+	// Do the request
+	_, errDo := c.client.Do(req)
+	if errDo != nil {
+		return fmt.Errorf("failed to send request: %w", errDo)
+	}
+
+	return nil
 }
 
-// ParseAddPetResponse parses an HTTP response from a AddPetWithResponse call
-func ParseAddPetResponse(rsp *http.Response) (*AddPetResponse, error) {
-	bodyBytes, err := io.ReadAll(rsp.Body)
-	defer func() { _ = rsp.Body.Close() }()
+// FindPetByID makes the request to the API endpoint.
+func (c *Client) FindPetByID(ctx context.Context, params FindPetByIDClientParams, opts ...func(*http.Request) error) error {
+
+	// Create the request
+	req, err := http.NewRequestWithContext(
+		ctx,
+		"GET",
+		buildURL(
+			c.BaseURL,
+			map[string]interface{}{
+				"id": params.ID,
+			},
+			nil,
+		),
+		nil,
+	)
 	if err != nil {
-		return nil, err
+		return fmt.Errorf("failed to build request: %w", err)
 	}
 
-	response := &AddPetResponse{
-		Body:         bodyBytes,
-		HTTPResponse: rsp,
-	}
-
-	switch {
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 201:
-		var dest Pet
-		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
-			return nil, err
+	// Apply any request editors
+	for _, fn := range c.reqEditors {
+		if err := fn(req); err != nil {
+			return fmt.Errorf("failed to apply request editor: %w", err)
 		}
-		response.JSON201 = &dest
-
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
-		var dest Error
-		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
-			return nil, err
-		}
-		response.JSONDefault = &dest
-
 	}
 
-	return response, nil
+	// Do the request
+	_, errDo := c.client.Do(req)
+	if errDo != nil {
+		return fmt.Errorf("failed to send request: %w", errDo)
+	}
+
+	return nil
 }
 
-// ParseDeletePetResponse parses an HTTP response from a DeletePetWithResponse call
-func ParseDeletePetResponse(rsp *http.Response) (*DeletePetResponse, error) {
-	bodyBytes, err := io.ReadAll(rsp.Body)
-	defer func() { _ = rsp.Body.Close() }()
+func buildURL(baseURL string, pathParams map[string]interface{}, queryParams map[string]interface{}) string {
+	u, err := url.Parse(baseURL)
 	if err != nil {
-		return nil, err
+		panic(err)
 	}
 
-	response := &DeletePetResponse{
-		Body:         bodyBytes,
-		HTTPResponse: rsp,
+	// add path parameters
+	for name, value := range pathParams {
+		u.Path = strings.Replace(u.Path, "{"+name+"}", fmt.Sprint(value), 1)
 	}
 
-	switch {
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
-		var dest Error
-		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
-			return nil, err
-		}
-		response.JSONDefault = &dest
-
+	// add query parameters
+	q := u.Query()
+	for key, value := range queryParams {
+		q.Set(key, fmt.Sprint(value))
 	}
+	u.RawQuery = q.Encode()
 
-	return response, nil
-}
-
-// ParseFindPetByIDResponse parses an HTTP response from a FindPetByIDWithResponse call
-func ParseFindPetByIDResponse(rsp *http.Response) (*FindPetByIDResponse, error) {
-	bodyBytes, err := io.ReadAll(rsp.Body)
-	defer func() { _ = rsp.Body.Close() }()
-	if err != nil {
-		return nil, err
-	}
-
-	response := &FindPetByIDResponse{
-		Body:         bodyBytes,
-		HTTPResponse: rsp,
-	}
-
-	switch {
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
-		var dest Pet
-		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
-			return nil, err
-		}
-		response.JSON200 = &dest
-
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
-		var dest Error
-		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
-			return nil, err
-		}
-		response.JSONDefault = &dest
-
-	}
-
-	return response, nil
+	return u.String()
 }

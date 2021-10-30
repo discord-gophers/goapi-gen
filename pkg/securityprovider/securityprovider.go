@@ -4,7 +4,6 @@
 package securityprovider
 
 import (
-	"context"
 	"fmt"
 	"net/http"
 )
@@ -41,7 +40,7 @@ type BasicAuth struct {
 
 // Intercept will attach an Authorization header to the request and ensures that
 // the username, password are base64 encoded and attached to the header.
-func (s *BasicAuth) Intercept(ctx context.Context, req *http.Request) error {
+func (s *BasicAuth) Intercept(req *http.Request) error {
 	req.SetBasicAuth(s.username, s.password)
 	return nil
 }
@@ -62,7 +61,7 @@ type BearerToken struct {
 
 // Intercept will attach an Authorization header to the request
 // and ensures that the bearer token is attached to the header.
-func (s *BearerToken) Intercept(ctx context.Context, req *http.Request) error {
+func (s *BearerToken) Intercept(req *http.Request) error {
 	req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", s.token))
 	return nil
 }
@@ -70,16 +69,16 @@ func (s *BearerToken) Intercept(ctx context.Context, req *http.Request) error {
 // NewAPIKey will attach a generic apiKey for a given name
 // either to a cookie, header or as a query parameter.
 func NewAPIKey(in, name, apiKey string) (*APIKey, error) {
-	interceptors := map[string]func(ctx context.Context, req *http.Request) error{
-		"cookie": func(ctx context.Context, req *http.Request) error {
+	interceptors := map[string]func(req *http.Request) error{
+		"cookie": func(req *http.Request) error {
 			req.AddCookie(&http.Cookie{Name: name, Value: apiKey})
 			return nil
 		},
-		"header": func(ctx context.Context, req *http.Request) error {
+		"header": func(req *http.Request) error {
 			req.Header.Add(name, apiKey)
 			return nil
 		},
-		"query": func(ctx context.Context, req *http.Request) error {
+		"query": func(req *http.Request) error {
 			query := req.URL.Query()
 			query.Add(name, apiKey)
 			req.URL.RawQuery = query.Encode()
@@ -100,11 +99,11 @@ func NewAPIKey(in, name, apiKey string) (*APIKey, error) {
 // APIKey will attach an apiKey either to a
 // cookie, header or query.
 type APIKey struct {
-	interceptor func(ctx context.Context, req *http.Request) error
+	interceptor func(req *http.Request) error
 }
 
 // Intercept will attach a cookie, header or query param for the configured
 // name and apiKey.
-func (s *APIKey) Intercept(ctx context.Context, req *http.Request) error {
-	return s.interceptor(ctx, req)
+func (s *APIKey) Intercept(req *http.Request) error {
+	return s.interceptor(req)
 }

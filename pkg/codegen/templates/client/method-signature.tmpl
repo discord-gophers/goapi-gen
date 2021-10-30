@@ -1,0 +1,12 @@
+{{- define "method-signature" -}}
+{{ .OperationID -}}
+	(ctx context.Context,
+		{{- if .HasBody -}}
+		respBody render.Binder,
+		{{- end -}}
+		
+		{{- if or (.HasBody) (.RequiresAllParamObject) -}}
+		params {{ .OperationID }}ClientParams,
+		{{- end -}}
+		opts ...func(*http.Request) error) ({{- if .HasBody }} *ReqResponse, {{ end -}} error)
+{{- end -}}

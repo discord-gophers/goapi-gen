@@ -10,14 +10,13 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"encoding/xml"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
 	"net/url"
 	"path"
 	"strings"
-
-	"gopkg.in/yaml.v3"
 
 	"github.com/discord-gophers/goapi-gen/pkg/runtime"
 	"github.com/getkin/kin-openapi/openapi3"
@@ -234,31 +233,47 @@ func GetIssues375JSON200Response(body EnumInObjInArray) *Response {
 	}
 }
 
-// RequestEditorFn  is the function signature for the RequestEditor callback function
-type RequestEditorFn func(ctx context.Context, req *http.Request) error
+// ClientInterface is implemented by Client
+type ClientInterface interface {
+	// EnsureEverythingIsReferenced makes the request to the API endpoint.
+	EnsureEverythingIsReferenced(ctx context.Context, opts ...func(*http.Request) error) error
+	// Issue127 makes the request to the API endpoint.
+	Issue127(ctx context.Context, opts ...func(*http.Request) error) error
+	// Issue185 makes the request to the API endpoint.
+	Issue185(ctx context.Context, respBody render.Binder, params Issue185ClientParams, opts ...func(*http.Request) error) (*ReqResponse, error)
+	// Issue209 makes the request to the API endpoint.
+	Issue209(ctx context.Context, params Issue209ClientParams, opts ...func(*http.Request) error) error
+	// Issue30 makes the request to the API endpoint.
+	Issue30(ctx context.Context, params Issue30ClientParams, opts ...func(*http.Request) error) error
+	// GetIssues375 makes the request to the API endpoint.
+	GetIssues375(ctx context.Context, opts ...func(*http.Request) error) error
+	// Issue41 makes the request to the API endpoint.
+	Issue41(ctx context.Context, params Issue41ClientParams, opts ...func(*http.Request) error) error
+	// Issue9 makes the request to the API endpoint.
+	Issue9(ctx context.Context, respBody render.Binder, params Issue9ClientParams, opts ...func(*http.Request) error) (*ReqResponse, error)
+}
 
 // Doer performs HTTP requests.
-//
 // The standard http.Client implements this interface.
-type HttpRequestDoer interface {
+type Doer interface {
 	Do(req *http.Request) (*http.Response, error)
 }
 
 // Client which conforms to the OpenAPI3 specification for this service.
 type Client struct {
 	// The endpoint of the server conforming to this interface, with scheme,
-	// https://api.deepmap.com for example. This can contain a path relative
-	// to the server, such as https://api.deepmap.com/dev-test, and all the
+	// https://example.com for example. This can contain a path relative
+	// to the server, such as https://example.com/dev-test, and all the
 	// paths in the swagger spec will be appended to the server.
-	Server string
+	BaseURL string
 
 	// Doer for performing requests, typically a *http.Client with any
 	// customized settings, such as certificate chains.
-	Client HttpRequestDoer
+	client Doer
 
 	// A list of callbacks for modifying requests which are generated before sending over
 	// the network.
-	RequestEditors []RequestEditorFn
+	reqEditors []func(req *http.Request) error
 }
 
 // ClientOption allows setting custom parameters during construction
@@ -268,1003 +283,416 @@ type ClientOption func(*Client) error
 func NewClient(server string, opts ...ClientOption) (*Client, error) {
 	// create a client with sane default values
 	client := Client{
-		Server: server,
-		Client: &http.Client{},
+		BaseURL: server,
+		client:  &http.Client{},
 	}
+
 	// mutate client and add all optional params
 	for _, o := range opts {
 		if err := o(&client); err != nil {
 			return nil, err
 		}
 	}
+
 	// ensure the server URL always has a trailing slash
-	if !strings.HasSuffix(client.Server, "/") {
-		client.Server += "/"
+	if !strings.HasSuffix(client.BaseURL, "/") {
+		client.BaseURL += "/"
 	}
+
 	return &client, nil
 }
 
-// WithHTTPClient allows overriding the default Doer, which is
+// WithDoer allows overriding the default Doer, which is
 // automatically created using http.Client. This is useful for tests.
-func WithHTTPClient(doer HttpRequestDoer) ClientOption {
+func WithDoer(doer Doer) ClientOption {
 	return func(c *Client) error {
-		c.Client = doer
+		c.client = doer
 		return nil
 	}
 }
 
-// WithRequestEditorFn allows setting up a callback function, which will be
-// called right before sending the request. This can be used to mutate the request.
-func WithRequestEditorFn(fn RequestEditorFn) ClientOption {
+// WithEditors allows setting up request editors, which are used to modify
+func WithEditors(fns ...func(req *http.Request) error) ClientOption {
 	return func(c *Client) error {
-		c.RequestEditors = append(c.RequestEditors, fn)
+		c.reqEditors = append(c.reqEditors, fns...)
 		return nil
 	}
 }
 
-// The interface specification for the client above.
-type ClientInterface interface {
-	// EnsureEverythingIsReferenced request
-	EnsureEverythingIsReferenced(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error)
-
-	// Issue127 request
-	Issue127(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error)
-
-	// Issue185 request with any body
-	Issue185WithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
-
-	Issue185(ctx context.Context, body Issue185JSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
-
-	// Issue209 request
-	Issue209(ctx context.Context, str StringInPath, reqEditors ...RequestEditorFn) (*http.Response, error)
-
-	// Issue30 request
-	Issue30(ctx context.Context, pFallthrough string, reqEditors ...RequestEditorFn) (*http.Response, error)
-
-	// GetIssues375 request
-	GetIssues375(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error)
-
-	// Issue41 request
-	Issue41(ctx context.Context, n1param N5startsWithNumber, reqEditors ...RequestEditorFn) (*http.Response, error)
-
-	// Issue9 request with any body
-	Issue9WithBody(ctx context.Context, params *Issue9Params, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
-
-	Issue9(ctx context.Context, params *Issue9Params, body Issue9JSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+type ReqResponse struct {
+	*http.Response
 }
 
-func (c *Client) EnsureEverythingIsReferenced(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewEnsureEverythingIsReferencedRequest(c.Server)
-	if err != nil {
-		return nil, err
-	}
-	req = req.WithContext(ctx)
-	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
-		return nil, err
-	}
-	return c.Client.Do(req)
+type Issue185ClientParams struct {
+	Body io.Reader
 }
 
-func (c *Client) Issue127(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewIssue127Request(c.Server)
-	if err != nil {
-		return nil, err
-	}
-	req = req.WithContext(ctx)
-	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
-		return nil, err
-	}
-	return c.Client.Do(req)
+type Issue209ClientParams struct {
+	Str StringInPath
 }
 
-func (c *Client) Issue185WithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewIssue185RequestWithBody(c.Server, contentType, body)
-	if err != nil {
-		return nil, err
-	}
-	req = req.WithContext(ctx)
-	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
-		return nil, err
-	}
-	return c.Client.Do(req)
+type Issue30ClientParams struct {
+	PFallthrough string
 }
 
-func (c *Client) Issue185(ctx context.Context, body Issue185JSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewIssue185Request(c.Server, body)
-	if err != nil {
-		return nil, err
-	}
-	req = req.WithContext(ctx)
-	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
-		return nil, err
-	}
-	return c.Client.Do(req)
+type Issue41ClientParams struct {
+	N1param N5startsWithNumber
 }
 
-func (c *Client) Issue209(ctx context.Context, str StringInPath, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewIssue209Request(c.Server, str)
-	if err != nil {
-		return nil, err
-	}
-	req = req.WithContext(ctx)
-	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
-		return nil, err
-	}
-	return c.Client.Do(req)
+type Issue9ClientParams struct {
+	Body io.Reader
+
+	Foo string
 }
 
-func (c *Client) Issue30(ctx context.Context, pFallthrough string, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewIssue30Request(c.Server, pFallthrough)
-	if err != nil {
-		return nil, err
-	}
-	req = req.WithContext(ctx)
-	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
-		return nil, err
-	}
-	return c.Client.Do(req)
-}
+// Decode is a package-level variable set to our default Decoder. We do this
+// because it allows you to set Decode to another function with the
+// same function signature, while also utilizing the Decoder() function
+// itself. Effectively, allowing you to easily add your own logic to the package
+// defaults. For example, maybe you want to impose a limit on the number of
+// bytes allowed to be read from the request body.
+var ReqDecoder = defaultDecoder
 
-func (c *Client) GetIssues375(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewGetIssues375Request(c.Server)
-	if err != nil {
-		return nil, err
-	}
-	req = req.WithContext(ctx)
-	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
-		return nil, err
-	}
-	return c.Client.Do(req)
-}
-
-func (c *Client) Issue41(ctx context.Context, n1param N5startsWithNumber, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewIssue41Request(c.Server, n1param)
-	if err != nil {
-		return nil, err
-	}
-	req = req.WithContext(ctx)
-	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
-		return nil, err
-	}
-	return c.Client.Do(req)
-}
-
-func (c *Client) Issue9WithBody(ctx context.Context, params *Issue9Params, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewIssue9RequestWithBody(c.Server, params, contentType, body)
-	if err != nil {
-		return nil, err
-	}
-	req = req.WithContext(ctx)
-	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
-		return nil, err
-	}
-	return c.Client.Do(req)
-}
-
-func (c *Client) Issue9(ctx context.Context, params *Issue9Params, body Issue9JSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewIssue9Request(c.Server, params, body)
-	if err != nil {
-		return nil, err
-	}
-	req = req.WithContext(ctx)
-	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
-		return nil, err
-	}
-	return c.Client.Do(req)
-}
-
-// NewEnsureEverythingIsReferencedRequest generates requests for EnsureEverythingIsReferenced
-func NewEnsureEverythingIsReferencedRequest(server string) (*http.Request, error) {
+// defaultDecoder detects the correct decoder for use on an HTTP request and
+// marshals into a given interface.
+func defaultDecoder(resp *http.Response, v interface{}) error {
 	var err error
 
-	serverURL, err := url.Parse(server)
-	if err != nil {
-		return nil, err
+	switch render.GetContentType(resp.Header.Get("Content-Type")) {
+	case render.ContentTypeJSON:
+		err = render.DecodeJSON(resp.Body, v)
+	case render.ContentTypeXML:
+		err = render.DecodeXML(resp.Body, v)
+	default:
+		err = errors.New("defaultDecoder: unable to automatically decode the request content type")
 	}
 
-	operationPath := fmt.Sprintf("/ensure-everything-is-referenced")
-	if operationPath[0] == '/' {
-		operationPath = "." + operationPath
-	}
-
-	queryURL, err := serverURL.Parse(operationPath)
-	if err != nil {
-		return nil, err
-	}
-
-	req, err := http.NewRequest("GET", queryURL.String(), nil)
-	if err != nil {
-		return nil, err
-	}
-
-	return req, nil
+	return err
 }
 
-// NewIssue127Request generates requests for Issue127
-func NewIssue127Request(server string) (*http.Request, error) {
-	var err error
+// EnsureEverythingIsReferenced makes the request to the API endpoint.
+func (c *Client) EnsureEverythingIsReferenced(ctx context.Context, opts ...func(*http.Request) error) error {
 
-	serverURL, err := url.Parse(server)
+	// Create the request
+	req, err := http.NewRequestWithContext(
+		ctx,
+		"GET",
+		buildURL(
+			c.BaseURL,
+			nil,
+			nil,
+		),
+		nil,
+	)
 	if err != nil {
-		return nil, err
+		return fmt.Errorf("failed to build request: %w", err)
 	}
 
-	operationPath := fmt.Sprintf("/issues/127")
-	if operationPath[0] == '/' {
-		operationPath = "." + operationPath
-	}
-
-	queryURL, err := serverURL.Parse(operationPath)
-	if err != nil {
-		return nil, err
-	}
-
-	req, err := http.NewRequest("GET", queryURL.String(), nil)
-	if err != nil {
-		return nil, err
-	}
-
-	return req, nil
-}
-
-// NewIssue185Request calls the generic Issue185 builder with application/json body
-func NewIssue185Request(server string, body Issue185JSONRequestBody) (*http.Request, error) {
-	var bodyReader io.Reader
-	buf, err := json.Marshal(body)
-	if err != nil {
-		return nil, err
-	}
-	bodyReader = bytes.NewReader(buf)
-	return NewIssue185RequestWithBody(server, "application/json", bodyReader)
-}
-
-// NewIssue185RequestWithBody generates requests for Issue185 with any type of body
-func NewIssue185RequestWithBody(server string, contentType string, body io.Reader) (*http.Request, error) {
-	var err error
-
-	serverURL, err := url.Parse(server)
-	if err != nil {
-		return nil, err
-	}
-
-	operationPath := fmt.Sprintf("/issues/185")
-	if operationPath[0] == '/' {
-		operationPath = "." + operationPath
-	}
-
-	queryURL, err := serverURL.Parse(operationPath)
-	if err != nil {
-		return nil, err
-	}
-
-	req, err := http.NewRequest("GET", queryURL.String(), body)
-	if err != nil {
-		return nil, err
-	}
-
-	req.Header.Add("Content-Type", contentType)
-
-	return req, nil
-}
-
-// NewIssue209Request generates requests for Issue209
-func NewIssue209Request(server string, str StringInPath) (*http.Request, error) {
-	var err error
-
-	var pathParam0 string
-
-	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "str", runtime.ParamLocationPath, str)
-	if err != nil {
-		return nil, err
-	}
-
-	serverURL, err := url.Parse(server)
-	if err != nil {
-		return nil, err
-	}
-
-	operationPath := fmt.Sprintf("/issues/209/$%s", pathParam0)
-	if operationPath[0] == '/' {
-		operationPath = "." + operationPath
-	}
-
-	queryURL, err := serverURL.Parse(operationPath)
-	if err != nil {
-		return nil, err
-	}
-
-	req, err := http.NewRequest("GET", queryURL.String(), nil)
-	if err != nil {
-		return nil, err
-	}
-
-	return req, nil
-}
-
-// NewIssue30Request generates requests for Issue30
-func NewIssue30Request(server string, pFallthrough string) (*http.Request, error) {
-	var err error
-
-	var pathParam0 string
-
-	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "fallthrough", runtime.ParamLocationPath, pFallthrough)
-	if err != nil {
-		return nil, err
-	}
-
-	serverURL, err := url.Parse(server)
-	if err != nil {
-		return nil, err
-	}
-
-	operationPath := fmt.Sprintf("/issues/30/%s", pathParam0)
-	if operationPath[0] == '/' {
-		operationPath = "." + operationPath
-	}
-
-	queryURL, err := serverURL.Parse(operationPath)
-	if err != nil {
-		return nil, err
-	}
-
-	req, err := http.NewRequest("GET", queryURL.String(), nil)
-	if err != nil {
-		return nil, err
-	}
-
-	return req, nil
-}
-
-// NewGetIssues375Request generates requests for GetIssues375
-func NewGetIssues375Request(server string) (*http.Request, error) {
-	var err error
-
-	serverURL, err := url.Parse(server)
-	if err != nil {
-		return nil, err
-	}
-
-	operationPath := fmt.Sprintf("/issues/375")
-	if operationPath[0] == '/' {
-		operationPath = "." + operationPath
-	}
-
-	queryURL, err := serverURL.Parse(operationPath)
-	if err != nil {
-		return nil, err
-	}
-
-	req, err := http.NewRequest("GET", queryURL.String(), nil)
-	if err != nil {
-		return nil, err
-	}
-
-	return req, nil
-}
-
-// NewIssue41Request generates requests for Issue41
-func NewIssue41Request(server string, n1param N5startsWithNumber) (*http.Request, error) {
-	var err error
-
-	var pathParam0 string
-
-	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "1param", runtime.ParamLocationPath, n1param)
-	if err != nil {
-		return nil, err
-	}
-
-	serverURL, err := url.Parse(server)
-	if err != nil {
-		return nil, err
-	}
-
-	operationPath := fmt.Sprintf("/issues/41/%s", pathParam0)
-	if operationPath[0] == '/' {
-		operationPath = "." + operationPath
-	}
-
-	queryURL, err := serverURL.Parse(operationPath)
-	if err != nil {
-		return nil, err
-	}
-
-	req, err := http.NewRequest("GET", queryURL.String(), nil)
-	if err != nil {
-		return nil, err
-	}
-
-	return req, nil
-}
-
-// NewIssue9Request calls the generic Issue9 builder with application/json body
-func NewIssue9Request(server string, params *Issue9Params, body Issue9JSONRequestBody) (*http.Request, error) {
-	var bodyReader io.Reader
-	buf, err := json.Marshal(body)
-	if err != nil {
-		return nil, err
-	}
-	bodyReader = bytes.NewReader(buf)
-	return NewIssue9RequestWithBody(server, params, "application/json", bodyReader)
-}
-
-// NewIssue9RequestWithBody generates requests for Issue9 with any type of body
-func NewIssue9RequestWithBody(server string, params *Issue9Params, contentType string, body io.Reader) (*http.Request, error) {
-	var err error
-
-	serverURL, err := url.Parse(server)
-	if err != nil {
-		return nil, err
-	}
-
-	operationPath := fmt.Sprintf("/issues/9")
-	if operationPath[0] == '/' {
-		operationPath = "." + operationPath
-	}
-
-	queryURL, err := serverURL.Parse(operationPath)
-	if err != nil {
-		return nil, err
-	}
-
-	queryValues := queryURL.Query()
-
-	if queryFrag, err := runtime.StyleParamWithLocation("form", true, "foo", runtime.ParamLocationQuery, params.Foo); err != nil {
-		return nil, err
-	} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
-		return nil, err
-	} else {
-		for k, v := range parsed {
-			for _, v2 := range v {
-				queryValues.Add(k, v2)
-			}
+	// Apply any request editors
+	for _, fn := range c.reqEditors {
+		if err := fn(req); err != nil {
+			return fmt.Errorf("failed to apply request editor: %w", err)
 		}
 	}
 
-	queryURL.RawQuery = queryValues.Encode()
-
-	req, err := http.NewRequest("GET", queryURL.String(), body)
-	if err != nil {
-		return nil, err
+	// Do the request
+	_, errDo := c.client.Do(req)
+	if errDo != nil {
+		return fmt.Errorf("failed to send request: %w", errDo)
 	}
 
-	req.Header.Add("Content-Type", contentType)
-
-	return req, nil
-}
-
-func (c *Client) applyEditors(ctx context.Context, req *http.Request, additionalEditors []RequestEditorFn) error {
-	for _, r := range c.RequestEditors {
-		if err := r(ctx, req); err != nil {
-			return err
-		}
-	}
-	for _, r := range additionalEditors {
-		if err := r(ctx, req); err != nil {
-			return err
-		}
-	}
 	return nil
 }
 
-// ClientWithResponses builds on ClientInterface to offer response payloads
-type ClientWithResponses struct {
-	ClientInterface
-}
+// Issue127 makes the request to the API endpoint.
+func (c *Client) Issue127(ctx context.Context, opts ...func(*http.Request) error) error {
 
-// NewClientWithResponses creates a new ClientWithResponses, which wraps
-// Client with return type handling
-func NewClientWithResponses(server string, opts ...ClientOption) (*ClientWithResponses, error) {
-	client, err := NewClient(server, opts...)
+	// Create the request
+	req, err := http.NewRequestWithContext(
+		ctx,
+		"GET",
+		buildURL(
+			c.BaseURL,
+			nil,
+			nil,
+		),
+		nil,
+	)
 	if err != nil {
-		return nil, err
+		return fmt.Errorf("failed to build request: %w", err)
 	}
-	return &ClientWithResponses{client}, nil
-}
 
-// WithBaseURL overrides the baseURL.
-func WithClientBaseURL(baseURL string) ClientOption {
-	return func(c *Client) error {
-		newBaseURL, err := url.Parse(baseURL)
-		if err != nil {
-			return err
+	// Apply any request editors
+	for _, fn := range c.reqEditors {
+		if err := fn(req); err != nil {
+			return fmt.Errorf("failed to apply request editor: %w", err)
 		}
-		c.Server = newBaseURL.String()
-		return nil
 	}
-}
 
-// ClientWithResponsesInterface is the interface specification for the client with responses above.
-type ClientWithResponsesInterface interface {
-	// EnsureEverythingIsReferenced request
-	EnsureEverythingIsReferencedWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*EnsureEverythingIsReferencedResponse, error)
-
-	// Issue127 request
-	Issue127WithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*Issue127Response, error)
-
-	// Issue185 request with any body
-	Issue185WithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*Issue185Response, error)
-
-	Issue185WithResponse(ctx context.Context, body Issue185JSONRequestBody, reqEditors ...RequestEditorFn) (*Issue185Response, error)
-
-	// Issue209 request
-	Issue209WithResponse(ctx context.Context, str StringInPath, reqEditors ...RequestEditorFn) (*Issue209Response, error)
-
-	// Issue30 request
-	Issue30WithResponse(ctx context.Context, pFallthrough string, reqEditors ...RequestEditorFn) (*Issue30Response, error)
-
-	// GetIssues375 request
-	GetIssues375WithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*GetIssues375Response, error)
-
-	// Issue41 request
-	Issue41WithResponse(ctx context.Context, n1param N5startsWithNumber, reqEditors ...RequestEditorFn) (*Issue41Response, error)
-
-	// Issue9 request with any body
-	Issue9WithBodyWithResponse(ctx context.Context, params *Issue9Params, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*Issue9Response, error)
-
-	Issue9WithResponse(ctx context.Context, params *Issue9Params, body Issue9JSONRequestBody, reqEditors ...RequestEditorFn) (*Issue9Response, error)
-}
-
-type EnsureEverythingIsReferencedResponse struct {
-	Body         []byte
-	HTTPResponse *http.Response
-	JSON200      *struct {
-		AnyType1 *AnyType1 `json:"anyType1,omitempty"`
-
-		// AnyType2 represents any type.
-		//
-		// This should be an interface{}
-		AnyType2         *AnyType2         `json:"anyType2,omitempty"`
-		CustomStringType *CustomStringType `foo:"bar" json:"customStringType,omitempty"`
+	// Do the request
+	_, errDo := c.client.Do(req)
+	if errDo != nil {
+		return fmt.Errorf("failed to send request: %w", errDo)
 	}
+
+	return nil
 }
 
-// Status returns HTTPResponse.Status
-func (r EnsureEverythingIsReferencedResponse) Status() string {
-	if r.HTTPResponse != nil {
-		return r.HTTPResponse.Status
-	}
-	return http.StatusText(0)
-}
+// Issue185 makes the request to the API endpoint.
+func (c *Client) Issue185(ctx context.Context, respBody render.Binder, params Issue185ClientParams, opts ...func(*http.Request) error) (*ReqResponse, error) {
 
-// StatusCode returns HTTPResponse.StatusCode
-func (r EnsureEverythingIsReferencedResponse) StatusCode() int {
-	if r.HTTPResponse != nil {
-		return r.HTTPResponse.StatusCode
-	}
-	return 0
-}
-
-type Issue127Response struct {
-	Body         []byte
-	HTTPResponse *http.Response
-	JSON200      *GenericObject
-	XML200       *GenericObject
-	YAML200      *GenericObject
-	JSONDefault  *GenericObject
-}
-
-// Status returns HTTPResponse.Status
-func (r Issue127Response) Status() string {
-	if r.HTTPResponse != nil {
-		return r.HTTPResponse.Status
-	}
-	return http.StatusText(0)
-}
-
-// StatusCode returns HTTPResponse.StatusCode
-func (r Issue127Response) StatusCode() int {
-	if r.HTTPResponse != nil {
-		return r.HTTPResponse.StatusCode
-	}
-	return 0
-}
-
-type Issue185Response struct {
-	Body         []byte
-	HTTPResponse *http.Response
-}
-
-// Status returns HTTPResponse.Status
-func (r Issue185Response) Status() string {
-	if r.HTTPResponse != nil {
-		return r.HTTPResponse.Status
-	}
-	return http.StatusText(0)
-}
-
-// StatusCode returns HTTPResponse.StatusCode
-func (r Issue185Response) StatusCode() int {
-	if r.HTTPResponse != nil {
-		return r.HTTPResponse.StatusCode
-	}
-	return 0
-}
-
-type Issue209Response struct {
-	Body         []byte
-	HTTPResponse *http.Response
-}
-
-// Status returns HTTPResponse.Status
-func (r Issue209Response) Status() string {
-	if r.HTTPResponse != nil {
-		return r.HTTPResponse.Status
-	}
-	return http.StatusText(0)
-}
-
-// StatusCode returns HTTPResponse.StatusCode
-func (r Issue209Response) StatusCode() int {
-	if r.HTTPResponse != nil {
-		return r.HTTPResponse.StatusCode
-	}
-	return 0
-}
-
-type Issue30Response struct {
-	Body         []byte
-	HTTPResponse *http.Response
-}
-
-// Status returns HTTPResponse.Status
-func (r Issue30Response) Status() string {
-	if r.HTTPResponse != nil {
-		return r.HTTPResponse.Status
-	}
-	return http.StatusText(0)
-}
-
-// StatusCode returns HTTPResponse.StatusCode
-func (r Issue30Response) StatusCode() int {
-	if r.HTTPResponse != nil {
-		return r.HTTPResponse.StatusCode
-	}
-	return 0
-}
-
-type GetIssues375Response struct {
-	Body         []byte
-	HTTPResponse *http.Response
-	JSON200      *EnumInObjInArray
-}
-
-// Status returns HTTPResponse.Status
-func (r GetIssues375Response) Status() string {
-	if r.HTTPResponse != nil {
-		return r.HTTPResponse.Status
-	}
-	return http.StatusText(0)
-}
-
-// StatusCode returns HTTPResponse.StatusCode
-func (r GetIssues375Response) StatusCode() int {
-	if r.HTTPResponse != nil {
-		return r.HTTPResponse.StatusCode
-	}
-	return 0
-}
-
-type Issue41Response struct {
-	Body         []byte
-	HTTPResponse *http.Response
-}
-
-// Status returns HTTPResponse.Status
-func (r Issue41Response) Status() string {
-	if r.HTTPResponse != nil {
-		return r.HTTPResponse.Status
-	}
-	return http.StatusText(0)
-}
-
-// StatusCode returns HTTPResponse.StatusCode
-func (r Issue41Response) StatusCode() int {
-	if r.HTTPResponse != nil {
-		return r.HTTPResponse.StatusCode
-	}
-	return 0
-}
-
-type Issue9Response struct {
-	Body         []byte
-	HTTPResponse *http.Response
-}
-
-// Status returns HTTPResponse.Status
-func (r Issue9Response) Status() string {
-	if r.HTTPResponse != nil {
-		return r.HTTPResponse.Status
-	}
-	return http.StatusText(0)
-}
-
-// StatusCode returns HTTPResponse.StatusCode
-func (r Issue9Response) StatusCode() int {
-	if r.HTTPResponse != nil {
-		return r.HTTPResponse.StatusCode
-	}
-	return 0
-}
-
-// EnsureEverythingIsReferencedWithResponse request returning *EnsureEverythingIsReferencedResponse
-func (c *ClientWithResponses) EnsureEverythingIsReferencedWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*EnsureEverythingIsReferencedResponse, error) {
-	rsp, err := c.EnsureEverythingIsReferenced(ctx, reqEditors...)
+	// Create the request
+	req, err := http.NewRequestWithContext(
+		ctx,
+		"GET",
+		buildURL(
+			c.BaseURL,
+			nil,
+			nil,
+		),
+		params.Body,
+	)
 	if err != nil {
-		return nil, err
-	}
-	return ParseEnsureEverythingIsReferencedResponse(rsp)
-}
-
-// Issue127WithResponse request returning *Issue127Response
-func (c *ClientWithResponses) Issue127WithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*Issue127Response, error) {
-	rsp, err := c.Issue127(ctx, reqEditors...)
-	if err != nil {
-		return nil, err
-	}
-	return ParseIssue127response(rsp)
-}
-
-// Issue185WithBodyWithResponse request with arbitrary body returning *Issue185Response
-func (c *ClientWithResponses) Issue185WithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*Issue185Response, error) {
-	rsp, err := c.Issue185WithBody(ctx, contentType, body, reqEditors...)
-	if err != nil {
-		return nil, err
-	}
-	return ParseIssue185response(rsp)
-}
-
-func (c *ClientWithResponses) Issue185WithResponse(ctx context.Context, body Issue185JSONRequestBody, reqEditors ...RequestEditorFn) (*Issue185Response, error) {
-	rsp, err := c.Issue185(ctx, body, reqEditors...)
-	if err != nil {
-		return nil, err
-	}
-	return ParseIssue185response(rsp)
-}
-
-// Issue209WithResponse request returning *Issue209Response
-func (c *ClientWithResponses) Issue209WithResponse(ctx context.Context, str StringInPath, reqEditors ...RequestEditorFn) (*Issue209Response, error) {
-	rsp, err := c.Issue209(ctx, str, reqEditors...)
-	if err != nil {
-		return nil, err
-	}
-	return ParseIssue209response(rsp)
-}
-
-// Issue30WithResponse request returning *Issue30Response
-func (c *ClientWithResponses) Issue30WithResponse(ctx context.Context, pFallthrough string, reqEditors ...RequestEditorFn) (*Issue30Response, error) {
-	rsp, err := c.Issue30(ctx, pFallthrough, reqEditors...)
-	if err != nil {
-		return nil, err
-	}
-	return ParseIssue30response(rsp)
-}
-
-// GetIssues375WithResponse request returning *GetIssues375Response
-func (c *ClientWithResponses) GetIssues375WithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*GetIssues375Response, error) {
-	rsp, err := c.GetIssues375(ctx, reqEditors...)
-	if err != nil {
-		return nil, err
-	}
-	return ParseGetIssues375response(rsp)
-}
-
-// Issue41WithResponse request returning *Issue41Response
-func (c *ClientWithResponses) Issue41WithResponse(ctx context.Context, n1param N5startsWithNumber, reqEditors ...RequestEditorFn) (*Issue41Response, error) {
-	rsp, err := c.Issue41(ctx, n1param, reqEditors...)
-	if err != nil {
-		return nil, err
-	}
-	return ParseIssue41response(rsp)
-}
-
-// Issue9WithBodyWithResponse request with arbitrary body returning *Issue9Response
-func (c *ClientWithResponses) Issue9WithBodyWithResponse(ctx context.Context, params *Issue9Params, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*Issue9Response, error) {
-	rsp, err := c.Issue9WithBody(ctx, params, contentType, body, reqEditors...)
-	if err != nil {
-		return nil, err
-	}
-	return ParseIssue9response(rsp)
-}
-
-func (c *ClientWithResponses) Issue9WithResponse(ctx context.Context, params *Issue9Params, body Issue9JSONRequestBody, reqEditors ...RequestEditorFn) (*Issue9Response, error) {
-	rsp, err := c.Issue9(ctx, params, body, reqEditors...)
-	if err != nil {
-		return nil, err
-	}
-	return ParseIssue9response(rsp)
-}
-
-// ParseEnsureEverythingIsReferencedResponse parses an HTTP response from a EnsureEverythingIsReferencedWithResponse call
-func ParseEnsureEverythingIsReferencedResponse(rsp *http.Response) (*EnsureEverythingIsReferencedResponse, error) {
-	bodyBytes, err := io.ReadAll(rsp.Body)
-	defer func() { _ = rsp.Body.Close() }()
-	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to build request: %w", err)
 	}
 
-	response := &EnsureEverythingIsReferencedResponse{
-		Body:         bodyBytes,
-		HTTPResponse: rsp,
-	}
-
-	switch {
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
-		var dest struct {
-			AnyType1 *AnyType1 `json:"anyType1,omitempty"`
-
-			// AnyType2 represents any type.
-			//
-			// This should be an interface{}
-			AnyType2         *AnyType2         `json:"anyType2,omitempty"`
-			CustomStringType *CustomStringType `foo:"bar" json:"customStringType,omitempty"`
+	// Apply any request editors
+	for _, fn := range c.reqEditors {
+		if err := fn(req); err != nil {
+			return nil, fmt.Errorf("failed to apply request editor: %w", err)
 		}
-		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
-			return nil, err
+	}
+
+	// Do the request
+	resp, errDo := c.client.Do(req)
+	if errDo != nil {
+		return &ReqResponse{
+			Response: resp,
+		}, fmt.Errorf("failed to send request: %w", errDo)
+	}
+
+	// Bind the response body
+	if err := ReqDecoder(resp, respBody); err != nil {
+		return &ReqResponse{
+				Response: resp,
+			},
+			fmt.Errorf("failed to bind response body: %w", err)
+	}
+
+	return &ReqResponse{
+		Response: resp,
+	}, nil
+}
+
+// Issue209 makes the request to the API endpoint.
+func (c *Client) Issue209(ctx context.Context, params Issue209ClientParams, opts ...func(*http.Request) error) error {
+
+	// Create the request
+	req, err := http.NewRequestWithContext(
+		ctx,
+		"GET",
+		buildURL(
+			c.BaseURL,
+			map[string]interface{}{
+				"str": params.Str,
+			},
+			nil,
+		),
+		nil,
+	)
+	if err != nil {
+		return fmt.Errorf("failed to build request: %w", err)
+	}
+
+	// Apply any request editors
+	for _, fn := range c.reqEditors {
+		if err := fn(req); err != nil {
+			return fmt.Errorf("failed to apply request editor: %w", err)
 		}
-		response.JSON200 = &dest
-
 	}
 
-	return response, nil
+	// Do the request
+	_, errDo := c.client.Do(req)
+	if errDo != nil {
+		return fmt.Errorf("failed to send request: %w", errDo)
+	}
+
+	return nil
 }
 
-// ParseIssue127response parses an HTTP response from a Issue127WithResponse call
-func ParseIssue127response(rsp *http.Response) (*Issue127Response, error) {
-	bodyBytes, err := io.ReadAll(rsp.Body)
-	defer func() { _ = rsp.Body.Close() }()
+// Issue30 makes the request to the API endpoint.
+func (c *Client) Issue30(ctx context.Context, params Issue30ClientParams, opts ...func(*http.Request) error) error {
+
+	// Create the request
+	req, err := http.NewRequestWithContext(
+		ctx,
+		"GET",
+		buildURL(
+			c.BaseURL,
+			map[string]interface{}{
+				"fallthrough": params.PFallthrough,
+			},
+			nil,
+		),
+		nil,
+	)
 	if err != nil {
-		return nil, err
+		return fmt.Errorf("failed to build request: %w", err)
 	}
 
-	response := &Issue127Response{
-		Body:         bodyBytes,
-		HTTPResponse: rsp,
-	}
-
-	switch {
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
-		var dest GenericObject
-		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
-			return nil, err
+	// Apply any request editors
+	for _, fn := range c.reqEditors {
+		if err := fn(req); err != nil {
+			return fmt.Errorf("failed to apply request editor: %w", err)
 		}
-		response.JSON200 = &dest
+	}
 
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
-		var dest GenericObject
-		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
-			return nil, err
+	// Do the request
+	_, errDo := c.client.Do(req)
+	if errDo != nil {
+		return fmt.Errorf("failed to send request: %w", errDo)
+	}
+
+	return nil
+}
+
+// GetIssues375 makes the request to the API endpoint.
+func (c *Client) GetIssues375(ctx context.Context, opts ...func(*http.Request) error) error {
+
+	// Create the request
+	req, err := http.NewRequestWithContext(
+		ctx,
+		"GET",
+		buildURL(
+			c.BaseURL,
+			nil,
+			nil,
+		),
+		nil,
+	)
+	if err != nil {
+		return fmt.Errorf("failed to build request: %w", err)
+	}
+
+	// Apply any request editors
+	for _, fn := range c.reqEditors {
+		if err := fn(req); err != nil {
+			return fmt.Errorf("failed to apply request editor: %w", err)
 		}
-		response.JSONDefault = &dest
+	}
 
-	case strings.Contains(rsp.Header.Get("Content-Type"), "xml") && rsp.StatusCode == 200:
-		var dest GenericObject
-		if err := xml.Unmarshal(bodyBytes, &dest); err != nil {
-			return nil, err
+	// Do the request
+	_, errDo := c.client.Do(req)
+	if errDo != nil {
+		return fmt.Errorf("failed to send request: %w", errDo)
+	}
+
+	return nil
+}
+
+// Issue41 makes the request to the API endpoint.
+func (c *Client) Issue41(ctx context.Context, params Issue41ClientParams, opts ...func(*http.Request) error) error {
+
+	// Create the request
+	req, err := http.NewRequestWithContext(
+		ctx,
+		"GET",
+		buildURL(
+			c.BaseURL,
+			map[string]interface{}{
+				"1param": params.N1param,
+			},
+			nil,
+		),
+		nil,
+	)
+	if err != nil {
+		return fmt.Errorf("failed to build request: %w", err)
+	}
+
+	// Apply any request editors
+	for _, fn := range c.reqEditors {
+		if err := fn(req); err != nil {
+			return fmt.Errorf("failed to apply request editor: %w", err)
 		}
-		response.XML200 = &dest
+	}
 
-	case strings.Contains(rsp.Header.Get("Content-Type"), "yaml") && rsp.StatusCode == 200:
-		var dest GenericObject
-		if err := yaml.Unmarshal(bodyBytes, &dest); err != nil {
-			return nil, err
+	// Do the request
+	_, errDo := c.client.Do(req)
+	if errDo != nil {
+		return fmt.Errorf("failed to send request: %w", errDo)
+	}
+
+	return nil
+}
+
+// Issue9 makes the request to the API endpoint.
+func (c *Client) Issue9(ctx context.Context, respBody render.Binder, params Issue9ClientParams, opts ...func(*http.Request) error) (*ReqResponse, error) {
+
+	// Create the request
+	req, err := http.NewRequestWithContext(
+		ctx,
+		"GET",
+		buildURL(
+			c.BaseURL,
+			nil,
+			map[string]interface{}{
+				"foo": params.Foo,
+			},
+		),
+		params.Body,
+	)
+	if err != nil {
+		return nil, fmt.Errorf("failed to build request: %w", err)
+	}
+
+	// Apply any request editors
+	for _, fn := range c.reqEditors {
+		if err := fn(req); err != nil {
+			return nil, fmt.Errorf("failed to apply request editor: %w", err)
 		}
-		response.YAML200 = &dest
-
-	case rsp.StatusCode == 200:
-	// Content-type (text/markdown) unsupported
-
-	case true:
-		// Content-type (text/markdown) unsupported
-
 	}
 
-	return response, nil
+	// Do the request
+	resp, errDo := c.client.Do(req)
+	if errDo != nil {
+		return &ReqResponse{
+			Response: resp,
+		}, fmt.Errorf("failed to send request: %w", errDo)
+	}
+
+	// Bind the response body
+	if err := ReqDecoder(resp, respBody); err != nil {
+		return &ReqResponse{
+				Response: resp,
+			},
+			fmt.Errorf("failed to bind response body: %w", err)
+	}
+
+	return &ReqResponse{
+		Response: resp,
+	}, nil
 }
 
-// ParseIssue185response parses an HTTP response from a Issue185WithResponse call
-func ParseIssue185response(rsp *http.Response) (*Issue185Response, error) {
-	bodyBytes, err := io.ReadAll(rsp.Body)
-	defer func() { _ = rsp.Body.Close() }()
+func buildURL(baseURL string, pathParams map[string]interface{}, queryParams map[string]interface{}) string {
+	u, err := url.Parse(baseURL)
 	if err != nil {
-		return nil, err
+		panic(err)
 	}
 
-	response := &Issue185Response{
-		Body:         bodyBytes,
-		HTTPResponse: rsp,
+	// add path parameters
+	for name, value := range pathParams {
+		u.Path = strings.Replace(u.Path, "{"+name+"}", fmt.Sprint(value), 1)
 	}
 
-	return response, nil
-}
-
-// ParseIssue209response parses an HTTP response from a Issue209WithResponse call
-func ParseIssue209response(rsp *http.Response) (*Issue209Response, error) {
-	bodyBytes, err := io.ReadAll(rsp.Body)
-	defer func() { _ = rsp.Body.Close() }()
-	if err != nil {
-		return nil, err
+	// add query parameters
+	q := u.Query()
+	for key, value := range queryParams {
+		q.Set(key, fmt.Sprint(value))
 	}
+	u.RawQuery = q.Encode()
 
-	response := &Issue209Response{
-		Body:         bodyBytes,
-		HTTPResponse: rsp,
-	}
-
-	return response, nil
-}
-
-// ParseIssue30response parses an HTTP response from a Issue30WithResponse call
-func ParseIssue30response(rsp *http.Response) (*Issue30Response, error) {
-	bodyBytes, err := io.ReadAll(rsp.Body)
-	defer func() { _ = rsp.Body.Close() }()
-	if err != nil {
-		return nil, err
-	}
-
-	response := &Issue30Response{
-		Body:         bodyBytes,
-		HTTPResponse: rsp,
-	}
-
-	return response, nil
-}
-
-// ParseGetIssues375response parses an HTTP response from a GetIssues375WithResponse call
-func ParseGetIssues375response(rsp *http.Response) (*GetIssues375Response, error) {
-	bodyBytes, err := io.ReadAll(rsp.Body)
-	defer func() { _ = rsp.Body.Close() }()
-	if err != nil {
-		return nil, err
-	}
-
-	response := &GetIssues375Response{
-		Body:         bodyBytes,
-		HTTPResponse: rsp,
-	}
-
-	switch {
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
-		var dest EnumInObjInArray
-		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
-			return nil, err
-		}
-		response.JSON200 = &dest
-
-	}
-
-	return response, nil
-}
-
-// ParseIssue41response parses an HTTP response from a Issue41WithResponse call
-func ParseIssue41response(rsp *http.Response) (*Issue41Response, error) {
-	bodyBytes, err := io.ReadAll(rsp.Body)
-	defer func() { _ = rsp.Body.Close() }()
-	if err != nil {
-		return nil, err
-	}
-
-	response := &Issue41Response{
-		Body:         bodyBytes,
-		HTTPResponse: rsp,
-	}
-
-	return response, nil
-}
-
-// ParseIssue9response parses an HTTP response from a Issue9WithResponse call
-func ParseIssue9response(rsp *http.Response) (*Issue9Response, error) {
-	bodyBytes, err := io.ReadAll(rsp.Body)
-	defer func() { _ = rsp.Body.Close() }()
-	if err != nil {
-		return nil, err
-	}
-
-	response := &Issue9Response{
-		Body:         bodyBytes,
-		HTTPResponse: rsp,
-	}
-
-	return response, nil
+	return u.String()
 }
 
 // ServerInterface represents all server handlers.

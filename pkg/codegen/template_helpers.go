@@ -47,8 +47,8 @@ func genParamArgs(params []ParameterDefinition) string {
 	}
 	parts := make([]string, len(params))
 	for i, p := range params {
-		paramName := p.GoVariableName()
-		parts[i] = fmt.Sprintf("%s %s", paramName, p.TypeDef())
+		ParamName := p.GoVariableName()
+		parts[i] = fmt.Sprintf("%s %s", ParamName, p.TypeDef())
 	}
 	return ", " + strings.Join(parts, ", ")
 }
@@ -80,6 +80,10 @@ func genParamNames(params []ParameterDefinition) string {
 		parts[i] = p.GoVariableName()
 	}
 	return ", " + strings.Join(parts, ", ")
+}
+
+func genParam(param ParameterDefinition) string {
+	return fmt.Sprintf("%s %s", snaker.ForceCamelIdentifier(param.GoVariableName()), param.TypeDef())
 }
 
 // genResponsePayload generates the payload returned at the end of each client request function
@@ -294,6 +298,7 @@ func responseNameToStatusCode(responseName string) string {
 // TemplateFunctions generates the list of utlity and helpfer functions used by
 // the templates.
 var TemplateFunctions = template.FuncMap{
+	"genParam":                   genParam,
 	"genParamArgs":               genParamArgs,
 	"genParamTypes":              genParamTypes,
 	"genParamNames":              genParamNames,

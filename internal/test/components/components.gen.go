@@ -10,6 +10,7 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"encoding/xml"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -808,31 +809,37 @@ func (a AdditionalPropertiesObject5) MarshalJSON() ([]byte, error) {
 	return json.Marshal(object)
 }
 
-// RequestEditorFn  is the function signature for the RequestEditor callback function
-type RequestEditorFn func(ctx context.Context, req *http.Request) error
+// ClientInterface is implemented by Client
+type ClientInterface interface {
+	// EnsureEverythingIsReferenced makes the request to the API endpoint.
+	EnsureEverythingIsReferenced(ctx context.Context, respBody render.Binder, params EnsureEverythingIsReferencedClientParams, opts ...func(*http.Request) error) (*ReqResponse, error)
+	// ParamsWithAddProps makes the request to the API endpoint.
+	ParamsWithAddProps(ctx context.Context, params ParamsWithAddPropsClientParams, opts ...func(*http.Request) error) error
+	// BodyWithAddProps makes the request to the API endpoint.
+	BodyWithAddProps(ctx context.Context, respBody render.Binder, params BodyWithAddPropsClientParams, opts ...func(*http.Request) error) (*ReqResponse, error)
+}
 
 // Doer performs HTTP requests.
-//
 // The standard http.Client implements this interface.
-type HttpRequestDoer interface {
+type Doer interface {
 	Do(req *http.Request) (*http.Response, error)
 }
 
 // Client which conforms to the OpenAPI3 specification for this service.
 type Client struct {
 	// The endpoint of the server conforming to this interface, with scheme,
-	// https://api.deepmap.com for example. This can contain a path relative
-	// to the server, such as https://api.deepmap.com/dev-test, and all the
+	// https://example.com for example. This can contain a path relative
+	// to the server, such as https://example.com/dev-test, and all the
 	// paths in the swagger spec will be appended to the server.
-	Server string
+	BaseURL string
 
 	// Doer for performing requests, typically a *http.Client with any
 	// customized settings, such as certificate chains.
-	Client HttpRequestDoer
+	client Doer
 
 	// A list of callbacks for modifying requests which are generated before sending over
 	// the network.
-	RequestEditors []RequestEditorFn
+	reqEditors []func(req *http.Request) error
 }
 
 // ClientOption allows setting custom parameters during construction
@@ -842,518 +849,237 @@ type ClientOption func(*Client) error
 func NewClient(server string, opts ...ClientOption) (*Client, error) {
 	// create a client with sane default values
 	client := Client{
-		Server: server,
-		Client: &http.Client{},
+		BaseURL: server,
+		client:  &http.Client{},
 	}
+
 	// mutate client and add all optional params
 	for _, o := range opts {
 		if err := o(&client); err != nil {
 			return nil, err
 		}
 	}
+
 	// ensure the server URL always has a trailing slash
-	if !strings.HasSuffix(client.Server, "/") {
-		client.Server += "/"
+	if !strings.HasSuffix(client.BaseURL, "/") {
+		client.BaseURL += "/"
 	}
+
 	return &client, nil
 }
 
-// WithHTTPClient allows overriding the default Doer, which is
+// WithDoer allows overriding the default Doer, which is
 // automatically created using http.Client. This is useful for tests.
-func WithHTTPClient(doer HttpRequestDoer) ClientOption {
+func WithDoer(doer Doer) ClientOption {
 	return func(c *Client) error {
-		c.Client = doer
+		c.client = doer
 		return nil
 	}
 }
 
-// WithRequestEditorFn allows setting up a callback function, which will be
-// called right before sending the request. This can be used to mutate the request.
-func WithRequestEditorFn(fn RequestEditorFn) ClientOption {
+// WithEditors allows setting up request editors, which are used to modify
+func WithEditors(fns ...func(req *http.Request) error) ClientOption {
 	return func(c *Client) error {
-		c.RequestEditors = append(c.RequestEditors, fn)
+		c.reqEditors = append(c.reqEditors, fns...)
 		return nil
 	}
 }
 
-// The interface specification for the client above.
-type ClientInterface interface {
-	// EnsureEverythingIsReferenced request with any body
-	EnsureEverythingIsReferencedWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
-
-	EnsureEverythingIsReferenced(ctx context.Context, body EnsureEverythingIsReferencedJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
-
-	// ParamsWithAddProps request
-	ParamsWithAddProps(ctx context.Context, params *ParamsWithAddPropsParams, reqEditors ...RequestEditorFn) (*http.Response, error)
-
-	// BodyWithAddProps request with any body
-	BodyWithAddPropsWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
-
-	BodyWithAddProps(ctx context.Context, body BodyWithAddPropsJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+type ReqResponse struct {
+	*http.Response
 }
 
-func (c *Client) EnsureEverythingIsReferencedWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewEnsureEverythingIsReferencedRequestWithBody(c.Server, contentType, body)
-	if err != nil {
-		return nil, err
-	}
-	req = req.WithContext(ctx)
-	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
-		return nil, err
-	}
-	return c.Client.Do(req)
+type EnsureEverythingIsReferencedClientParams struct {
+	Body io.Reader
 }
 
-func (c *Client) EnsureEverythingIsReferenced(ctx context.Context, body EnsureEverythingIsReferencedJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewEnsureEverythingIsReferencedRequest(c.Server, body)
-	if err != nil {
-		return nil, err
+type ParamsWithAddPropsClientParams struct {
+	P1 struct {
+		AdditionalProperties map[string]interface{} `json:"-"`
 	}
-	req = req.WithContext(ctx)
-	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
-		return nil, err
+
+	P2 struct {
+		Inner ParamsWithAddPropsParams_P2_Inner `json:"inner"`
 	}
-	return c.Client.Do(req)
 }
 
-func (c *Client) ParamsWithAddProps(ctx context.Context, params *ParamsWithAddPropsParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewParamsWithAddPropsRequest(c.Server, params)
-	if err != nil {
-		return nil, err
-	}
-	req = req.WithContext(ctx)
-	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
-		return nil, err
-	}
-	return c.Client.Do(req)
+type BodyWithAddPropsClientParams struct {
+	Body io.Reader
 }
 
-func (c *Client) BodyWithAddPropsWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewBodyWithAddPropsRequestWithBody(c.Server, contentType, body)
-	if err != nil {
-		return nil, err
-	}
-	req = req.WithContext(ctx)
-	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
-		return nil, err
-	}
-	return c.Client.Do(req)
-}
+// Decode is a package-level variable set to our default Decoder. We do this
+// because it allows you to set Decode to another function with the
+// same function signature, while also utilizing the Decoder() function
+// itself. Effectively, allowing you to easily add your own logic to the package
+// defaults. For example, maybe you want to impose a limit on the number of
+// bytes allowed to be read from the request body.
+var ReqDecoder = defaultDecoder
 
-func (c *Client) BodyWithAddProps(ctx context.Context, body BodyWithAddPropsJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewBodyWithAddPropsRequest(c.Server, body)
-	if err != nil {
-		return nil, err
-	}
-	req = req.WithContext(ctx)
-	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
-		return nil, err
-	}
-	return c.Client.Do(req)
-}
-
-// NewEnsureEverythingIsReferencedRequest calls the generic EnsureEverythingIsReferenced builder with application/json body
-func NewEnsureEverythingIsReferencedRequest(server string, body EnsureEverythingIsReferencedJSONRequestBody) (*http.Request, error) {
-	var bodyReader io.Reader
-	buf, err := json.Marshal(body)
-	if err != nil {
-		return nil, err
-	}
-	bodyReader = bytes.NewReader(buf)
-	return NewEnsureEverythingIsReferencedRequestWithBody(server, "application/json", bodyReader)
-}
-
-// NewEnsureEverythingIsReferencedRequestWithBody generates requests for EnsureEverythingIsReferenced with any type of body
-func NewEnsureEverythingIsReferencedRequestWithBody(server string, contentType string, body io.Reader) (*http.Request, error) {
+// defaultDecoder detects the correct decoder for use on an HTTP request and
+// marshals into a given interface.
+func defaultDecoder(resp *http.Response, v interface{}) error {
 	var err error
 
-	serverURL, err := url.Parse(server)
-	if err != nil {
-		return nil, err
+	switch render.GetContentType(resp.Header.Get("Content-Type")) {
+	case render.ContentTypeJSON:
+		err = render.DecodeJSON(resp.Body, v)
+	case render.ContentTypeXML:
+		err = render.DecodeXML(resp.Body, v)
+	default:
+		err = errors.New("defaultDecoder: unable to automatically decode the request content type")
 	}
 
-	operationPath := fmt.Sprintf("/ensure-everything-is-referenced")
-	if operationPath[0] == '/' {
-		operationPath = "." + operationPath
-	}
-
-	queryURL, err := serverURL.Parse(operationPath)
-	if err != nil {
-		return nil, err
-	}
-
-	req, err := http.NewRequest("GET", queryURL.String(), body)
-	if err != nil {
-		return nil, err
-	}
-
-	req.Header.Add("Content-Type", contentType)
-
-	return req, nil
+	return err
 }
 
-// NewParamsWithAddPropsRequest generates requests for ParamsWithAddProps
-func NewParamsWithAddPropsRequest(server string, params *ParamsWithAddPropsParams) (*http.Request, error) {
-	var err error
+// EnsureEverythingIsReferenced makes the request to the API endpoint.
+func (c *Client) EnsureEverythingIsReferenced(ctx context.Context, respBody render.Binder, params EnsureEverythingIsReferencedClientParams, opts ...func(*http.Request) error) (*ReqResponse, error) {
 
-	serverURL, err := url.Parse(server)
+	// Create the request
+	req, err := http.NewRequestWithContext(
+		ctx,
+		"GET",
+		buildURL(
+			c.BaseURL,
+			nil,
+			nil,
+		),
+		params.Body,
+	)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to build request: %w", err)
 	}
 
-	operationPath := fmt.Sprintf("/params_with_add_props")
-	if operationPath[0] == '/' {
-		operationPath = "." + operationPath
-	}
-
-	queryURL, err := serverURL.Parse(operationPath)
-	if err != nil {
-		return nil, err
-	}
-
-	queryValues := queryURL.Query()
-
-	if queryFrag, err := runtime.StyleParamWithLocation("simple", true, "p1", runtime.ParamLocationQuery, params.P1); err != nil {
-		return nil, err
-	} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
-		return nil, err
-	} else {
-		for k, v := range parsed {
-			for _, v2 := range v {
-				queryValues.Add(k, v2)
-			}
+	// Apply any request editors
+	for _, fn := range c.reqEditors {
+		if err := fn(req); err != nil {
+			return nil, fmt.Errorf("failed to apply request editor: %w", err)
 		}
 	}
 
-	if queryFrag, err := runtime.StyleParamWithLocation("form", true, "p2", runtime.ParamLocationQuery, params.P2); err != nil {
-		return nil, err
-	} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
-		return nil, err
-	} else {
-		for k, v := range parsed {
-			for _, v2 := range v {
-				queryValues.Add(k, v2)
-			}
+	// Do the request
+	resp, errDo := c.client.Do(req)
+	if errDo != nil {
+		return &ReqResponse{
+			Response: resp,
+		}, fmt.Errorf("failed to send request: %w", errDo)
+	}
+
+	// Bind the response body
+	if err := ReqDecoder(resp, respBody); err != nil {
+		return &ReqResponse{
+				Response: resp,
+			},
+			fmt.Errorf("failed to bind response body: %w", err)
+	}
+
+	return &ReqResponse{
+		Response: resp,
+	}, nil
+}
+
+// ParamsWithAddProps makes the request to the API endpoint.
+func (c *Client) ParamsWithAddProps(ctx context.Context, params ParamsWithAddPropsClientParams, opts ...func(*http.Request) error) error {
+
+	// Create the request
+	req, err := http.NewRequestWithContext(
+		ctx,
+		"GET",
+		buildURL(
+			c.BaseURL,
+			nil,
+			map[string]interface{}{
+				"p1": params.P1,
+				"p2": params.P2,
+			},
+		),
+		nil,
+	)
+	if err != nil {
+		return fmt.Errorf("failed to build request: %w", err)
+	}
+
+	// Apply any request editors
+	for _, fn := range c.reqEditors {
+		if err := fn(req); err != nil {
+			return fmt.Errorf("failed to apply request editor: %w", err)
 		}
 	}
 
-	queryURL.RawQuery = queryValues.Encode()
-
-	req, err := http.NewRequest("GET", queryURL.String(), nil)
-	if err != nil {
-		return nil, err
+	// Do the request
+	_, errDo := c.client.Do(req)
+	if errDo != nil {
+		return fmt.Errorf("failed to send request: %w", errDo)
 	}
 
-	return req, nil
-}
-
-// NewBodyWithAddPropsRequest calls the generic BodyWithAddProps builder with application/json body
-func NewBodyWithAddPropsRequest(server string, body BodyWithAddPropsJSONRequestBody) (*http.Request, error) {
-	var bodyReader io.Reader
-	buf, err := json.Marshal(body)
-	if err != nil {
-		return nil, err
-	}
-	bodyReader = bytes.NewReader(buf)
-	return NewBodyWithAddPropsRequestWithBody(server, "application/json", bodyReader)
-}
-
-// NewBodyWithAddPropsRequestWithBody generates requests for BodyWithAddProps with any type of body
-func NewBodyWithAddPropsRequestWithBody(server string, contentType string, body io.Reader) (*http.Request, error) {
-	var err error
-
-	serverURL, err := url.Parse(server)
-	if err != nil {
-		return nil, err
-	}
-
-	operationPath := fmt.Sprintf("/params_with_add_props")
-	if operationPath[0] == '/' {
-		operationPath = "." + operationPath
-	}
-
-	queryURL, err := serverURL.Parse(operationPath)
-	if err != nil {
-		return nil, err
-	}
-
-	req, err := http.NewRequest("POST", queryURL.String(), body)
-	if err != nil {
-		return nil, err
-	}
-
-	req.Header.Add("Content-Type", contentType)
-
-	return req, nil
-}
-
-func (c *Client) applyEditors(ctx context.Context, req *http.Request, additionalEditors []RequestEditorFn) error {
-	for _, r := range c.RequestEditors {
-		if err := r(ctx, req); err != nil {
-			return err
-		}
-	}
-	for _, r := range additionalEditors {
-		if err := r(ctx, req); err != nil {
-			return err
-		}
-	}
 	return nil
 }
 
-// ClientWithResponses builds on ClientInterface to offer response payloads
-type ClientWithResponses struct {
-	ClientInterface
-}
+// BodyWithAddProps makes the request to the API endpoint.
+func (c *Client) BodyWithAddProps(ctx context.Context, respBody render.Binder, params BodyWithAddPropsClientParams, opts ...func(*http.Request) error) (*ReqResponse, error) {
 
-// NewClientWithResponses creates a new ClientWithResponses, which wraps
-// Client with return type handling
-func NewClientWithResponses(server string, opts ...ClientOption) (*ClientWithResponses, error) {
-	client, err := NewClient(server, opts...)
+	// Create the request
+	req, err := http.NewRequestWithContext(
+		ctx,
+		"POST",
+		buildURL(
+			c.BaseURL,
+			nil,
+			nil,
+		),
+		params.Body,
+	)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to build request: %w", err)
 	}
-	return &ClientWithResponses{client}, nil
-}
 
-// WithBaseURL overrides the baseURL.
-func WithClientBaseURL(baseURL string) ClientOption {
-	return func(c *Client) error {
-		newBaseURL, err := url.Parse(baseURL)
-		if err != nil {
-			return err
+	// Apply any request editors
+	for _, fn := range c.reqEditors {
+		if err := fn(req); err != nil {
+			return nil, fmt.Errorf("failed to apply request editor: %w", err)
 		}
-		c.Server = newBaseURL.String()
-		return nil
 	}
-}
 
-// ClientWithResponsesInterface is the interface specification for the client with responses above.
-type ClientWithResponsesInterface interface {
-	// EnsureEverythingIsReferenced request with any body
-	EnsureEverythingIsReferencedWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*EnsureEverythingIsReferencedResponse, error)
-
-	EnsureEverythingIsReferencedWithResponse(ctx context.Context, body EnsureEverythingIsReferencedJSONRequestBody, reqEditors ...RequestEditorFn) (*EnsureEverythingIsReferencedResponse, error)
-
-	// ParamsWithAddProps request
-	ParamsWithAddPropsWithResponse(ctx context.Context, params *ParamsWithAddPropsParams, reqEditors ...RequestEditorFn) (*ParamsWithAddPropsResponse, error)
-
-	// BodyWithAddProps request with any body
-	BodyWithAddPropsWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*BodyWithAddPropsResponse, error)
-
-	BodyWithAddPropsWithResponse(ctx context.Context, body BodyWithAddPropsJSONRequestBody, reqEditors ...RequestEditorFn) (*BodyWithAddPropsResponse, error)
-}
-
-type EnsureEverythingIsReferencedResponse struct {
-	Body         []byte
-	HTTPResponse *http.Response
-	JSON200      *struct {
-		// Has additional properties with schema for dictionaries
-		Five *AdditionalPropertiesObject5 `json:"five,omitempty"`
-
-		// Has anonymous field which has additional properties
-		Four      *AdditionalPropertiesObject4 `json:"four,omitempty"`
-		JSONField *ObjectWithJSONField         `json:"jsonField,omitempty"`
-
-		// Has additional properties of type int
-		One *AdditionalPropertiesObject1 `json:"one,omitempty"`
-
-		// Allows any additional property
-		Three *AdditionalPropertiesObject3 `json:"three,omitempty"`
-
-		// Does not allow additional properties
-		Two *AdditionalPropertiesObject2 `json:"two,omitempty"`
+	// Do the request
+	resp, errDo := c.client.Do(req)
+	if errDo != nil {
+		return &ReqResponse{
+			Response: resp,
+		}, fmt.Errorf("failed to send request: %w", errDo)
 	}
-	JSONDefault *struct {
-		Field SchemaObject `json:"Field"`
+
+	// Bind the response body
+	if err := ReqDecoder(resp, respBody); err != nil {
+		return &ReqResponse{
+				Response: resp,
+			},
+			fmt.Errorf("failed to bind response body: %w", err)
 	}
+
+	return &ReqResponse{
+		Response: resp,
+	}, nil
 }
 
-// Status returns HTTPResponse.Status
-func (r EnsureEverythingIsReferencedResponse) Status() string {
-	if r.HTTPResponse != nil {
-		return r.HTTPResponse.Status
-	}
-	return http.StatusText(0)
-}
-
-// StatusCode returns HTTPResponse.StatusCode
-func (r EnsureEverythingIsReferencedResponse) StatusCode() int {
-	if r.HTTPResponse != nil {
-		return r.HTTPResponse.StatusCode
-	}
-	return 0
-}
-
-type ParamsWithAddPropsResponse struct {
-	Body         []byte
-	HTTPResponse *http.Response
-}
-
-// Status returns HTTPResponse.Status
-func (r ParamsWithAddPropsResponse) Status() string {
-	if r.HTTPResponse != nil {
-		return r.HTTPResponse.Status
-	}
-	return http.StatusText(0)
-}
-
-// StatusCode returns HTTPResponse.StatusCode
-func (r ParamsWithAddPropsResponse) StatusCode() int {
-	if r.HTTPResponse != nil {
-		return r.HTTPResponse.StatusCode
-	}
-	return 0
-}
-
-type BodyWithAddPropsResponse struct {
-	Body         []byte
-	HTTPResponse *http.Response
-}
-
-// Status returns HTTPResponse.Status
-func (r BodyWithAddPropsResponse) Status() string {
-	if r.HTTPResponse != nil {
-		return r.HTTPResponse.Status
-	}
-	return http.StatusText(0)
-}
-
-// StatusCode returns HTTPResponse.StatusCode
-func (r BodyWithAddPropsResponse) StatusCode() int {
-	if r.HTTPResponse != nil {
-		return r.HTTPResponse.StatusCode
-	}
-	return 0
-}
-
-// EnsureEverythingIsReferencedWithBodyWithResponse request with arbitrary body returning *EnsureEverythingIsReferencedResponse
-func (c *ClientWithResponses) EnsureEverythingIsReferencedWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*EnsureEverythingIsReferencedResponse, error) {
-	rsp, err := c.EnsureEverythingIsReferencedWithBody(ctx, contentType, body, reqEditors...)
+func buildURL(baseURL string, pathParams map[string]interface{}, queryParams map[string]interface{}) string {
+	u, err := url.Parse(baseURL)
 	if err != nil {
-		return nil, err
-	}
-	return ParseEnsureEverythingIsReferencedResponse(rsp)
-}
-
-func (c *ClientWithResponses) EnsureEverythingIsReferencedWithResponse(ctx context.Context, body EnsureEverythingIsReferencedJSONRequestBody, reqEditors ...RequestEditorFn) (*EnsureEverythingIsReferencedResponse, error) {
-	rsp, err := c.EnsureEverythingIsReferenced(ctx, body, reqEditors...)
-	if err != nil {
-		return nil, err
-	}
-	return ParseEnsureEverythingIsReferencedResponse(rsp)
-}
-
-// ParamsWithAddPropsWithResponse request returning *ParamsWithAddPropsResponse
-func (c *ClientWithResponses) ParamsWithAddPropsWithResponse(ctx context.Context, params *ParamsWithAddPropsParams, reqEditors ...RequestEditorFn) (*ParamsWithAddPropsResponse, error) {
-	rsp, err := c.ParamsWithAddProps(ctx, params, reqEditors...)
-	if err != nil {
-		return nil, err
-	}
-	return ParseParamsWithAddPropsResponse(rsp)
-}
-
-// BodyWithAddPropsWithBodyWithResponse request with arbitrary body returning *BodyWithAddPropsResponse
-func (c *ClientWithResponses) BodyWithAddPropsWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*BodyWithAddPropsResponse, error) {
-	rsp, err := c.BodyWithAddPropsWithBody(ctx, contentType, body, reqEditors...)
-	if err != nil {
-		return nil, err
-	}
-	return ParseBodyWithAddPropsResponse(rsp)
-}
-
-func (c *ClientWithResponses) BodyWithAddPropsWithResponse(ctx context.Context, body BodyWithAddPropsJSONRequestBody, reqEditors ...RequestEditorFn) (*BodyWithAddPropsResponse, error) {
-	rsp, err := c.BodyWithAddProps(ctx, body, reqEditors...)
-	if err != nil {
-		return nil, err
-	}
-	return ParseBodyWithAddPropsResponse(rsp)
-}
-
-// ParseEnsureEverythingIsReferencedResponse parses an HTTP response from a EnsureEverythingIsReferencedWithResponse call
-func ParseEnsureEverythingIsReferencedResponse(rsp *http.Response) (*EnsureEverythingIsReferencedResponse, error) {
-	bodyBytes, err := io.ReadAll(rsp.Body)
-	defer func() { _ = rsp.Body.Close() }()
-	if err != nil {
-		return nil, err
+		panic(err)
 	}
 
-	response := &EnsureEverythingIsReferencedResponse{
-		Body:         bodyBytes,
-		HTTPResponse: rsp,
+	// add path parameters
+	for name, value := range pathParams {
+		u.Path = strings.Replace(u.Path, "{"+name+"}", fmt.Sprint(value), 1)
 	}
 
-	switch {
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
-		var dest struct {
-			// Has additional properties with schema for dictionaries
-			Five *AdditionalPropertiesObject5 `json:"five,omitempty"`
-
-			// Has anonymous field which has additional properties
-			Four      *AdditionalPropertiesObject4 `json:"four,omitempty"`
-			JSONField *ObjectWithJSONField         `json:"jsonField,omitempty"`
-
-			// Has additional properties of type int
-			One *AdditionalPropertiesObject1 `json:"one,omitempty"`
-
-			// Allows any additional property
-			Three *AdditionalPropertiesObject3 `json:"three,omitempty"`
-
-			// Does not allow additional properties
-			Two *AdditionalPropertiesObject2 `json:"two,omitempty"`
-		}
-		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
-			return nil, err
-		}
-		response.JSON200 = &dest
-
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
-		var dest struct {
-			Field SchemaObject `json:"Field"`
-		}
-		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
-			return nil, err
-		}
-		response.JSONDefault = &dest
-
-	case true:
-		// Content-type (text/plain) unsupported
-
+	// add query parameters
+	q := u.Query()
+	for key, value := range queryParams {
+		q.Set(key, fmt.Sprint(value))
 	}
+	u.RawQuery = q.Encode()
 
-	return response, nil
-}
-
-// ParseParamsWithAddPropsResponse parses an HTTP response from a ParamsWithAddPropsWithResponse call
-func ParseParamsWithAddPropsResponse(rsp *http.Response) (*ParamsWithAddPropsResponse, error) {
-	bodyBytes, err := io.ReadAll(rsp.Body)
-	defer func() { _ = rsp.Body.Close() }()
-	if err != nil {
-		return nil, err
-	}
-
-	response := &ParamsWithAddPropsResponse{
-		Body:         bodyBytes,
-		HTTPResponse: rsp,
-	}
-
-	return response, nil
-}
-
-// ParseBodyWithAddPropsResponse parses an HTTP response from a BodyWithAddPropsWithResponse call
-func ParseBodyWithAddPropsResponse(rsp *http.Response) (*BodyWithAddPropsResponse, error) {
-	bodyBytes, err := io.ReadAll(rsp.Body)
-	defer func() { _ = rsp.Body.Close() }()
-	if err != nil {
-		return nil, err
-	}
-
-	response := &BodyWithAddPropsResponse{
-		Body:         bodyBytes,
-		HTTPResponse: rsp,
-	}
-
-	return response, nil
+	return u.String()
 }
 
 // ServerInterface represents all server handlers.

@@ -14,7 +14,7 @@ func TestSecurityProviders(t *testing.T) {
 	assert.NoError(t, err)
 	client1, err := client.NewClient(
 		withTrailingSlash,
-		client.WithRequestEditorFn(bearer.Intercept),
+		client.WithEditors(bearer.Intercept),
 	)
 	assert.NoError(t, err)
 
@@ -22,7 +22,7 @@ func TestSecurityProviders(t *testing.T) {
 	assert.NoError(t, err)
 	client2, err := client.NewClient(
 		withTrailingSlash,
-		client.WithRequestEditorFn(apiKey.Intercept),
+		client.WithEditors(apiKey.Intercept),
 	)
 	assert.NoError(t, err)
 
@@ -30,11 +30,11 @@ func TestSecurityProviders(t *testing.T) {
 	assert.NoError(t, err)
 	client3, err := client.NewClient(
 		withTrailingSlash,
-		client.WithRequestEditorFn(basicAuth.Intercept),
+		client.WithEditors(basicAuth.Intercept),
 	)
 	assert.NoError(t, err)
 
-	assert.Equal(t, withTrailingSlash, client1.Server)
-	assert.Equal(t, withTrailingSlash, client2.Server)
-	assert.Equal(t, withTrailingSlash, client3.Server)
+	assert.Equal(t, withTrailingSlash, client1.BaseURL)
+	assert.Equal(t, withTrailingSlash, client2.BaseURL)
+	assert.Equal(t, withTrailingSlash, client3.BaseURL)
 }

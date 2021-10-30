@@ -167,14 +167,6 @@ func Generate(swagger *openapi3.T, packageName string, opts Options) (string, er
 		}
 	}
 
-	var clientWithResponsesOut string
-	if opts.GenerateClient {
-		clientWithResponsesOut, err = GenerateClientWithResponses(t, ops)
-		if err != nil {
-			return "", fmt.Errorf("error generating client with responses: %w", err)
-		}
-	}
-
 	var inlinedSpec string
 	if opts.EmbedSpec {
 		inlinedSpec, err = GenerateInlinedSpec(t, importMapping, swagger)
@@ -209,10 +201,6 @@ func Generate(swagger *openapi3.T, packageName string, opts Options) (string, er
 
 	if opts.GenerateClient {
 		_, err = w.WriteString(clientOut)
-		if err != nil {
-			return "", fmt.Errorf("error writing client: %w", err)
-		}
-		_, err = w.WriteString(clientWithResponsesOut)
 		if err != nil {
 			return "", fmt.Errorf("error writing client: %w", err)
 		}

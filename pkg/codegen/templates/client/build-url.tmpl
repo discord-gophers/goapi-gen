@@ -1,0 +1,20 @@
+func buildURL(baseURL string, pathParams map[string]interface{}, queryParams map[string]interface{}) string {
+	u, err := url.Parse(baseURL)
+	if err != nil {
+		panic(err)
+	}
+
+	// add path parameters
+	for name, value := range pathParams {
+		u.Path = strings.Replace(u.Path, "{"+name+"}", fmt.Sprint(value), 1)
+	}
+
+	// add query parameters
+	q := u.Query()
+	for key, value := range queryParams {
+		q.Set(key, fmt.Sprint(value))
+	}
+	u.RawQuery = q.Encode()
+
+	return u.String()
+}

@@ -1,0 +1,93 @@
+{{ range . -}}
+// {{ .OperationID }} makes the request to the API endpoint.
+func (c *Client) {{template "method-signature" .}} {
+
+	// Create the request
+	{{/* Yes this is absolutely painful, :cry: */ -}}
+	req, err := http.NewRequestWithContext(
+		ctx,
+		"{{ .Method }}",
+		buildURL(
+			c.BaseURL,
+			{{- if .PathParams }}
+			map[string]interface{}{
+				{{- range .PathParams }}
+				"{{ .ParamName }}": params.{{- .GoVariableName | ucFirst -}},
+				{{ end }}
+			},
+
+			{{- else }}
+			nil,
+			{{- end }}
+			{{- if .QueryParams }}
+			map[string]interface{}{
+				{{- range .QueryParams }}
+				"{{ .ParamName }}": params.{{- .GoVariableName | ucFirst -}},
+				{{- end }}
+			},
+
+			{{- else }}
+			nil,
+			{{- end }}
+		),
+		{{- if .HasBody }}
+		params.Body,
+		{{- else }}
+		nil,	
+		{{- end }}
+	)
+	if err != nil {
+		return {{ if .HasBody }} nil, {{- end -}}
+		fmt.Errorf("failed to build request: %w", err)
+	}
+
+	{{- if .HeaderParams }}
+	// Set the headers
+	
+	{{ range .HeaderParams }}
+		req.Header.Set("{{.ParamName}}", params.{{- .GoVariableName | ucFirst -}})
+	{{- end }}
+	{{- end }}
+
+	{{- if .CookieParams }}
+	// Set the cookies
+	{{ range .CookieParams }}
+		req.AddCookie(params.{{ .GoVariableName | ucFirst }})
+	{{- end }}
+	{{- end }}
+
+	// Apply any request editors
+	for _, fn := range c.reqEditors {
+		if err := fn(req); err != nil {
+			return {{ if .HasBody }} nil, {{- end -}}
+			fmt.Errorf("failed to apply request editor: %w", err)
+		}
+	}
+	
+	// Do the request
+	{{ if .HasBody -}} resp {{- else -}} _ {{- end -}}, errDo := c.client.Do(req)
+	if errDo != nil {
+		return {{ if .HasBody }} &ReqResponse{
+			Response: resp,
+		},
+		{{- end -}}
+		fmt.Errorf("failed to send request: %w", errDo)
+	}
+
+	{{ if .HasBody -}}
+	// Bind the response body
+	if err := ReqDecoder(resp, respBody); err != nil {
+		return &ReqResponse{
+			Response: resp,
+		},
+		fmt.Errorf("failed to bind response body: %w", err)
+	}
+	{{- end }}
+
+	return {{ if .HasBody -}} &ReqResponse{
+			Response: resp,
+		},
+		{{- end -}}
+		nil
+}
+{{ end }}

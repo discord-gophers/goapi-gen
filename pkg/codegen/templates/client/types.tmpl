@@ -1,0 +1,33 @@
+{{ range . -}}
+{{ if or (.HasBody) (.RequiresAllParamObject) }} {{/* check if we actually need to generate the type*/}}
+type {{ .OperationID }}ClientParams struct {
+	{{ if .HasBody -}}
+	{{/*
+		TODO(@Karitham): This should not be an io.Reader, but probably of the type to send.
+	*/ -}}
+	Body io.Reader
+	{{- end }}
+
+	{{ range .PathParams }}
+	{{ genParam . }}
+	{{ end }}
+
+	{{ range .QueryParams }}
+	{{ genParam . }}
+	{{ end }}
+
+	{{ range .HeaderParams }}
+	{{/*
+		TODO(@Karitham): The headers can be a lot of different things, exploded, json, objects etc.
+			We need to figure out how to handle this. For now it kinda works for strings and ints,
+			and you probably don't wanna send an object anyways, but still
+	*/ -}}
+	{{ .GoVariableName | ucFirst }} string
+	{{ end }}
+
+	{{ range .CookieParams }}
+	{{ .GoVariableName | ucFirst }} *http.Cookie
+	{{ end }}
+}
+{{- end }}
+{{ end }}

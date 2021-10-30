@@ -10,8 +10,8 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"encoding/xml"
+	"errors"
 	"fmt"
-	"io"
 	"net/http"
 	"net/url"
 	"path"
@@ -166,31 +166,71 @@ func (resp *Response) MarshalXML(e *xml.Encoder, start xml.StartElement) error {
 	return e.Encode(resp.body)
 }
 
-// RequestEditorFn  is the function signature for the RequestEditor callback function
-type RequestEditorFn func(ctx context.Context, req *http.Request) error
+// ClientInterface is implemented by Client
+type ClientInterface interface {
+	// GetContentObject makes the request to the API endpoint.
+	GetContentObject(ctx context.Context, params GetContentObjectClientParams, opts ...func(*http.Request) error) error
+	// GetCookie makes the request to the API endpoint.
+	GetCookie(ctx context.Context, params GetCookieClientParams, opts ...func(*http.Request) error) error
+	// GetHeader makes the request to the API endpoint.
+	GetHeader(ctx context.Context, params GetHeaderClientParams, opts ...func(*http.Request) error) error
+	// GetLabelExplodeArray makes the request to the API endpoint.
+	GetLabelExplodeArray(ctx context.Context, params GetLabelExplodeArrayClientParams, opts ...func(*http.Request) error) error
+	// GetLabelExplodeObject makes the request to the API endpoint.
+	GetLabelExplodeObject(ctx context.Context, params GetLabelExplodeObjectClientParams, opts ...func(*http.Request) error) error
+	// GetLabelNoExplodeArray makes the request to the API endpoint.
+	GetLabelNoExplodeArray(ctx context.Context, params GetLabelNoExplodeArrayClientParams, opts ...func(*http.Request) error) error
+	// GetLabelNoExplodeObject makes the request to the API endpoint.
+	GetLabelNoExplodeObject(ctx context.Context, params GetLabelNoExplodeObjectClientParams, opts ...func(*http.Request) error) error
+	// GetMatrixExplodeArray makes the request to the API endpoint.
+	GetMatrixExplodeArray(ctx context.Context, params GetMatrixExplodeArrayClientParams, opts ...func(*http.Request) error) error
+	// GetMatrixExplodeObject makes the request to the API endpoint.
+	GetMatrixExplodeObject(ctx context.Context, params GetMatrixExplodeObjectClientParams, opts ...func(*http.Request) error) error
+	// GetMatrixNoExplodeArray makes the request to the API endpoint.
+	GetMatrixNoExplodeArray(ctx context.Context, params GetMatrixNoExplodeArrayClientParams, opts ...func(*http.Request) error) error
+	// GetMatrixNoExplodeObject makes the request to the API endpoint.
+	GetMatrixNoExplodeObject(ctx context.Context, params GetMatrixNoExplodeObjectClientParams, opts ...func(*http.Request) error) error
+	// GetPassThrough makes the request to the API endpoint.
+	GetPassThrough(ctx context.Context, params GetPassThroughClientParams, opts ...func(*http.Request) error) error
+	// GetDeepObject makes the request to the API endpoint.
+	GetDeepObject(ctx context.Context, params GetDeepObjectClientParams, opts ...func(*http.Request) error) error
+	// GetQueryForm makes the request to the API endpoint.
+	GetQueryForm(ctx context.Context, params GetQueryFormClientParams, opts ...func(*http.Request) error) error
+	// GetSimpleExplodeArray makes the request to the API endpoint.
+	GetSimpleExplodeArray(ctx context.Context, params GetSimpleExplodeArrayClientParams, opts ...func(*http.Request) error) error
+	// GetSimpleExplodeObject makes the request to the API endpoint.
+	GetSimpleExplodeObject(ctx context.Context, params GetSimpleExplodeObjectClientParams, opts ...func(*http.Request) error) error
+	// GetSimpleNoExplodeArray makes the request to the API endpoint.
+	GetSimpleNoExplodeArray(ctx context.Context, params GetSimpleNoExplodeArrayClientParams, opts ...func(*http.Request) error) error
+	// GetSimpleNoExplodeObject makes the request to the API endpoint.
+	GetSimpleNoExplodeObject(ctx context.Context, params GetSimpleNoExplodeObjectClientParams, opts ...func(*http.Request) error) error
+	// GetSimplePrimitive makes the request to the API endpoint.
+	GetSimplePrimitive(ctx context.Context, params GetSimplePrimitiveClientParams, opts ...func(*http.Request) error) error
+	// GetStartingWithNumber makes the request to the API endpoint.
+	GetStartingWithNumber(ctx context.Context, params GetStartingWithNumberClientParams, opts ...func(*http.Request) error) error
+}
 
 // Doer performs HTTP requests.
-//
 // The standard http.Client implements this interface.
-type HttpRequestDoer interface {
+type Doer interface {
 	Do(req *http.Request) (*http.Response, error)
 }
 
 // Client which conforms to the OpenAPI3 specification for this service.
 type Client struct {
 	// The endpoint of the server conforming to this interface, with scheme,
-	// https://api.deepmap.com for example. This can contain a path relative
-	// to the server, such as https://api.deepmap.com/dev-test, and all the
+	// https://example.com for example. This can contain a path relative
+	// to the server, such as https://example.com/dev-test, and all the
 	// paths in the swagger spec will be appended to the server.
-	Server string
+	BaseURL string
 
 	// Doer for performing requests, typically a *http.Client with any
 	// customized settings, such as certificate chains.
-	Client HttpRequestDoer
+	client Doer
 
 	// A list of callbacks for modifying requests which are generated before sending over
 	// the network.
-	RequestEditors []RequestEditorFn
+	reqEditors []func(req *http.Request) error
 }
 
 // ClientOption allows setting custom parameters during construction
@@ -200,2383 +240,958 @@ type ClientOption func(*Client) error
 func NewClient(server string, opts ...ClientOption) (*Client, error) {
 	// create a client with sane default values
 	client := Client{
-		Server: server,
-		Client: &http.Client{},
+		BaseURL: server,
+		client:  &http.Client{},
 	}
+
 	// mutate client and add all optional params
 	for _, o := range opts {
 		if err := o(&client); err != nil {
 			return nil, err
 		}
 	}
+
 	// ensure the server URL always has a trailing slash
-	if !strings.HasSuffix(client.Server, "/") {
-		client.Server += "/"
+	if !strings.HasSuffix(client.BaseURL, "/") {
+		client.BaseURL += "/"
 	}
+
 	return &client, nil
 }
 
-// WithHTTPClient allows overriding the default Doer, which is
+// WithDoer allows overriding the default Doer, which is
 // automatically created using http.Client. This is useful for tests.
-func WithHTTPClient(doer HttpRequestDoer) ClientOption {
+func WithDoer(doer Doer) ClientOption {
 	return func(c *Client) error {
-		c.Client = doer
+		c.client = doer
 		return nil
 	}
 }
 
-// WithRequestEditorFn allows setting up a callback function, which will be
-// called right before sending the request. This can be used to mutate the request.
-func WithRequestEditorFn(fn RequestEditorFn) ClientOption {
+// WithEditors allows setting up request editors, which are used to modify
+func WithEditors(fns ...func(req *http.Request) error) ClientOption {
 	return func(c *Client) error {
-		c.RequestEditors = append(c.RequestEditors, fn)
+		c.reqEditors = append(c.reqEditors, fns...)
 		return nil
 	}
 }
 
-// The interface specification for the client above.
-type ClientInterface interface {
-	// GetContentObject request
-	GetContentObject(ctx context.Context, param ComplexObject, reqEditors ...RequestEditorFn) (*http.Response, error)
-
-	// GetCookie request
-	GetCookie(ctx context.Context, params *GetCookieParams, reqEditors ...RequestEditorFn) (*http.Response, error)
-
-	// GetHeader request
-	GetHeader(ctx context.Context, params *GetHeaderParams, reqEditors ...RequestEditorFn) (*http.Response, error)
-
-	// GetLabelExplodeArray request
-	GetLabelExplodeArray(ctx context.Context, param []int32, reqEditors ...RequestEditorFn) (*http.Response, error)
-
-	// GetLabelExplodeObject request
-	GetLabelExplodeObject(ctx context.Context, param Object, reqEditors ...RequestEditorFn) (*http.Response, error)
-
-	// GetLabelNoExplodeArray request
-	GetLabelNoExplodeArray(ctx context.Context, param []int32, reqEditors ...RequestEditorFn) (*http.Response, error)
-
-	// GetLabelNoExplodeObject request
-	GetLabelNoExplodeObject(ctx context.Context, param Object, reqEditors ...RequestEditorFn) (*http.Response, error)
-
-	// GetMatrixExplodeArray request
-	GetMatrixExplodeArray(ctx context.Context, id []int32, reqEditors ...RequestEditorFn) (*http.Response, error)
-
-	// GetMatrixExplodeObject request
-	GetMatrixExplodeObject(ctx context.Context, id Object, reqEditors ...RequestEditorFn) (*http.Response, error)
-
-	// GetMatrixNoExplodeArray request
-	GetMatrixNoExplodeArray(ctx context.Context, id []int32, reqEditors ...RequestEditorFn) (*http.Response, error)
-
-	// GetMatrixNoExplodeObject request
-	GetMatrixNoExplodeObject(ctx context.Context, id Object, reqEditors ...RequestEditorFn) (*http.Response, error)
-
-	// GetPassThrough request
-	GetPassThrough(ctx context.Context, param string, reqEditors ...RequestEditorFn) (*http.Response, error)
-
-	// GetDeepObject request
-	GetDeepObject(ctx context.Context, params *GetDeepObjectParams, reqEditors ...RequestEditorFn) (*http.Response, error)
-
-	// GetQueryForm request
-	GetQueryForm(ctx context.Context, params *GetQueryFormParams, reqEditors ...RequestEditorFn) (*http.Response, error)
-
-	// GetSimpleExplodeArray request
-	GetSimpleExplodeArray(ctx context.Context, param []int32, reqEditors ...RequestEditorFn) (*http.Response, error)
-
-	// GetSimpleExplodeObject request
-	GetSimpleExplodeObject(ctx context.Context, param Object, reqEditors ...RequestEditorFn) (*http.Response, error)
-
-	// GetSimpleNoExplodeArray request
-	GetSimpleNoExplodeArray(ctx context.Context, param []int32, reqEditors ...RequestEditorFn) (*http.Response, error)
-
-	// GetSimpleNoExplodeObject request
-	GetSimpleNoExplodeObject(ctx context.Context, param Object, reqEditors ...RequestEditorFn) (*http.Response, error)
-
-	// GetSimplePrimitive request
-	GetSimplePrimitive(ctx context.Context, param int32, reqEditors ...RequestEditorFn) (*http.Response, error)
-
-	// GetStartingWithNumber request
-	GetStartingWithNumber(ctx context.Context, n1param string, reqEditors ...RequestEditorFn) (*http.Response, error)
+type ReqResponse struct {
+	*http.Response
 }
 
-func (c *Client) GetContentObject(ctx context.Context, param ComplexObject, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewGetContentObjectRequest(c.Server, param)
-	if err != nil {
-		return nil, err
-	}
-	req = req.WithContext(ctx)
-	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
-		return nil, err
-	}
-	return c.Client.Do(req)
+type GetContentObjectClientParams struct {
+	Param ComplexObject
 }
 
-func (c *Client) GetCookie(ctx context.Context, params *GetCookieParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewGetCookieRequest(c.Server, params)
-	if err != nil {
-		return nil, err
-	}
-	req = req.WithContext(ctx)
-	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
-		return nil, err
-	}
-	return c.Client.Do(req)
+type GetCookieClientParams struct {
+	P *http.Cookie
+
+	Ep *http.Cookie
+
+	Ea *http.Cookie
+
+	A *http.Cookie
+
+	Eo *http.Cookie
+
+	O *http.Cookie
+
+	Co *http.Cookie
+
+	N1s *http.Cookie
 }
 
-func (c *Client) GetHeader(ctx context.Context, params *GetHeaderParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewGetHeaderRequest(c.Server, params)
-	if err != nil {
-		return nil, err
-	}
-	req = req.WithContext(ctx)
-	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
-		return nil, err
-	}
-	return c.Client.Do(req)
+type GetHeaderClientParams struct {
+	XPrimitive string
+
+	XPrimitiveExploded string
+
+	XArrayExploded string
+
+	XArray string
+
+	XObjectExploded string
+
+	XObject string
+
+	XComplexObject string
+
+	N1startingWithNumber string
 }
 
-func (c *Client) GetLabelExplodeArray(ctx context.Context, param []int32, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewGetLabelExplodeArrayRequest(c.Server, param)
-	if err != nil {
-		return nil, err
-	}
-	req = req.WithContext(ctx)
-	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
-		return nil, err
-	}
-	return c.Client.Do(req)
+type GetLabelExplodeArrayClientParams struct {
+	Param []int32
 }
 
-func (c *Client) GetLabelExplodeObject(ctx context.Context, param Object, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewGetLabelExplodeObjectRequest(c.Server, param)
-	if err != nil {
-		return nil, err
-	}
-	req = req.WithContext(ctx)
-	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
-		return nil, err
-	}
-	return c.Client.Do(req)
+type GetLabelExplodeObjectClientParams struct {
+	Param Object
 }
 
-func (c *Client) GetLabelNoExplodeArray(ctx context.Context, param []int32, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewGetLabelNoExplodeArrayRequest(c.Server, param)
-	if err != nil {
-		return nil, err
-	}
-	req = req.WithContext(ctx)
-	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
-		return nil, err
-	}
-	return c.Client.Do(req)
+type GetLabelNoExplodeArrayClientParams struct {
+	Param []int32
 }
 
-func (c *Client) GetLabelNoExplodeObject(ctx context.Context, param Object, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewGetLabelNoExplodeObjectRequest(c.Server, param)
-	if err != nil {
-		return nil, err
-	}
-	req = req.WithContext(ctx)
-	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
-		return nil, err
-	}
-	return c.Client.Do(req)
+type GetLabelNoExplodeObjectClientParams struct {
+	Param Object
 }
 
-func (c *Client) GetMatrixExplodeArray(ctx context.Context, id []int32, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewGetMatrixExplodeArrayRequest(c.Server, id)
-	if err != nil {
-		return nil, err
-	}
-	req = req.WithContext(ctx)
-	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
-		return nil, err
-	}
-	return c.Client.Do(req)
+type GetMatrixExplodeArrayClientParams struct {
+	ID []int32
 }
 
-func (c *Client) GetMatrixExplodeObject(ctx context.Context, id Object, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewGetMatrixExplodeObjectRequest(c.Server, id)
-	if err != nil {
-		return nil, err
-	}
-	req = req.WithContext(ctx)
-	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
-		return nil, err
-	}
-	return c.Client.Do(req)
+type GetMatrixExplodeObjectClientParams struct {
+	ID Object
 }
 
-func (c *Client) GetMatrixNoExplodeArray(ctx context.Context, id []int32, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewGetMatrixNoExplodeArrayRequest(c.Server, id)
-	if err != nil {
-		return nil, err
-	}
-	req = req.WithContext(ctx)
-	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
-		return nil, err
-	}
-	return c.Client.Do(req)
+type GetMatrixNoExplodeArrayClientParams struct {
+	ID []int32
 }
 
-func (c *Client) GetMatrixNoExplodeObject(ctx context.Context, id Object, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewGetMatrixNoExplodeObjectRequest(c.Server, id)
-	if err != nil {
-		return nil, err
-	}
-	req = req.WithContext(ctx)
-	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
-		return nil, err
-	}
-	return c.Client.Do(req)
+type GetMatrixNoExplodeObjectClientParams struct {
+	ID Object
 }
 
-func (c *Client) GetPassThrough(ctx context.Context, param string, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewGetPassThroughRequest(c.Server, param)
-	if err != nil {
-		return nil, err
-	}
-	req = req.WithContext(ctx)
-	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
-		return nil, err
-	}
-	return c.Client.Do(req)
+type GetPassThroughClientParams struct {
+	Param string
 }
 
-func (c *Client) GetDeepObject(ctx context.Context, params *GetDeepObjectParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewGetDeepObjectRequest(c.Server, params)
-	if err != nil {
-		return nil, err
-	}
-	req = req.WithContext(ctx)
-	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
-		return nil, err
-	}
-	return c.Client.Do(req)
+type GetDeepObjectClientParams struct {
+	DeepObj ComplexObject
 }
 
-func (c *Client) GetQueryForm(ctx context.Context, params *GetQueryFormParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewGetQueryFormRequest(c.Server, params)
-	if err != nil {
-		return nil, err
-	}
-	req = req.WithContext(ctx)
-	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
-		return nil, err
-	}
-	return c.Client.Do(req)
+type GetQueryFormClientParams struct {
+	Ea []int32
+
+	A []int32
+
+	Eo Object
+
+	O Object
+
+	Ep int32
+
+	P int32
+
+	Ps string
+
+	Co ComplexObject
+
+	N1s string
 }
 
-func (c *Client) GetSimpleExplodeArray(ctx context.Context, param []int32, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewGetSimpleExplodeArrayRequest(c.Server, param)
-	if err != nil {
-		return nil, err
-	}
-	req = req.WithContext(ctx)
-	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
-		return nil, err
-	}
-	return c.Client.Do(req)
+type GetSimpleExplodeArrayClientParams struct {
+	Param []int32
 }
 
-func (c *Client) GetSimpleExplodeObject(ctx context.Context, param Object, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewGetSimpleExplodeObjectRequest(c.Server, param)
-	if err != nil {
-		return nil, err
-	}
-	req = req.WithContext(ctx)
-	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
-		return nil, err
-	}
-	return c.Client.Do(req)
+type GetSimpleExplodeObjectClientParams struct {
+	Param Object
 }
 
-func (c *Client) GetSimpleNoExplodeArray(ctx context.Context, param []int32, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewGetSimpleNoExplodeArrayRequest(c.Server, param)
-	if err != nil {
-		return nil, err
-	}
-	req = req.WithContext(ctx)
-	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
-		return nil, err
-	}
-	return c.Client.Do(req)
+type GetSimpleNoExplodeArrayClientParams struct {
+	Param []int32
 }
 
-func (c *Client) GetSimpleNoExplodeObject(ctx context.Context, param Object, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewGetSimpleNoExplodeObjectRequest(c.Server, param)
-	if err != nil {
-		return nil, err
-	}
-	req = req.WithContext(ctx)
-	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
-		return nil, err
-	}
-	return c.Client.Do(req)
+type GetSimpleNoExplodeObjectClientParams struct {
+	Param Object
 }
 
-func (c *Client) GetSimplePrimitive(ctx context.Context, param int32, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewGetSimplePrimitiveRequest(c.Server, param)
-	if err != nil {
-		return nil, err
-	}
-	req = req.WithContext(ctx)
-	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
-		return nil, err
-	}
-	return c.Client.Do(req)
+type GetSimplePrimitiveClientParams struct {
+	Param int32
 }
 
-func (c *Client) GetStartingWithNumber(ctx context.Context, n1param string, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewGetStartingWithNumberRequest(c.Server, n1param)
-	if err != nil {
-		return nil, err
-	}
-	req = req.WithContext(ctx)
-	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
-		return nil, err
-	}
-	return c.Client.Do(req)
+type GetStartingWithNumberClientParams struct {
+	N1param string
 }
 
-// NewGetContentObjectRequest generates requests for GetContentObject
-func NewGetContentObjectRequest(server string, param ComplexObject) (*http.Request, error) {
+// Decode is a package-level variable set to our default Decoder. We do this
+// because it allows you to set Decode to another function with the
+// same function signature, while also utilizing the Decoder() function
+// itself. Effectively, allowing you to easily add your own logic to the package
+// defaults. For example, maybe you want to impose a limit on the number of
+// bytes allowed to be read from the request body.
+var ReqDecoder = defaultDecoder
+
+// defaultDecoder detects the correct decoder for use on an HTTP request and
+// marshals into a given interface.
+func defaultDecoder(resp *http.Response, v interface{}) error {
 	var err error
 
-	var pathParam0 string
-
-	var pathParamBuf0 []byte
-	pathParamBuf0, err = json.Marshal(param)
-	if err != nil {
-		return nil, err
-	}
-	pathParam0 = string(pathParamBuf0)
-
-	serverURL, err := url.Parse(server)
-	if err != nil {
-		return nil, err
+	switch render.GetContentType(resp.Header.Get("Content-Type")) {
+	case render.ContentTypeJSON:
+		err = render.DecodeJSON(resp.Body, v)
+	case render.ContentTypeXML:
+		err = render.DecodeXML(resp.Body, v)
+	default:
+		err = errors.New("defaultDecoder: unable to automatically decode the request content type")
 	}
 
-	operationPath := fmt.Sprintf("/contentObject/%s", pathParam0)
-	if operationPath[0] == '/' {
-		operationPath = "." + operationPath
-	}
-
-	queryURL, err := serverURL.Parse(operationPath)
-	if err != nil {
-		return nil, err
-	}
-
-	req, err := http.NewRequest("GET", queryURL.String(), nil)
-	if err != nil {
-		return nil, err
-	}
-
-	return req, nil
+	return err
 }
 
-// NewGetCookieRequest generates requests for GetCookie
-func NewGetCookieRequest(server string, params *GetCookieParams) (*http.Request, error) {
-	var err error
+// GetContentObject makes the request to the API endpoint.
+func (c *Client) GetContentObject(ctx context.Context, params GetContentObjectClientParams, opts ...func(*http.Request) error) error {
 
-	serverURL, err := url.Parse(server)
+	// Create the request
+	req, err := http.NewRequestWithContext(
+		ctx,
+		"GET",
+		buildURL(
+			c.BaseURL,
+			map[string]interface{}{
+				"param": params.Param,
+			},
+			nil,
+		),
+		nil,
+	)
 	if err != nil {
-		return nil, err
+		return fmt.Errorf("failed to build request: %w", err)
 	}
 
-	operationPath := fmt.Sprintf("/cookie")
-	if operationPath[0] == '/' {
-		operationPath = "." + operationPath
-	}
-
-	queryURL, err := serverURL.Parse(operationPath)
-	if err != nil {
-		return nil, err
-	}
-
-	req, err := http.NewRequest("GET", queryURL.String(), nil)
-	if err != nil {
-		return nil, err
-	}
-
-	if params.P != nil {
-		var cookieParam0 string
-
-		cookieParam0, err = runtime.StyleParamWithLocation("simple", false, "p", runtime.ParamLocationCookie, *params.P)
-		if err != nil {
-			return nil, err
-		}
-
-		cookie0 := &http.Cookie{
-			Name:  "p",
-			Value: cookieParam0,
-		}
-		req.AddCookie(cookie0)
-	}
-
-	if params.Ep != nil {
-		var cookieParam1 string
-
-		cookieParam1, err = runtime.StyleParamWithLocation("simple", true, "ep", runtime.ParamLocationCookie, *params.Ep)
-		if err != nil {
-			return nil, err
-		}
-
-		cookie1 := &http.Cookie{
-			Name:  "ep",
-			Value: cookieParam1,
-		}
-		req.AddCookie(cookie1)
-	}
-
-	if params.Ea != nil {
-		var cookieParam2 string
-
-		cookieParam2, err = runtime.StyleParamWithLocation("simple", true, "ea", runtime.ParamLocationCookie, *params.Ea)
-		if err != nil {
-			return nil, err
-		}
-
-		cookie2 := &http.Cookie{
-			Name:  "ea",
-			Value: cookieParam2,
-		}
-		req.AddCookie(cookie2)
-	}
-
-	if params.A != nil {
-		var cookieParam3 string
-
-		cookieParam3, err = runtime.StyleParamWithLocation("simple", false, "a", runtime.ParamLocationCookie, *params.A)
-		if err != nil {
-			return nil, err
-		}
-
-		cookie3 := &http.Cookie{
-			Name:  "a",
-			Value: cookieParam3,
-		}
-		req.AddCookie(cookie3)
-	}
-
-	if params.Eo != nil {
-		var cookieParam4 string
-
-		cookieParam4, err = runtime.StyleParamWithLocation("simple", true, "eo", runtime.ParamLocationCookie, *params.Eo)
-		if err != nil {
-			return nil, err
-		}
-
-		cookie4 := &http.Cookie{
-			Name:  "eo",
-			Value: cookieParam4,
-		}
-		req.AddCookie(cookie4)
-	}
-
-	if params.O != nil {
-		var cookieParam5 string
-
-		cookieParam5, err = runtime.StyleParamWithLocation("simple", false, "o", runtime.ParamLocationCookie, *params.O)
-		if err != nil {
-			return nil, err
-		}
-
-		cookie5 := &http.Cookie{
-			Name:  "o",
-			Value: cookieParam5,
-		}
-		req.AddCookie(cookie5)
-	}
-
-	if params.Co != nil {
-		var cookieParam6 string
-
-		var cookieParamBuf6 []byte
-		cookieParamBuf6, err = json.Marshal(*params.Co)
-		if err != nil {
-			return nil, err
-		}
-		cookieParam6 = url.QueryEscape(string(cookieParamBuf6))
-
-		cookie6 := &http.Cookie{
-			Name:  "co",
-			Value: cookieParam6,
-		}
-		req.AddCookie(cookie6)
-	}
-
-	if params.N1s != nil {
-		var cookieParam7 string
-
-		cookieParam7, err = runtime.StyleParamWithLocation("simple", true, "1s", runtime.ParamLocationCookie, *params.N1s)
-		if err != nil {
-			return nil, err
-		}
-
-		cookie7 := &http.Cookie{
-			Name:  "1s",
-			Value: cookieParam7,
-		}
-		req.AddCookie(cookie7)
-	}
-
-	return req, nil
-}
-
-// NewGetHeaderRequest generates requests for GetHeader
-func NewGetHeaderRequest(server string, params *GetHeaderParams) (*http.Request, error) {
-	var err error
-
-	serverURL, err := url.Parse(server)
-	if err != nil {
-		return nil, err
-	}
-
-	operationPath := fmt.Sprintf("/header")
-	if operationPath[0] == '/' {
-		operationPath = "." + operationPath
-	}
-
-	queryURL, err := serverURL.Parse(operationPath)
-	if err != nil {
-		return nil, err
-	}
-
-	req, err := http.NewRequest("GET", queryURL.String(), nil)
-	if err != nil {
-		return nil, err
-	}
-
-	if params.XPrimitive != nil {
-		var headerParam0 string
-
-		headerParam0, err = runtime.StyleParamWithLocation("simple", false, "X-Primitive", runtime.ParamLocationHeader, *params.XPrimitive)
-		if err != nil {
-			return nil, err
-		}
-
-		req.Header.Set("X-Primitive", headerParam0)
-	}
-
-	if params.XPrimitiveExploded != nil {
-		var headerParam1 string
-
-		headerParam1, err = runtime.StyleParamWithLocation("simple", true, "X-Primitive-Exploded", runtime.ParamLocationHeader, *params.XPrimitiveExploded)
-		if err != nil {
-			return nil, err
-		}
-
-		req.Header.Set("X-Primitive-Exploded", headerParam1)
-	}
-
-	if params.XArrayExploded != nil {
-		var headerParam2 string
-
-		headerParam2, err = runtime.StyleParamWithLocation("simple", true, "X-Array-Exploded", runtime.ParamLocationHeader, *params.XArrayExploded)
-		if err != nil {
-			return nil, err
-		}
-
-		req.Header.Set("X-Array-Exploded", headerParam2)
-	}
-
-	if params.XArray != nil {
-		var headerParam3 string
-
-		headerParam3, err = runtime.StyleParamWithLocation("simple", false, "X-Array", runtime.ParamLocationHeader, *params.XArray)
-		if err != nil {
-			return nil, err
-		}
-
-		req.Header.Set("X-Array", headerParam3)
-	}
-
-	if params.XObjectExploded != nil {
-		var headerParam4 string
-
-		headerParam4, err = runtime.StyleParamWithLocation("simple", true, "X-Object-Exploded", runtime.ParamLocationHeader, *params.XObjectExploded)
-		if err != nil {
-			return nil, err
-		}
-
-		req.Header.Set("X-Object-Exploded", headerParam4)
-	}
-
-	if params.XObject != nil {
-		var headerParam5 string
-
-		headerParam5, err = runtime.StyleParamWithLocation("simple", false, "X-Object", runtime.ParamLocationHeader, *params.XObject)
-		if err != nil {
-			return nil, err
-		}
-
-		req.Header.Set("X-Object", headerParam5)
-	}
-
-	if params.XComplexObject != nil {
-		var headerParam6 string
-
-		var headerParamBuf6 []byte
-		headerParamBuf6, err = json.Marshal(*params.XComplexObject)
-		if err != nil {
-			return nil, err
-		}
-		headerParam6 = string(headerParamBuf6)
-
-		req.Header.Set("X-Complex-Object", headerParam6)
-	}
-
-	if params.N1StartingWithNumber != nil {
-		var headerParam7 string
-
-		headerParam7, err = runtime.StyleParamWithLocation("simple", false, "1-Starting-With-Number", runtime.ParamLocationHeader, *params.N1StartingWithNumber)
-		if err != nil {
-			return nil, err
-		}
-
-		req.Header.Set("1-Starting-With-Number", headerParam7)
-	}
-
-	return req, nil
-}
-
-// NewGetLabelExplodeArrayRequest generates requests for GetLabelExplodeArray
-func NewGetLabelExplodeArrayRequest(server string, param []int32) (*http.Request, error) {
-	var err error
-
-	var pathParam0 string
-
-	pathParam0, err = runtime.StyleParamWithLocation("label", true, "param", runtime.ParamLocationPath, param)
-	if err != nil {
-		return nil, err
-	}
-
-	serverURL, err := url.Parse(server)
-	if err != nil {
-		return nil, err
-	}
-
-	operationPath := fmt.Sprintf("/labelExplodeArray/%s", pathParam0)
-	if operationPath[0] == '/' {
-		operationPath = "." + operationPath
-	}
-
-	queryURL, err := serverURL.Parse(operationPath)
-	if err != nil {
-		return nil, err
-	}
-
-	req, err := http.NewRequest("GET", queryURL.String(), nil)
-	if err != nil {
-		return nil, err
-	}
-
-	return req, nil
-}
-
-// NewGetLabelExplodeObjectRequest generates requests for GetLabelExplodeObject
-func NewGetLabelExplodeObjectRequest(server string, param Object) (*http.Request, error) {
-	var err error
-
-	var pathParam0 string
-
-	pathParam0, err = runtime.StyleParamWithLocation("label", true, "param", runtime.ParamLocationPath, param)
-	if err != nil {
-		return nil, err
-	}
-
-	serverURL, err := url.Parse(server)
-	if err != nil {
-		return nil, err
-	}
-
-	operationPath := fmt.Sprintf("/labelExplodeObject/%s", pathParam0)
-	if operationPath[0] == '/' {
-		operationPath = "." + operationPath
-	}
-
-	queryURL, err := serverURL.Parse(operationPath)
-	if err != nil {
-		return nil, err
-	}
-
-	req, err := http.NewRequest("GET", queryURL.String(), nil)
-	if err != nil {
-		return nil, err
-	}
-
-	return req, nil
-}
-
-// NewGetLabelNoExplodeArrayRequest generates requests for GetLabelNoExplodeArray
-func NewGetLabelNoExplodeArrayRequest(server string, param []int32) (*http.Request, error) {
-	var err error
-
-	var pathParam0 string
-
-	pathParam0, err = runtime.StyleParamWithLocation("label", false, "param", runtime.ParamLocationPath, param)
-	if err != nil {
-		return nil, err
-	}
-
-	serverURL, err := url.Parse(server)
-	if err != nil {
-		return nil, err
-	}
-
-	operationPath := fmt.Sprintf("/labelNoExplodeArray/%s", pathParam0)
-	if operationPath[0] == '/' {
-		operationPath = "." + operationPath
-	}
-
-	queryURL, err := serverURL.Parse(operationPath)
-	if err != nil {
-		return nil, err
-	}
-
-	req, err := http.NewRequest("GET", queryURL.String(), nil)
-	if err != nil {
-		return nil, err
-	}
-
-	return req, nil
-}
-
-// NewGetLabelNoExplodeObjectRequest generates requests for GetLabelNoExplodeObject
-func NewGetLabelNoExplodeObjectRequest(server string, param Object) (*http.Request, error) {
-	var err error
-
-	var pathParam0 string
-
-	pathParam0, err = runtime.StyleParamWithLocation("label", false, "param", runtime.ParamLocationPath, param)
-	if err != nil {
-		return nil, err
-	}
-
-	serverURL, err := url.Parse(server)
-	if err != nil {
-		return nil, err
-	}
-
-	operationPath := fmt.Sprintf("/labelNoExplodeObject/%s", pathParam0)
-	if operationPath[0] == '/' {
-		operationPath = "." + operationPath
-	}
-
-	queryURL, err := serverURL.Parse(operationPath)
-	if err != nil {
-		return nil, err
-	}
-
-	req, err := http.NewRequest("GET", queryURL.String(), nil)
-	if err != nil {
-		return nil, err
-	}
-
-	return req, nil
-}
-
-// NewGetMatrixExplodeArrayRequest generates requests for GetMatrixExplodeArray
-func NewGetMatrixExplodeArrayRequest(server string, id []int32) (*http.Request, error) {
-	var err error
-
-	var pathParam0 string
-
-	pathParam0, err = runtime.StyleParamWithLocation("matrix", true, "id", runtime.ParamLocationPath, id)
-	if err != nil {
-		return nil, err
-	}
-
-	serverURL, err := url.Parse(server)
-	if err != nil {
-		return nil, err
-	}
-
-	operationPath := fmt.Sprintf("/matrixExplodeArray/%s", pathParam0)
-	if operationPath[0] == '/' {
-		operationPath = "." + operationPath
-	}
-
-	queryURL, err := serverURL.Parse(operationPath)
-	if err != nil {
-		return nil, err
-	}
-
-	req, err := http.NewRequest("GET", queryURL.String(), nil)
-	if err != nil {
-		return nil, err
-	}
-
-	return req, nil
-}
-
-// NewGetMatrixExplodeObjectRequest generates requests for GetMatrixExplodeObject
-func NewGetMatrixExplodeObjectRequest(server string, id Object) (*http.Request, error) {
-	var err error
-
-	var pathParam0 string
-
-	pathParam0, err = runtime.StyleParamWithLocation("matrix", true, "id", runtime.ParamLocationPath, id)
-	if err != nil {
-		return nil, err
-	}
-
-	serverURL, err := url.Parse(server)
-	if err != nil {
-		return nil, err
-	}
-
-	operationPath := fmt.Sprintf("/matrixExplodeObject/%s", pathParam0)
-	if operationPath[0] == '/' {
-		operationPath = "." + operationPath
-	}
-
-	queryURL, err := serverURL.Parse(operationPath)
-	if err != nil {
-		return nil, err
-	}
-
-	req, err := http.NewRequest("GET", queryURL.String(), nil)
-	if err != nil {
-		return nil, err
-	}
-
-	return req, nil
-}
-
-// NewGetMatrixNoExplodeArrayRequest generates requests for GetMatrixNoExplodeArray
-func NewGetMatrixNoExplodeArrayRequest(server string, id []int32) (*http.Request, error) {
-	var err error
-
-	var pathParam0 string
-
-	pathParam0, err = runtime.StyleParamWithLocation("matrix", false, "id", runtime.ParamLocationPath, id)
-	if err != nil {
-		return nil, err
-	}
-
-	serverURL, err := url.Parse(server)
-	if err != nil {
-		return nil, err
-	}
-
-	operationPath := fmt.Sprintf("/matrixNoExplodeArray/%s", pathParam0)
-	if operationPath[0] == '/' {
-		operationPath = "." + operationPath
-	}
-
-	queryURL, err := serverURL.Parse(operationPath)
-	if err != nil {
-		return nil, err
-	}
-
-	req, err := http.NewRequest("GET", queryURL.String(), nil)
-	if err != nil {
-		return nil, err
-	}
-
-	return req, nil
-}
-
-// NewGetMatrixNoExplodeObjectRequest generates requests for GetMatrixNoExplodeObject
-func NewGetMatrixNoExplodeObjectRequest(server string, id Object) (*http.Request, error) {
-	var err error
-
-	var pathParam0 string
-
-	pathParam0, err = runtime.StyleParamWithLocation("matrix", false, "id", runtime.ParamLocationPath, id)
-	if err != nil {
-		return nil, err
-	}
-
-	serverURL, err := url.Parse(server)
-	if err != nil {
-		return nil, err
-	}
-
-	operationPath := fmt.Sprintf("/matrixNoExplodeObject/%s", pathParam0)
-	if operationPath[0] == '/' {
-		operationPath = "." + operationPath
-	}
-
-	queryURL, err := serverURL.Parse(operationPath)
-	if err != nil {
-		return nil, err
-	}
-
-	req, err := http.NewRequest("GET", queryURL.String(), nil)
-	if err != nil {
-		return nil, err
-	}
-
-	return req, nil
-}
-
-// NewGetPassThroughRequest generates requests for GetPassThrough
-func NewGetPassThroughRequest(server string, param string) (*http.Request, error) {
-	var err error
-
-	var pathParam0 string
-
-	pathParam0 = param
-
-	serverURL, err := url.Parse(server)
-	if err != nil {
-		return nil, err
-	}
-
-	operationPath := fmt.Sprintf("/passThrough/%s", pathParam0)
-	if operationPath[0] == '/' {
-		operationPath = "." + operationPath
-	}
-
-	queryURL, err := serverURL.Parse(operationPath)
-	if err != nil {
-		return nil, err
-	}
-
-	req, err := http.NewRequest("GET", queryURL.String(), nil)
-	if err != nil {
-		return nil, err
-	}
-
-	return req, nil
-}
-
-// NewGetDeepObjectRequest generates requests for GetDeepObject
-func NewGetDeepObjectRequest(server string, params *GetDeepObjectParams) (*http.Request, error) {
-	var err error
-
-	serverURL, err := url.Parse(server)
-	if err != nil {
-		return nil, err
-	}
-
-	operationPath := fmt.Sprintf("/queryDeepObject")
-	if operationPath[0] == '/' {
-		operationPath = "." + operationPath
-	}
-
-	queryURL, err := serverURL.Parse(operationPath)
-	if err != nil {
-		return nil, err
-	}
-
-	queryValues := queryURL.Query()
-
-	if queryFrag, err := runtime.StyleParamWithLocation("deepObject", true, "deepObj", runtime.ParamLocationQuery, params.DeepObj); err != nil {
-		return nil, err
-	} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
-		return nil, err
-	} else {
-		for k, v := range parsed {
-			for _, v2 := range v {
-				queryValues.Add(k, v2)
-			}
+	// Apply any request editors
+	for _, fn := range c.reqEditors {
+		if err := fn(req); err != nil {
+			return fmt.Errorf("failed to apply request editor: %w", err)
 		}
 	}
 
-	queryURL.RawQuery = queryValues.Encode()
-
-	req, err := http.NewRequest("GET", queryURL.String(), nil)
-	if err != nil {
-		return nil, err
+	// Do the request
+	_, errDo := c.client.Do(req)
+	if errDo != nil {
+		return fmt.Errorf("failed to send request: %w", errDo)
 	}
 
-	return req, nil
-}
-
-// NewGetQueryFormRequest generates requests for GetQueryForm
-func NewGetQueryFormRequest(server string, params *GetQueryFormParams) (*http.Request, error) {
-	var err error
-
-	serverURL, err := url.Parse(server)
-	if err != nil {
-		return nil, err
-	}
-
-	operationPath := fmt.Sprintf("/queryForm")
-	if operationPath[0] == '/' {
-		operationPath = "." + operationPath
-	}
-
-	queryURL, err := serverURL.Parse(operationPath)
-	if err != nil {
-		return nil, err
-	}
-
-	queryValues := queryURL.Query()
-
-	if params.Ea != nil {
-
-		if queryFrag, err := runtime.StyleParamWithLocation("form", true, "ea", runtime.ParamLocationQuery, *params.Ea); err != nil {
-			return nil, err
-		} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
-			return nil, err
-		} else {
-			for k, v := range parsed {
-				for _, v2 := range v {
-					queryValues.Add(k, v2)
-				}
-			}
-		}
-
-	}
-
-	if params.A != nil {
-
-		if queryFrag, err := runtime.StyleParamWithLocation("form", false, "a", runtime.ParamLocationQuery, *params.A); err != nil {
-			return nil, err
-		} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
-			return nil, err
-		} else {
-			for k, v := range parsed {
-				for _, v2 := range v {
-					queryValues.Add(k, v2)
-				}
-			}
-		}
-
-	}
-
-	if params.Eo != nil {
-
-		if queryFrag, err := runtime.StyleParamWithLocation("form", true, "eo", runtime.ParamLocationQuery, *params.Eo); err != nil {
-			return nil, err
-		} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
-			return nil, err
-		} else {
-			for k, v := range parsed {
-				for _, v2 := range v {
-					queryValues.Add(k, v2)
-				}
-			}
-		}
-
-	}
-
-	if params.O != nil {
-
-		if queryFrag, err := runtime.StyleParamWithLocation("form", false, "o", runtime.ParamLocationQuery, *params.O); err != nil {
-			return nil, err
-		} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
-			return nil, err
-		} else {
-			for k, v := range parsed {
-				for _, v2 := range v {
-					queryValues.Add(k, v2)
-				}
-			}
-		}
-
-	}
-
-	if params.Ep != nil {
-
-		if queryFrag, err := runtime.StyleParamWithLocation("form", true, "ep", runtime.ParamLocationQuery, *params.Ep); err != nil {
-			return nil, err
-		} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
-			return nil, err
-		} else {
-			for k, v := range parsed {
-				for _, v2 := range v {
-					queryValues.Add(k, v2)
-				}
-			}
-		}
-
-	}
-
-	if params.P != nil {
-
-		if queryFrag, err := runtime.StyleParamWithLocation("form", false, "p", runtime.ParamLocationQuery, *params.P); err != nil {
-			return nil, err
-		} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
-			return nil, err
-		} else {
-			for k, v := range parsed {
-				for _, v2 := range v {
-					queryValues.Add(k, v2)
-				}
-			}
-		}
-
-	}
-
-	if params.Ps != nil {
-
-		if queryFrag, err := runtime.StyleParamWithLocation("form", true, "ps", runtime.ParamLocationQuery, *params.Ps); err != nil {
-			return nil, err
-		} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
-			return nil, err
-		} else {
-			for k, v := range parsed {
-				for _, v2 := range v {
-					queryValues.Add(k, v2)
-				}
-			}
-		}
-
-	}
-
-	if params.Co != nil {
-
-		if queryParamBuf, err := json.Marshal(*params.Co); err != nil {
-			return nil, err
-		} else {
-			queryValues.Add("co", string(queryParamBuf))
-		}
-
-	}
-
-	if params.N1s != nil {
-
-		if queryFrag, err := runtime.StyleParamWithLocation("form", true, "1s", runtime.ParamLocationQuery, *params.N1s); err != nil {
-			return nil, err
-		} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
-			return nil, err
-		} else {
-			for k, v := range parsed {
-				for _, v2 := range v {
-					queryValues.Add(k, v2)
-				}
-			}
-		}
-
-	}
-
-	queryURL.RawQuery = queryValues.Encode()
-
-	req, err := http.NewRequest("GET", queryURL.String(), nil)
-	if err != nil {
-		return nil, err
-	}
-
-	return req, nil
-}
-
-// NewGetSimpleExplodeArrayRequest generates requests for GetSimpleExplodeArray
-func NewGetSimpleExplodeArrayRequest(server string, param []int32) (*http.Request, error) {
-	var err error
-
-	var pathParam0 string
-
-	pathParam0, err = runtime.StyleParamWithLocation("simple", true, "param", runtime.ParamLocationPath, param)
-	if err != nil {
-		return nil, err
-	}
-
-	serverURL, err := url.Parse(server)
-	if err != nil {
-		return nil, err
-	}
-
-	operationPath := fmt.Sprintf("/simpleExplodeArray/%s", pathParam0)
-	if operationPath[0] == '/' {
-		operationPath = "." + operationPath
-	}
-
-	queryURL, err := serverURL.Parse(operationPath)
-	if err != nil {
-		return nil, err
-	}
-
-	req, err := http.NewRequest("GET", queryURL.String(), nil)
-	if err != nil {
-		return nil, err
-	}
-
-	return req, nil
-}
-
-// NewGetSimpleExplodeObjectRequest generates requests for GetSimpleExplodeObject
-func NewGetSimpleExplodeObjectRequest(server string, param Object) (*http.Request, error) {
-	var err error
-
-	var pathParam0 string
-
-	pathParam0, err = runtime.StyleParamWithLocation("simple", true, "param", runtime.ParamLocationPath, param)
-	if err != nil {
-		return nil, err
-	}
-
-	serverURL, err := url.Parse(server)
-	if err != nil {
-		return nil, err
-	}
-
-	operationPath := fmt.Sprintf("/simpleExplodeObject/%s", pathParam0)
-	if operationPath[0] == '/' {
-		operationPath = "." + operationPath
-	}
-
-	queryURL, err := serverURL.Parse(operationPath)
-	if err != nil {
-		return nil, err
-	}
-
-	req, err := http.NewRequest("GET", queryURL.String(), nil)
-	if err != nil {
-		return nil, err
-	}
-
-	return req, nil
-}
-
-// NewGetSimpleNoExplodeArrayRequest generates requests for GetSimpleNoExplodeArray
-func NewGetSimpleNoExplodeArrayRequest(server string, param []int32) (*http.Request, error) {
-	var err error
-
-	var pathParam0 string
-
-	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "param", runtime.ParamLocationPath, param)
-	if err != nil {
-		return nil, err
-	}
-
-	serverURL, err := url.Parse(server)
-	if err != nil {
-		return nil, err
-	}
-
-	operationPath := fmt.Sprintf("/simpleNoExplodeArray/%s", pathParam0)
-	if operationPath[0] == '/' {
-		operationPath = "." + operationPath
-	}
-
-	queryURL, err := serverURL.Parse(operationPath)
-	if err != nil {
-		return nil, err
-	}
-
-	req, err := http.NewRequest("GET", queryURL.String(), nil)
-	if err != nil {
-		return nil, err
-	}
-
-	return req, nil
-}
-
-// NewGetSimpleNoExplodeObjectRequest generates requests for GetSimpleNoExplodeObject
-func NewGetSimpleNoExplodeObjectRequest(server string, param Object) (*http.Request, error) {
-	var err error
-
-	var pathParam0 string
-
-	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "param", runtime.ParamLocationPath, param)
-	if err != nil {
-		return nil, err
-	}
-
-	serverURL, err := url.Parse(server)
-	if err != nil {
-		return nil, err
-	}
-
-	operationPath := fmt.Sprintf("/simpleNoExplodeObject/%s", pathParam0)
-	if operationPath[0] == '/' {
-		operationPath = "." + operationPath
-	}
-
-	queryURL, err := serverURL.Parse(operationPath)
-	if err != nil {
-		return nil, err
-	}
-
-	req, err := http.NewRequest("GET", queryURL.String(), nil)
-	if err != nil {
-		return nil, err
-	}
-
-	return req, nil
-}
-
-// NewGetSimplePrimitiveRequest generates requests for GetSimplePrimitive
-func NewGetSimplePrimitiveRequest(server string, param int32) (*http.Request, error) {
-	var err error
-
-	var pathParam0 string
-
-	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "param", runtime.ParamLocationPath, param)
-	if err != nil {
-		return nil, err
-	}
-
-	serverURL, err := url.Parse(server)
-	if err != nil {
-		return nil, err
-	}
-
-	operationPath := fmt.Sprintf("/simplePrimitive/%s", pathParam0)
-	if operationPath[0] == '/' {
-		operationPath = "." + operationPath
-	}
-
-	queryURL, err := serverURL.Parse(operationPath)
-	if err != nil {
-		return nil, err
-	}
-
-	req, err := http.NewRequest("GET", queryURL.String(), nil)
-	if err != nil {
-		return nil, err
-	}
-
-	return req, nil
-}
-
-// NewGetStartingWithNumberRequest generates requests for GetStartingWithNumber
-func NewGetStartingWithNumberRequest(server string, n1param string) (*http.Request, error) {
-	var err error
-
-	var pathParam0 string
-
-	pathParam0 = n1param
-
-	serverURL, err := url.Parse(server)
-	if err != nil {
-		return nil, err
-	}
-
-	operationPath := fmt.Sprintf("/startingWithNumber/%s", pathParam0)
-	if operationPath[0] == '/' {
-		operationPath = "." + operationPath
-	}
-
-	queryURL, err := serverURL.Parse(operationPath)
-	if err != nil {
-		return nil, err
-	}
-
-	req, err := http.NewRequest("GET", queryURL.String(), nil)
-	if err != nil {
-		return nil, err
-	}
-
-	return req, nil
-}
-
-func (c *Client) applyEditors(ctx context.Context, req *http.Request, additionalEditors []RequestEditorFn) error {
-	for _, r := range c.RequestEditors {
-		if err := r(ctx, req); err != nil {
-			return err
-		}
-	}
-	for _, r := range additionalEditors {
-		if err := r(ctx, req); err != nil {
-			return err
-		}
-	}
 	return nil
 }
 
-// ClientWithResponses builds on ClientInterface to offer response payloads
-type ClientWithResponses struct {
-	ClientInterface
-}
+// GetCookie makes the request to the API endpoint.
+func (c *Client) GetCookie(ctx context.Context, params GetCookieClientParams, opts ...func(*http.Request) error) error {
 
-// NewClientWithResponses creates a new ClientWithResponses, which wraps
-// Client with return type handling
-func NewClientWithResponses(server string, opts ...ClientOption) (*ClientWithResponses, error) {
-	client, err := NewClient(server, opts...)
+	// Create the request
+	req, err := http.NewRequestWithContext(
+		ctx,
+		"GET",
+		buildURL(
+			c.BaseURL,
+			nil,
+			nil,
+		),
+		nil,
+	)
 	if err != nil {
-		return nil, err
+		return fmt.Errorf("failed to build request: %w", err)
 	}
-	return &ClientWithResponses{client}, nil
-}
+	// Set the cookies
 
-// WithBaseURL overrides the baseURL.
-func WithClientBaseURL(baseURL string) ClientOption {
-	return func(c *Client) error {
-		newBaseURL, err := url.Parse(baseURL)
-		if err != nil {
-			return err
+	req.AddCookie(params.P)
+	req.AddCookie(params.Ep)
+	req.AddCookie(params.Ea)
+	req.AddCookie(params.A)
+	req.AddCookie(params.Eo)
+	req.AddCookie(params.O)
+	req.AddCookie(params.Co)
+	req.AddCookie(params.N1s)
+
+	// Apply any request editors
+	for _, fn := range c.reqEditors {
+		if err := fn(req); err != nil {
+			return fmt.Errorf("failed to apply request editor: %w", err)
 		}
-		c.Server = newBaseURL.String()
-		return nil
 	}
-}
 
-// ClientWithResponsesInterface is the interface specification for the client with responses above.
-type ClientWithResponsesInterface interface {
-	// GetContentObject request
-	GetContentObjectWithResponse(ctx context.Context, param ComplexObject, reqEditors ...RequestEditorFn) (*GetContentObjectResponse, error)
-
-	// GetCookie request
-	GetCookieWithResponse(ctx context.Context, params *GetCookieParams, reqEditors ...RequestEditorFn) (*GetCookieResponse, error)
-
-	// GetHeader request
-	GetHeaderWithResponse(ctx context.Context, params *GetHeaderParams, reqEditors ...RequestEditorFn) (*GetHeaderResponse, error)
-
-	// GetLabelExplodeArray request
-	GetLabelExplodeArrayWithResponse(ctx context.Context, param []int32, reqEditors ...RequestEditorFn) (*GetLabelExplodeArrayResponse, error)
-
-	// GetLabelExplodeObject request
-	GetLabelExplodeObjectWithResponse(ctx context.Context, param Object, reqEditors ...RequestEditorFn) (*GetLabelExplodeObjectResponse, error)
-
-	// GetLabelNoExplodeArray request
-	GetLabelNoExplodeArrayWithResponse(ctx context.Context, param []int32, reqEditors ...RequestEditorFn) (*GetLabelNoExplodeArrayResponse, error)
-
-	// GetLabelNoExplodeObject request
-	GetLabelNoExplodeObjectWithResponse(ctx context.Context, param Object, reqEditors ...RequestEditorFn) (*GetLabelNoExplodeObjectResponse, error)
-
-	// GetMatrixExplodeArray request
-	GetMatrixExplodeArrayWithResponse(ctx context.Context, id []int32, reqEditors ...RequestEditorFn) (*GetMatrixExplodeArrayResponse, error)
-
-	// GetMatrixExplodeObject request
-	GetMatrixExplodeObjectWithResponse(ctx context.Context, id Object, reqEditors ...RequestEditorFn) (*GetMatrixExplodeObjectResponse, error)
-
-	// GetMatrixNoExplodeArray request
-	GetMatrixNoExplodeArrayWithResponse(ctx context.Context, id []int32, reqEditors ...RequestEditorFn) (*GetMatrixNoExplodeArrayResponse, error)
-
-	// GetMatrixNoExplodeObject request
-	GetMatrixNoExplodeObjectWithResponse(ctx context.Context, id Object, reqEditors ...RequestEditorFn) (*GetMatrixNoExplodeObjectResponse, error)
-
-	// GetPassThrough request
-	GetPassThroughWithResponse(ctx context.Context, param string, reqEditors ...RequestEditorFn) (*GetPassThroughResponse, error)
-
-	// GetDeepObject request
-	GetDeepObjectWithResponse(ctx context.Context, params *GetDeepObjectParams, reqEditors ...RequestEditorFn) (*GetDeepObjectResponse, error)
-
-	// GetQueryForm request
-	GetQueryFormWithResponse(ctx context.Context, params *GetQueryFormParams, reqEditors ...RequestEditorFn) (*GetQueryFormResponse, error)
-
-	// GetSimpleExplodeArray request
-	GetSimpleExplodeArrayWithResponse(ctx context.Context, param []int32, reqEditors ...RequestEditorFn) (*GetSimpleExplodeArrayResponse, error)
-
-	// GetSimpleExplodeObject request
-	GetSimpleExplodeObjectWithResponse(ctx context.Context, param Object, reqEditors ...RequestEditorFn) (*GetSimpleExplodeObjectResponse, error)
-
-	// GetSimpleNoExplodeArray request
-	GetSimpleNoExplodeArrayWithResponse(ctx context.Context, param []int32, reqEditors ...RequestEditorFn) (*GetSimpleNoExplodeArrayResponse, error)
-
-	// GetSimpleNoExplodeObject request
-	GetSimpleNoExplodeObjectWithResponse(ctx context.Context, param Object, reqEditors ...RequestEditorFn) (*GetSimpleNoExplodeObjectResponse, error)
-
-	// GetSimplePrimitive request
-	GetSimplePrimitiveWithResponse(ctx context.Context, param int32, reqEditors ...RequestEditorFn) (*GetSimplePrimitiveResponse, error)
-
-	// GetStartingWithNumber request
-	GetStartingWithNumberWithResponse(ctx context.Context, n1param string, reqEditors ...RequestEditorFn) (*GetStartingWithNumberResponse, error)
-}
-
-type GetContentObjectResponse struct {
-	Body         []byte
-	HTTPResponse *http.Response
-}
-
-// Status returns HTTPResponse.Status
-func (r GetContentObjectResponse) Status() string {
-	if r.HTTPResponse != nil {
-		return r.HTTPResponse.Status
+	// Do the request
+	_, errDo := c.client.Do(req)
+	if errDo != nil {
+		return fmt.Errorf("failed to send request: %w", errDo)
 	}
-	return http.StatusText(0)
+
+	return nil
 }
 
-// StatusCode returns HTTPResponse.StatusCode
-func (r GetContentObjectResponse) StatusCode() int {
-	if r.HTTPResponse != nil {
-		return r.HTTPResponse.StatusCode
-	}
-	return 0
-}
+// GetHeader makes the request to the API endpoint.
+func (c *Client) GetHeader(ctx context.Context, params GetHeaderClientParams, opts ...func(*http.Request) error) error {
 
-type GetCookieResponse struct {
-	Body         []byte
-	HTTPResponse *http.Response
-}
-
-// Status returns HTTPResponse.Status
-func (r GetCookieResponse) Status() string {
-	if r.HTTPResponse != nil {
-		return r.HTTPResponse.Status
-	}
-	return http.StatusText(0)
-}
-
-// StatusCode returns HTTPResponse.StatusCode
-func (r GetCookieResponse) StatusCode() int {
-	if r.HTTPResponse != nil {
-		return r.HTTPResponse.StatusCode
-	}
-	return 0
-}
-
-type GetHeaderResponse struct {
-	Body         []byte
-	HTTPResponse *http.Response
-}
-
-// Status returns HTTPResponse.Status
-func (r GetHeaderResponse) Status() string {
-	if r.HTTPResponse != nil {
-		return r.HTTPResponse.Status
-	}
-	return http.StatusText(0)
-}
-
-// StatusCode returns HTTPResponse.StatusCode
-func (r GetHeaderResponse) StatusCode() int {
-	if r.HTTPResponse != nil {
-		return r.HTTPResponse.StatusCode
-	}
-	return 0
-}
-
-type GetLabelExplodeArrayResponse struct {
-	Body         []byte
-	HTTPResponse *http.Response
-}
-
-// Status returns HTTPResponse.Status
-func (r GetLabelExplodeArrayResponse) Status() string {
-	if r.HTTPResponse != nil {
-		return r.HTTPResponse.Status
-	}
-	return http.StatusText(0)
-}
-
-// StatusCode returns HTTPResponse.StatusCode
-func (r GetLabelExplodeArrayResponse) StatusCode() int {
-	if r.HTTPResponse != nil {
-		return r.HTTPResponse.StatusCode
-	}
-	return 0
-}
-
-type GetLabelExplodeObjectResponse struct {
-	Body         []byte
-	HTTPResponse *http.Response
-}
-
-// Status returns HTTPResponse.Status
-func (r GetLabelExplodeObjectResponse) Status() string {
-	if r.HTTPResponse != nil {
-		return r.HTTPResponse.Status
-	}
-	return http.StatusText(0)
-}
-
-// StatusCode returns HTTPResponse.StatusCode
-func (r GetLabelExplodeObjectResponse) StatusCode() int {
-	if r.HTTPResponse != nil {
-		return r.HTTPResponse.StatusCode
-	}
-	return 0
-}
-
-type GetLabelNoExplodeArrayResponse struct {
-	Body         []byte
-	HTTPResponse *http.Response
-}
-
-// Status returns HTTPResponse.Status
-func (r GetLabelNoExplodeArrayResponse) Status() string {
-	if r.HTTPResponse != nil {
-		return r.HTTPResponse.Status
-	}
-	return http.StatusText(0)
-}
-
-// StatusCode returns HTTPResponse.StatusCode
-func (r GetLabelNoExplodeArrayResponse) StatusCode() int {
-	if r.HTTPResponse != nil {
-		return r.HTTPResponse.StatusCode
-	}
-	return 0
-}
-
-type GetLabelNoExplodeObjectResponse struct {
-	Body         []byte
-	HTTPResponse *http.Response
-}
-
-// Status returns HTTPResponse.Status
-func (r GetLabelNoExplodeObjectResponse) Status() string {
-	if r.HTTPResponse != nil {
-		return r.HTTPResponse.Status
-	}
-	return http.StatusText(0)
-}
-
-// StatusCode returns HTTPResponse.StatusCode
-func (r GetLabelNoExplodeObjectResponse) StatusCode() int {
-	if r.HTTPResponse != nil {
-		return r.HTTPResponse.StatusCode
-	}
-	return 0
-}
-
-type GetMatrixExplodeArrayResponse struct {
-	Body         []byte
-	HTTPResponse *http.Response
-}
-
-// Status returns HTTPResponse.Status
-func (r GetMatrixExplodeArrayResponse) Status() string {
-	if r.HTTPResponse != nil {
-		return r.HTTPResponse.Status
-	}
-	return http.StatusText(0)
-}
-
-// StatusCode returns HTTPResponse.StatusCode
-func (r GetMatrixExplodeArrayResponse) StatusCode() int {
-	if r.HTTPResponse != nil {
-		return r.HTTPResponse.StatusCode
-	}
-	return 0
-}
-
-type GetMatrixExplodeObjectResponse struct {
-	Body         []byte
-	HTTPResponse *http.Response
-}
-
-// Status returns HTTPResponse.Status
-func (r GetMatrixExplodeObjectResponse) Status() string {
-	if r.HTTPResponse != nil {
-		return r.HTTPResponse.Status
-	}
-	return http.StatusText(0)
-}
-
-// StatusCode returns HTTPResponse.StatusCode
-func (r GetMatrixExplodeObjectResponse) StatusCode() int {
-	if r.HTTPResponse != nil {
-		return r.HTTPResponse.StatusCode
-	}
-	return 0
-}
-
-type GetMatrixNoExplodeArrayResponse struct {
-	Body         []byte
-	HTTPResponse *http.Response
-}
-
-// Status returns HTTPResponse.Status
-func (r GetMatrixNoExplodeArrayResponse) Status() string {
-	if r.HTTPResponse != nil {
-		return r.HTTPResponse.Status
-	}
-	return http.StatusText(0)
-}
-
-// StatusCode returns HTTPResponse.StatusCode
-func (r GetMatrixNoExplodeArrayResponse) StatusCode() int {
-	if r.HTTPResponse != nil {
-		return r.HTTPResponse.StatusCode
-	}
-	return 0
-}
-
-type GetMatrixNoExplodeObjectResponse struct {
-	Body         []byte
-	HTTPResponse *http.Response
-}
-
-// Status returns HTTPResponse.Status
-func (r GetMatrixNoExplodeObjectResponse) Status() string {
-	if r.HTTPResponse != nil {
-		return r.HTTPResponse.Status
-	}
-	return http.StatusText(0)
-}
-
-// StatusCode returns HTTPResponse.StatusCode
-func (r GetMatrixNoExplodeObjectResponse) StatusCode() int {
-	if r.HTTPResponse != nil {
-		return r.HTTPResponse.StatusCode
-	}
-	return 0
-}
-
-type GetPassThroughResponse struct {
-	Body         []byte
-	HTTPResponse *http.Response
-}
-
-// Status returns HTTPResponse.Status
-func (r GetPassThroughResponse) Status() string {
-	if r.HTTPResponse != nil {
-		return r.HTTPResponse.Status
-	}
-	return http.StatusText(0)
-}
-
-// StatusCode returns HTTPResponse.StatusCode
-func (r GetPassThroughResponse) StatusCode() int {
-	if r.HTTPResponse != nil {
-		return r.HTTPResponse.StatusCode
-	}
-	return 0
-}
-
-type GetDeepObjectResponse struct {
-	Body         []byte
-	HTTPResponse *http.Response
-}
-
-// Status returns HTTPResponse.Status
-func (r GetDeepObjectResponse) Status() string {
-	if r.HTTPResponse != nil {
-		return r.HTTPResponse.Status
-	}
-	return http.StatusText(0)
-}
-
-// StatusCode returns HTTPResponse.StatusCode
-func (r GetDeepObjectResponse) StatusCode() int {
-	if r.HTTPResponse != nil {
-		return r.HTTPResponse.StatusCode
-	}
-	return 0
-}
-
-type GetQueryFormResponse struct {
-	Body         []byte
-	HTTPResponse *http.Response
-}
-
-// Status returns HTTPResponse.Status
-func (r GetQueryFormResponse) Status() string {
-	if r.HTTPResponse != nil {
-		return r.HTTPResponse.Status
-	}
-	return http.StatusText(0)
-}
-
-// StatusCode returns HTTPResponse.StatusCode
-func (r GetQueryFormResponse) StatusCode() int {
-	if r.HTTPResponse != nil {
-		return r.HTTPResponse.StatusCode
-	}
-	return 0
-}
-
-type GetSimpleExplodeArrayResponse struct {
-	Body         []byte
-	HTTPResponse *http.Response
-}
-
-// Status returns HTTPResponse.Status
-func (r GetSimpleExplodeArrayResponse) Status() string {
-	if r.HTTPResponse != nil {
-		return r.HTTPResponse.Status
-	}
-	return http.StatusText(0)
-}
-
-// StatusCode returns HTTPResponse.StatusCode
-func (r GetSimpleExplodeArrayResponse) StatusCode() int {
-	if r.HTTPResponse != nil {
-		return r.HTTPResponse.StatusCode
-	}
-	return 0
-}
-
-type GetSimpleExplodeObjectResponse struct {
-	Body         []byte
-	HTTPResponse *http.Response
-}
-
-// Status returns HTTPResponse.Status
-func (r GetSimpleExplodeObjectResponse) Status() string {
-	if r.HTTPResponse != nil {
-		return r.HTTPResponse.Status
-	}
-	return http.StatusText(0)
-}
-
-// StatusCode returns HTTPResponse.StatusCode
-func (r GetSimpleExplodeObjectResponse) StatusCode() int {
-	if r.HTTPResponse != nil {
-		return r.HTTPResponse.StatusCode
-	}
-	return 0
-}
-
-type GetSimpleNoExplodeArrayResponse struct {
-	Body         []byte
-	HTTPResponse *http.Response
-}
-
-// Status returns HTTPResponse.Status
-func (r GetSimpleNoExplodeArrayResponse) Status() string {
-	if r.HTTPResponse != nil {
-		return r.HTTPResponse.Status
-	}
-	return http.StatusText(0)
-}
-
-// StatusCode returns HTTPResponse.StatusCode
-func (r GetSimpleNoExplodeArrayResponse) StatusCode() int {
-	if r.HTTPResponse != nil {
-		return r.HTTPResponse.StatusCode
-	}
-	return 0
-}
-
-type GetSimpleNoExplodeObjectResponse struct {
-	Body         []byte
-	HTTPResponse *http.Response
-}
-
-// Status returns HTTPResponse.Status
-func (r GetSimpleNoExplodeObjectResponse) Status() string {
-	if r.HTTPResponse != nil {
-		return r.HTTPResponse.Status
-	}
-	return http.StatusText(0)
-}
-
-// StatusCode returns HTTPResponse.StatusCode
-func (r GetSimpleNoExplodeObjectResponse) StatusCode() int {
-	if r.HTTPResponse != nil {
-		return r.HTTPResponse.StatusCode
-	}
-	return 0
-}
-
-type GetSimplePrimitiveResponse struct {
-	Body         []byte
-	HTTPResponse *http.Response
-}
-
-// Status returns HTTPResponse.Status
-func (r GetSimplePrimitiveResponse) Status() string {
-	if r.HTTPResponse != nil {
-		return r.HTTPResponse.Status
-	}
-	return http.StatusText(0)
-}
-
-// StatusCode returns HTTPResponse.StatusCode
-func (r GetSimplePrimitiveResponse) StatusCode() int {
-	if r.HTTPResponse != nil {
-		return r.HTTPResponse.StatusCode
-	}
-	return 0
-}
-
-type GetStartingWithNumberResponse struct {
-	Body         []byte
-	HTTPResponse *http.Response
-}
-
-// Status returns HTTPResponse.Status
-func (r GetStartingWithNumberResponse) Status() string {
-	if r.HTTPResponse != nil {
-		return r.HTTPResponse.Status
-	}
-	return http.StatusText(0)
-}
-
-// StatusCode returns HTTPResponse.StatusCode
-func (r GetStartingWithNumberResponse) StatusCode() int {
-	if r.HTTPResponse != nil {
-		return r.HTTPResponse.StatusCode
-	}
-	return 0
-}
-
-// GetContentObjectWithResponse request returning *GetContentObjectResponse
-func (c *ClientWithResponses) GetContentObjectWithResponse(ctx context.Context, param ComplexObject, reqEditors ...RequestEditorFn) (*GetContentObjectResponse, error) {
-	rsp, err := c.GetContentObject(ctx, param, reqEditors...)
+	// Create the request
+	req, err := http.NewRequestWithContext(
+		ctx,
+		"GET",
+		buildURL(
+			c.BaseURL,
+			nil,
+			nil,
+		),
+		nil,
+	)
 	if err != nil {
-		return nil, err
+		return fmt.Errorf("failed to build request: %w", err)
 	}
-	return ParseGetContentObjectResponse(rsp)
+	// Set the headers
+
+	req.Header.Set("X-Primitive", params.XPrimitive)
+	req.Header.Set("X-Primitive-Exploded", params.XPrimitiveExploded)
+	req.Header.Set("X-Array-Exploded", params.XArrayExploded)
+	req.Header.Set("X-Array", params.XArray)
+	req.Header.Set("X-Object-Exploded", params.XObjectExploded)
+	req.Header.Set("X-Object", params.XObject)
+	req.Header.Set("X-Complex-Object", params.XComplexObject)
+	req.Header.Set("1-Starting-With-Number", params.N1startingWithNumber)
+
+	// Apply any request editors
+	for _, fn := range c.reqEditors {
+		if err := fn(req); err != nil {
+			return fmt.Errorf("failed to apply request editor: %w", err)
+		}
+	}
+
+	// Do the request
+	_, errDo := c.client.Do(req)
+	if errDo != nil {
+		return fmt.Errorf("failed to send request: %w", errDo)
+	}
+
+	return nil
 }
 
-// GetCookieWithResponse request returning *GetCookieResponse
-func (c *ClientWithResponses) GetCookieWithResponse(ctx context.Context, params *GetCookieParams, reqEditors ...RequestEditorFn) (*GetCookieResponse, error) {
-	rsp, err := c.GetCookie(ctx, params, reqEditors...)
+// GetLabelExplodeArray makes the request to the API endpoint.
+func (c *Client) GetLabelExplodeArray(ctx context.Context, params GetLabelExplodeArrayClientParams, opts ...func(*http.Request) error) error {
+
+	// Create the request
+	req, err := http.NewRequestWithContext(
+		ctx,
+		"GET",
+		buildURL(
+			c.BaseURL,
+			map[string]interface{}{
+				"param": params.Param,
+			},
+			nil,
+		),
+		nil,
+	)
 	if err != nil {
-		return nil, err
+		return fmt.Errorf("failed to build request: %w", err)
 	}
-	return ParseGetCookieResponse(rsp)
+
+	// Apply any request editors
+	for _, fn := range c.reqEditors {
+		if err := fn(req); err != nil {
+			return fmt.Errorf("failed to apply request editor: %w", err)
+		}
+	}
+
+	// Do the request
+	_, errDo := c.client.Do(req)
+	if errDo != nil {
+		return fmt.Errorf("failed to send request: %w", errDo)
+	}
+
+	return nil
 }
 
-// GetHeaderWithResponse request returning *GetHeaderResponse
-func (c *ClientWithResponses) GetHeaderWithResponse(ctx context.Context, params *GetHeaderParams, reqEditors ...RequestEditorFn) (*GetHeaderResponse, error) {
-	rsp, err := c.GetHeader(ctx, params, reqEditors...)
+// GetLabelExplodeObject makes the request to the API endpoint.
+func (c *Client) GetLabelExplodeObject(ctx context.Context, params GetLabelExplodeObjectClientParams, opts ...func(*http.Request) error) error {
+
+	// Create the request
+	req, err := http.NewRequestWithContext(
+		ctx,
+		"GET",
+		buildURL(
+			c.BaseURL,
+			map[string]interface{}{
+				"param": params.Param,
+			},
+			nil,
+		),
+		nil,
+	)
 	if err != nil {
-		return nil, err
+		return fmt.Errorf("failed to build request: %w", err)
 	}
-	return ParseGetHeaderResponse(rsp)
+
+	// Apply any request editors
+	for _, fn := range c.reqEditors {
+		if err := fn(req); err != nil {
+			return fmt.Errorf("failed to apply request editor: %w", err)
+		}
+	}
+
+	// Do the request
+	_, errDo := c.client.Do(req)
+	if errDo != nil {
+		return fmt.Errorf("failed to send request: %w", errDo)
+	}
+
+	return nil
 }
 
-// GetLabelExplodeArrayWithResponse request returning *GetLabelExplodeArrayResponse
-func (c *ClientWithResponses) GetLabelExplodeArrayWithResponse(ctx context.Context, param []int32, reqEditors ...RequestEditorFn) (*GetLabelExplodeArrayResponse, error) {
-	rsp, err := c.GetLabelExplodeArray(ctx, param, reqEditors...)
+// GetLabelNoExplodeArray makes the request to the API endpoint.
+func (c *Client) GetLabelNoExplodeArray(ctx context.Context, params GetLabelNoExplodeArrayClientParams, opts ...func(*http.Request) error) error {
+
+	// Create the request
+	req, err := http.NewRequestWithContext(
+		ctx,
+		"GET",
+		buildURL(
+			c.BaseURL,
+			map[string]interface{}{
+				"param": params.Param,
+			},
+			nil,
+		),
+		nil,
+	)
 	if err != nil {
-		return nil, err
+		return fmt.Errorf("failed to build request: %w", err)
 	}
-	return ParseGetLabelExplodeArrayResponse(rsp)
+
+	// Apply any request editors
+	for _, fn := range c.reqEditors {
+		if err := fn(req); err != nil {
+			return fmt.Errorf("failed to apply request editor: %w", err)
+		}
+	}
+
+	// Do the request
+	_, errDo := c.client.Do(req)
+	if errDo != nil {
+		return fmt.Errorf("failed to send request: %w", errDo)
+	}
+
+	return nil
 }
 
-// GetLabelExplodeObjectWithResponse request returning *GetLabelExplodeObjectResponse
-func (c *ClientWithResponses) GetLabelExplodeObjectWithResponse(ctx context.Context, param Object, reqEditors ...RequestEditorFn) (*GetLabelExplodeObjectResponse, error) {
-	rsp, err := c.GetLabelExplodeObject(ctx, param, reqEditors...)
+// GetLabelNoExplodeObject makes the request to the API endpoint.
+func (c *Client) GetLabelNoExplodeObject(ctx context.Context, params GetLabelNoExplodeObjectClientParams, opts ...func(*http.Request) error) error {
+
+	// Create the request
+	req, err := http.NewRequestWithContext(
+		ctx,
+		"GET",
+		buildURL(
+			c.BaseURL,
+			map[string]interface{}{
+				"param": params.Param,
+			},
+			nil,
+		),
+		nil,
+	)
 	if err != nil {
-		return nil, err
+		return fmt.Errorf("failed to build request: %w", err)
 	}
-	return ParseGetLabelExplodeObjectResponse(rsp)
+
+	// Apply any request editors
+	for _, fn := range c.reqEditors {
+		if err := fn(req); err != nil {
+			return fmt.Errorf("failed to apply request editor: %w", err)
+		}
+	}
+
+	// Do the request
+	_, errDo := c.client.Do(req)
+	if errDo != nil {
+		return fmt.Errorf("failed to send request: %w", errDo)
+	}
+
+	return nil
 }
 
-// GetLabelNoExplodeArrayWithResponse request returning *GetLabelNoExplodeArrayResponse
-func (c *ClientWithResponses) GetLabelNoExplodeArrayWithResponse(ctx context.Context, param []int32, reqEditors ...RequestEditorFn) (*GetLabelNoExplodeArrayResponse, error) {
-	rsp, err := c.GetLabelNoExplodeArray(ctx, param, reqEditors...)
+// GetMatrixExplodeArray makes the request to the API endpoint.
+func (c *Client) GetMatrixExplodeArray(ctx context.Context, params GetMatrixExplodeArrayClientParams, opts ...func(*http.Request) error) error {
+
+	// Create the request
+	req, err := http.NewRequestWithContext(
+		ctx,
+		"GET",
+		buildURL(
+			c.BaseURL,
+			map[string]interface{}{
+				"id": params.ID,
+			},
+			nil,
+		),
+		nil,
+	)
 	if err != nil {
-		return nil, err
+		return fmt.Errorf("failed to build request: %w", err)
 	}
-	return ParseGetLabelNoExplodeArrayResponse(rsp)
+
+	// Apply any request editors
+	for _, fn := range c.reqEditors {
+		if err := fn(req); err != nil {
+			return fmt.Errorf("failed to apply request editor: %w", err)
+		}
+	}
+
+	// Do the request
+	_, errDo := c.client.Do(req)
+	if errDo != nil {
+		return fmt.Errorf("failed to send request: %w", errDo)
+	}
+
+	return nil
 }
 
-// GetLabelNoExplodeObjectWithResponse request returning *GetLabelNoExplodeObjectResponse
-func (c *ClientWithResponses) GetLabelNoExplodeObjectWithResponse(ctx context.Context, param Object, reqEditors ...RequestEditorFn) (*GetLabelNoExplodeObjectResponse, error) {
-	rsp, err := c.GetLabelNoExplodeObject(ctx, param, reqEditors...)
+// GetMatrixExplodeObject makes the request to the API endpoint.
+func (c *Client) GetMatrixExplodeObject(ctx context.Context, params GetMatrixExplodeObjectClientParams, opts ...func(*http.Request) error) error {
+
+	// Create the request
+	req, err := http.NewRequestWithContext(
+		ctx,
+		"GET",
+		buildURL(
+			c.BaseURL,
+			map[string]interface{}{
+				"id": params.ID,
+			},
+			nil,
+		),
+		nil,
+	)
 	if err != nil {
-		return nil, err
+		return fmt.Errorf("failed to build request: %w", err)
 	}
-	return ParseGetLabelNoExplodeObjectResponse(rsp)
+
+	// Apply any request editors
+	for _, fn := range c.reqEditors {
+		if err := fn(req); err != nil {
+			return fmt.Errorf("failed to apply request editor: %w", err)
+		}
+	}
+
+	// Do the request
+	_, errDo := c.client.Do(req)
+	if errDo != nil {
+		return fmt.Errorf("failed to send request: %w", errDo)
+	}
+
+	return nil
 }
 
-// GetMatrixExplodeArrayWithResponse request returning *GetMatrixExplodeArrayResponse
-func (c *ClientWithResponses) GetMatrixExplodeArrayWithResponse(ctx context.Context, id []int32, reqEditors ...RequestEditorFn) (*GetMatrixExplodeArrayResponse, error) {
-	rsp, err := c.GetMatrixExplodeArray(ctx, id, reqEditors...)
+// GetMatrixNoExplodeArray makes the request to the API endpoint.
+func (c *Client) GetMatrixNoExplodeArray(ctx context.Context, params GetMatrixNoExplodeArrayClientParams, opts ...func(*http.Request) error) error {
+
+	// Create the request
+	req, err := http.NewRequestWithContext(
+		ctx,
+		"GET",
+		buildURL(
+			c.BaseURL,
+			map[string]interface{}{
+				"id": params.ID,
+			},
+			nil,
+		),
+		nil,
+	)
 	if err != nil {
-		return nil, err
+		return fmt.Errorf("failed to build request: %w", err)
 	}
-	return ParseGetMatrixExplodeArrayResponse(rsp)
+
+	// Apply any request editors
+	for _, fn := range c.reqEditors {
+		if err := fn(req); err != nil {
+			return fmt.Errorf("failed to apply request editor: %w", err)
+		}
+	}
+
+	// Do the request
+	_, errDo := c.client.Do(req)
+	if errDo != nil {
+		return fmt.Errorf("failed to send request: %w", errDo)
+	}
+
+	return nil
 }
 
-// GetMatrixExplodeObjectWithResponse request returning *GetMatrixExplodeObjectResponse
-func (c *ClientWithResponses) GetMatrixExplodeObjectWithResponse(ctx context.Context, id Object, reqEditors ...RequestEditorFn) (*GetMatrixExplodeObjectResponse, error) {
-	rsp, err := c.GetMatrixExplodeObject(ctx, id, reqEditors...)
+// GetMatrixNoExplodeObject makes the request to the API endpoint.
+func (c *Client) GetMatrixNoExplodeObject(ctx context.Context, params GetMatrixNoExplodeObjectClientParams, opts ...func(*http.Request) error) error {
+
+	// Create the request
+	req, err := http.NewRequestWithContext(
+		ctx,
+		"GET",
+		buildURL(
+			c.BaseURL,
+			map[string]interface{}{
+				"id": params.ID,
+			},
+			nil,
+		),
+		nil,
+	)
 	if err != nil {
-		return nil, err
+		return fmt.Errorf("failed to build request: %w", err)
 	}
-	return ParseGetMatrixExplodeObjectResponse(rsp)
+
+	// Apply any request editors
+	for _, fn := range c.reqEditors {
+		if err := fn(req); err != nil {
+			return fmt.Errorf("failed to apply request editor: %w", err)
+		}
+	}
+
+	// Do the request
+	_, errDo := c.client.Do(req)
+	if errDo != nil {
+		return fmt.Errorf("failed to send request: %w", errDo)
+	}
+
+	return nil
 }
 
-// GetMatrixNoExplodeArrayWithResponse request returning *GetMatrixNoExplodeArrayResponse
-func (c *ClientWithResponses) GetMatrixNoExplodeArrayWithResponse(ctx context.Context, id []int32, reqEditors ...RequestEditorFn) (*GetMatrixNoExplodeArrayResponse, error) {
-	rsp, err := c.GetMatrixNoExplodeArray(ctx, id, reqEditors...)
+// GetPassThrough makes the request to the API endpoint.
+func (c *Client) GetPassThrough(ctx context.Context, params GetPassThroughClientParams, opts ...func(*http.Request) error) error {
+
+	// Create the request
+	req, err := http.NewRequestWithContext(
+		ctx,
+		"GET",
+		buildURL(
+			c.BaseURL,
+			map[string]interface{}{
+				"param": params.Param,
+			},
+			nil,
+		),
+		nil,
+	)
 	if err != nil {
-		return nil, err
+		return fmt.Errorf("failed to build request: %w", err)
 	}
-	return ParseGetMatrixNoExplodeArrayResponse(rsp)
+
+	// Apply any request editors
+	for _, fn := range c.reqEditors {
+		if err := fn(req); err != nil {
+			return fmt.Errorf("failed to apply request editor: %w", err)
+		}
+	}
+
+	// Do the request
+	_, errDo := c.client.Do(req)
+	if errDo != nil {
+		return fmt.Errorf("failed to send request: %w", errDo)
+	}
+
+	return nil
 }
 
-// GetMatrixNoExplodeObjectWithResponse request returning *GetMatrixNoExplodeObjectResponse
-func (c *ClientWithResponses) GetMatrixNoExplodeObjectWithResponse(ctx context.Context, id Object, reqEditors ...RequestEditorFn) (*GetMatrixNoExplodeObjectResponse, error) {
-	rsp, err := c.GetMatrixNoExplodeObject(ctx, id, reqEditors...)
+// GetDeepObject makes the request to the API endpoint.
+func (c *Client) GetDeepObject(ctx context.Context, params GetDeepObjectClientParams, opts ...func(*http.Request) error) error {
+
+	// Create the request
+	req, err := http.NewRequestWithContext(
+		ctx,
+		"GET",
+		buildURL(
+			c.BaseURL,
+			nil,
+			map[string]interface{}{
+				"deepObj": params.DeepObj,
+			},
+		),
+		nil,
+	)
 	if err != nil {
-		return nil, err
+		return fmt.Errorf("failed to build request: %w", err)
 	}
-	return ParseGetMatrixNoExplodeObjectResponse(rsp)
+
+	// Apply any request editors
+	for _, fn := range c.reqEditors {
+		if err := fn(req); err != nil {
+			return fmt.Errorf("failed to apply request editor: %w", err)
+		}
+	}
+
+	// Do the request
+	_, errDo := c.client.Do(req)
+	if errDo != nil {
+		return fmt.Errorf("failed to send request: %w", errDo)
+	}
+
+	return nil
 }
 
-// GetPassThroughWithResponse request returning *GetPassThroughResponse
-func (c *ClientWithResponses) GetPassThroughWithResponse(ctx context.Context, param string, reqEditors ...RequestEditorFn) (*GetPassThroughResponse, error) {
-	rsp, err := c.GetPassThrough(ctx, param, reqEditors...)
+// GetQueryForm makes the request to the API endpoint.
+func (c *Client) GetQueryForm(ctx context.Context, params GetQueryFormClientParams, opts ...func(*http.Request) error) error {
+
+	// Create the request
+	req, err := http.NewRequestWithContext(
+		ctx,
+		"GET",
+		buildURL(
+			c.BaseURL,
+			nil,
+			map[string]interface{}{
+				"ea": params.Ea,
+				"a":  params.A,
+				"eo": params.Eo,
+				"o":  params.O,
+				"ep": params.Ep,
+				"p":  params.P,
+				"ps": params.Ps,
+				"co": params.Co,
+				"1s": params.N1s,
+			},
+		),
+		nil,
+	)
 	if err != nil {
-		return nil, err
+		return fmt.Errorf("failed to build request: %w", err)
 	}
-	return ParseGetPassThroughResponse(rsp)
+
+	// Apply any request editors
+	for _, fn := range c.reqEditors {
+		if err := fn(req); err != nil {
+			return fmt.Errorf("failed to apply request editor: %w", err)
+		}
+	}
+
+	// Do the request
+	_, errDo := c.client.Do(req)
+	if errDo != nil {
+		return fmt.Errorf("failed to send request: %w", errDo)
+	}
+
+	return nil
 }
 
-// GetDeepObjectWithResponse request returning *GetDeepObjectResponse
-func (c *ClientWithResponses) GetDeepObjectWithResponse(ctx context.Context, params *GetDeepObjectParams, reqEditors ...RequestEditorFn) (*GetDeepObjectResponse, error) {
-	rsp, err := c.GetDeepObject(ctx, params, reqEditors...)
+// GetSimpleExplodeArray makes the request to the API endpoint.
+func (c *Client) GetSimpleExplodeArray(ctx context.Context, params GetSimpleExplodeArrayClientParams, opts ...func(*http.Request) error) error {
+
+	// Create the request
+	req, err := http.NewRequestWithContext(
+		ctx,
+		"GET",
+		buildURL(
+			c.BaseURL,
+			map[string]interface{}{
+				"param": params.Param,
+			},
+			nil,
+		),
+		nil,
+	)
 	if err != nil {
-		return nil, err
+		return fmt.Errorf("failed to build request: %w", err)
 	}
-	return ParseGetDeepObjectResponse(rsp)
+
+	// Apply any request editors
+	for _, fn := range c.reqEditors {
+		if err := fn(req); err != nil {
+			return fmt.Errorf("failed to apply request editor: %w", err)
+		}
+	}
+
+	// Do the request
+	_, errDo := c.client.Do(req)
+	if errDo != nil {
+		return fmt.Errorf("failed to send request: %w", errDo)
+	}
+
+	return nil
 }
 
-// GetQueryFormWithResponse request returning *GetQueryFormResponse
-func (c *ClientWithResponses) GetQueryFormWithResponse(ctx context.Context, params *GetQueryFormParams, reqEditors ...RequestEditorFn) (*GetQueryFormResponse, error) {
-	rsp, err := c.GetQueryForm(ctx, params, reqEditors...)
+// GetSimpleExplodeObject makes the request to the API endpoint.
+func (c *Client) GetSimpleExplodeObject(ctx context.Context, params GetSimpleExplodeObjectClientParams, opts ...func(*http.Request) error) error {
+
+	// Create the request
+	req, err := http.NewRequestWithContext(
+		ctx,
+		"GET",
+		buildURL(
+			c.BaseURL,
+			map[string]interface{}{
+				"param": params.Param,
+			},
+			nil,
+		),
+		nil,
+	)
 	if err != nil {
-		return nil, err
+		return fmt.Errorf("failed to build request: %w", err)
 	}
-	return ParseGetQueryFormResponse(rsp)
+
+	// Apply any request editors
+	for _, fn := range c.reqEditors {
+		if err := fn(req); err != nil {
+			return fmt.Errorf("failed to apply request editor: %w", err)
+		}
+	}
+
+	// Do the request
+	_, errDo := c.client.Do(req)
+	if errDo != nil {
+		return fmt.Errorf("failed to send request: %w", errDo)
+	}
+
+	return nil
 }
 
-// GetSimpleExplodeArrayWithResponse request returning *GetSimpleExplodeArrayResponse
-func (c *ClientWithResponses) GetSimpleExplodeArrayWithResponse(ctx context.Context, param []int32, reqEditors ...RequestEditorFn) (*GetSimpleExplodeArrayResponse, error) {
-	rsp, err := c.GetSimpleExplodeArray(ctx, param, reqEditors...)
+// GetSimpleNoExplodeArray makes the request to the API endpoint.
+func (c *Client) GetSimpleNoExplodeArray(ctx context.Context, params GetSimpleNoExplodeArrayClientParams, opts ...func(*http.Request) error) error {
+
+	// Create the request
+	req, err := http.NewRequestWithContext(
+		ctx,
+		"GET",
+		buildURL(
+			c.BaseURL,
+			map[string]interface{}{
+				"param": params.Param,
+			},
+			nil,
+		),
+		nil,
+	)
 	if err != nil {
-		return nil, err
+		return fmt.Errorf("failed to build request: %w", err)
 	}
-	return ParseGetSimpleExplodeArrayResponse(rsp)
+
+	// Apply any request editors
+	for _, fn := range c.reqEditors {
+		if err := fn(req); err != nil {
+			return fmt.Errorf("failed to apply request editor: %w", err)
+		}
+	}
+
+	// Do the request
+	_, errDo := c.client.Do(req)
+	if errDo != nil {
+		return fmt.Errorf("failed to send request: %w", errDo)
+	}
+
+	return nil
 }
 
-// GetSimpleExplodeObjectWithResponse request returning *GetSimpleExplodeObjectResponse
-func (c *ClientWithResponses) GetSimpleExplodeObjectWithResponse(ctx context.Context, param Object, reqEditors ...RequestEditorFn) (*GetSimpleExplodeObjectResponse, error) {
-	rsp, err := c.GetSimpleExplodeObject(ctx, param, reqEditors...)
+// GetSimpleNoExplodeObject makes the request to the API endpoint.
+func (c *Client) GetSimpleNoExplodeObject(ctx context.Context, params GetSimpleNoExplodeObjectClientParams, opts ...func(*http.Request) error) error {
+
+	// Create the request
+	req, err := http.NewRequestWithContext(
+		ctx,
+		"GET",
+		buildURL(
+			c.BaseURL,
+			map[string]interface{}{
+				"param": params.Param,
+			},
+			nil,
+		),
+		nil,
+	)
 	if err != nil {
-		return nil, err
+		return fmt.Errorf("failed to build request: %w", err)
 	}
-	return ParseGetSimpleExplodeObjectResponse(rsp)
+
+	// Apply any request editors
+	for _, fn := range c.reqEditors {
+		if err := fn(req); err != nil {
+			return fmt.Errorf("failed to apply request editor: %w", err)
+		}
+	}
+
+	// Do the request
+	_, errDo := c.client.Do(req)
+	if errDo != nil {
+		return fmt.Errorf("failed to send request: %w", errDo)
+	}
+
+	return nil
 }
 
-// GetSimpleNoExplodeArrayWithResponse request returning *GetSimpleNoExplodeArrayResponse
-func (c *ClientWithResponses) GetSimpleNoExplodeArrayWithResponse(ctx context.Context, param []int32, reqEditors ...RequestEditorFn) (*GetSimpleNoExplodeArrayResponse, error) {
-	rsp, err := c.GetSimpleNoExplodeArray(ctx, param, reqEditors...)
+// GetSimplePrimitive makes the request to the API endpoint.
+func (c *Client) GetSimplePrimitive(ctx context.Context, params GetSimplePrimitiveClientParams, opts ...func(*http.Request) error) error {
+
+	// Create the request
+	req, err := http.NewRequestWithContext(
+		ctx,
+		"GET",
+		buildURL(
+			c.BaseURL,
+			map[string]interface{}{
+				"param": params.Param,
+			},
+			nil,
+		),
+		nil,
+	)
 	if err != nil {
-		return nil, err
+		return fmt.Errorf("failed to build request: %w", err)
 	}
-	return ParseGetSimpleNoExplodeArrayResponse(rsp)
+
+	// Apply any request editors
+	for _, fn := range c.reqEditors {
+		if err := fn(req); err != nil {
+			return fmt.Errorf("failed to apply request editor: %w", err)
+		}
+	}
+
+	// Do the request
+	_, errDo := c.client.Do(req)
+	if errDo != nil {
+		return fmt.Errorf("failed to send request: %w", errDo)
+	}
+
+	return nil
 }
 
-// GetSimpleNoExplodeObjectWithResponse request returning *GetSimpleNoExplodeObjectResponse
-func (c *ClientWithResponses) GetSimpleNoExplodeObjectWithResponse(ctx context.Context, param Object, reqEditors ...RequestEditorFn) (*GetSimpleNoExplodeObjectResponse, error) {
-	rsp, err := c.GetSimpleNoExplodeObject(ctx, param, reqEditors...)
+// GetStartingWithNumber makes the request to the API endpoint.
+func (c *Client) GetStartingWithNumber(ctx context.Context, params GetStartingWithNumberClientParams, opts ...func(*http.Request) error) error {
+
+	// Create the request
+	req, err := http.NewRequestWithContext(
+		ctx,
+		"GET",
+		buildURL(
+			c.BaseURL,
+			map[string]interface{}{
+				"1param": params.N1param,
+			},
+			nil,
+		),
+		nil,
+	)
 	if err != nil {
-		return nil, err
+		return fmt.Errorf("failed to build request: %w", err)
 	}
-	return ParseGetSimpleNoExplodeObjectResponse(rsp)
+
+	// Apply any request editors
+	for _, fn := range c.reqEditors {
+		if err := fn(req); err != nil {
+			return fmt.Errorf("failed to apply request editor: %w", err)
+		}
+	}
+
+	// Do the request
+	_, errDo := c.client.Do(req)
+	if errDo != nil {
+		return fmt.Errorf("failed to send request: %w", errDo)
+	}
+
+	return nil
 }
 
-// GetSimplePrimitiveWithResponse request returning *GetSimplePrimitiveResponse
-func (c *ClientWithResponses) GetSimplePrimitiveWithResponse(ctx context.Context, param int32, reqEditors ...RequestEditorFn) (*GetSimplePrimitiveResponse, error) {
-	rsp, err := c.GetSimplePrimitive(ctx, param, reqEditors...)
+func buildURL(baseURL string, pathParams map[string]interface{}, queryParams map[string]interface{}) string {
+	u, err := url.Parse(baseURL)
 	if err != nil {
-		return nil, err
-	}
-	return ParseGetSimplePrimitiveResponse(rsp)
-}
-
-// GetStartingWithNumberWithResponse request returning *GetStartingWithNumberResponse
-func (c *ClientWithResponses) GetStartingWithNumberWithResponse(ctx context.Context, n1param string, reqEditors ...RequestEditorFn) (*GetStartingWithNumberResponse, error) {
-	rsp, err := c.GetStartingWithNumber(ctx, n1param, reqEditors...)
-	if err != nil {
-		return nil, err
-	}
-	return ParseGetStartingWithNumberResponse(rsp)
-}
-
-// ParseGetContentObjectResponse parses an HTTP response from a GetContentObjectWithResponse call
-func ParseGetContentObjectResponse(rsp *http.Response) (*GetContentObjectResponse, error) {
-	bodyBytes, err := io.ReadAll(rsp.Body)
-	defer func() { _ = rsp.Body.Close() }()
-	if err != nil {
-		return nil, err
+		panic(err)
 	}
 
-	response := &GetContentObjectResponse{
-		Body:         bodyBytes,
-		HTTPResponse: rsp,
+	// add path parameters
+	for name, value := range pathParams {
+		u.Path = strings.Replace(u.Path, "{"+name+"}", fmt.Sprint(value), 1)
 	}
 
-	return response, nil
-}
-
-// ParseGetCookieResponse parses an HTTP response from a GetCookieWithResponse call
-func ParseGetCookieResponse(rsp *http.Response) (*GetCookieResponse, error) {
-	bodyBytes, err := io.ReadAll(rsp.Body)
-	defer func() { _ = rsp.Body.Close() }()
-	if err != nil {
-		return nil, err
+	// add query parameters
+	q := u.Query()
+	for key, value := range queryParams {
+		q.Set(key, fmt.Sprint(value))
 	}
+	u.RawQuery = q.Encode()
 
-	response := &GetCookieResponse{
-		Body:         bodyBytes,
-		HTTPResponse: rsp,
-	}
-
-	return response, nil
-}
-
-// ParseGetHeaderResponse parses an HTTP response from a GetHeaderWithResponse call
-func ParseGetHeaderResponse(rsp *http.Response) (*GetHeaderResponse, error) {
-	bodyBytes, err := io.ReadAll(rsp.Body)
-	defer func() { _ = rsp.Body.Close() }()
-	if err != nil {
-		return nil, err
-	}
-
-	response := &GetHeaderResponse{
-		Body:         bodyBytes,
-		HTTPResponse: rsp,
-	}
-
-	return response, nil
-}
-
-// ParseGetLabelExplodeArrayResponse parses an HTTP response from a GetLabelExplodeArrayWithResponse call
-func ParseGetLabelExplodeArrayResponse(rsp *http.Response) (*GetLabelExplodeArrayResponse, error) {
-	bodyBytes, err := io.ReadAll(rsp.Body)
-	defer func() { _ = rsp.Body.Close() }()
-	if err != nil {
-		return nil, err
-	}
-
-	response := &GetLabelExplodeArrayResponse{
-		Body:         bodyBytes,
-		HTTPResponse: rsp,
-	}
-
-	return response, nil
-}
-
-// ParseGetLabelExplodeObjectResponse parses an HTTP response from a GetLabelExplodeObjectWithResponse call
-func ParseGetLabelExplodeObjectResponse(rsp *http.Response) (*GetLabelExplodeObjectResponse, error) {
-	bodyBytes, err := io.ReadAll(rsp.Body)
-	defer func() { _ = rsp.Body.Close() }()
-	if err != nil {
-		return nil, err
-	}
-
-	response := &GetLabelExplodeObjectResponse{
-		Body:         bodyBytes,
-		HTTPResponse: rsp,
-	}
-
-	return response, nil
-}
-
-// ParseGetLabelNoExplodeArrayResponse parses an HTTP response from a GetLabelNoExplodeArrayWithResponse call
-func ParseGetLabelNoExplodeArrayResponse(rsp *http.Response) (*GetLabelNoExplodeArrayResponse, error) {
-	bodyBytes, err := io.ReadAll(rsp.Body)
-	defer func() { _ = rsp.Body.Close() }()
-	if err != nil {
-		return nil, err
-	}
-
-	response := &GetLabelNoExplodeArrayResponse{
-		Body:         bodyBytes,
-		HTTPResponse: rsp,
-	}
-
-	return response, nil
-}
-
-// ParseGetLabelNoExplodeObjectResponse parses an HTTP response from a GetLabelNoExplodeObjectWithResponse call
-func ParseGetLabelNoExplodeObjectResponse(rsp *http.Response) (*GetLabelNoExplodeObjectResponse, error) {
-	bodyBytes, err := io.ReadAll(rsp.Body)
-	defer func() { _ = rsp.Body.Close() }()
-	if err != nil {
-		return nil, err
-	}
-
-	response := &GetLabelNoExplodeObjectResponse{
-		Body:         bodyBytes,
-		HTTPResponse: rsp,
-	}
-
-	return response, nil
-}
-
-// ParseGetMatrixExplodeArrayResponse parses an HTTP response from a GetMatrixExplodeArrayWithResponse call
-func ParseGetMatrixExplodeArrayResponse(rsp *http.Response) (*GetMatrixExplodeArrayResponse, error) {
-	bodyBytes, err := io.ReadAll(rsp.Body)
-	defer func() { _ = rsp.Body.Close() }()
-	if err != nil {
-		return nil, err
-	}
-
-	response := &GetMatrixExplodeArrayResponse{
-		Body:         bodyBytes,
-		HTTPResponse: rsp,
-	}
-
-	return response, nil
-}
-
-// ParseGetMatrixExplodeObjectResponse parses an HTTP response from a GetMatrixExplodeObjectWithResponse call
-func ParseGetMatrixExplodeObjectResponse(rsp *http.Response) (*GetMatrixExplodeObjectResponse, error) {
-	bodyBytes, err := io.ReadAll(rsp.Body)
-	defer func() { _ = rsp.Body.Close() }()
-	if err != nil {
-		return nil, err
-	}
-
-	response := &GetMatrixExplodeObjectResponse{
-		Body:         bodyBytes,
-		HTTPResponse: rsp,
-	}
-
-	return response, nil
-}
-
-// ParseGetMatrixNoExplodeArrayResponse parses an HTTP response from a GetMatrixNoExplodeArrayWithResponse call
-func ParseGetMatrixNoExplodeArrayResponse(rsp *http.Response) (*GetMatrixNoExplodeArrayResponse, error) {
-	bodyBytes, err := io.ReadAll(rsp.Body)
-	defer func() { _ = rsp.Body.Close() }()
-	if err != nil {
-		return nil, err
-	}
-
-	response := &GetMatrixNoExplodeArrayResponse{
-		Body:         bodyBytes,
-		HTTPResponse: rsp,
-	}
-
-	return response, nil
-}
-
-// ParseGetMatrixNoExplodeObjectResponse parses an HTTP response from a GetMatrixNoExplodeObjectWithResponse call
-func ParseGetMatrixNoExplodeObjectResponse(rsp *http.Response) (*GetMatrixNoExplodeObjectResponse, error) {
-	bodyBytes, err := io.ReadAll(rsp.Body)
-	defer func() { _ = rsp.Body.Close() }()
-	if err != nil {
-		return nil, err
-	}
-
-	response := &GetMatrixNoExplodeObjectResponse{
-		Body:         bodyBytes,
-		HTTPResponse: rsp,
-	}
-
-	return response, nil
-}
-
-// ParseGetPassThroughResponse parses an HTTP response from a GetPassThroughWithResponse call
-func ParseGetPassThroughResponse(rsp *http.Response) (*GetPassThroughResponse, error) {
-	bodyBytes, err := io.ReadAll(rsp.Body)
-	defer func() { _ = rsp.Body.Close() }()
-	if err != nil {
-		return nil, err
-	}
-
-	response := &GetPassThroughResponse{
-		Body:         bodyBytes,
-		HTTPResponse: rsp,
-	}
-
-	return response, nil
-}
-
-// ParseGetDeepObjectResponse parses an HTTP response from a GetDeepObjectWithResponse call
-func ParseGetDeepObjectResponse(rsp *http.Response) (*GetDeepObjectResponse, error) {
-	bodyBytes, err := io.ReadAll(rsp.Body)
-	defer func() { _ = rsp.Body.Close() }()
-	if err != nil {
-		return nil, err
-	}
-
-	response := &GetDeepObjectResponse{
-		Body:         bodyBytes,
-		HTTPResponse: rsp,
-	}
-
-	return response, nil
-}
-
-// ParseGetQueryFormResponse parses an HTTP response from a GetQueryFormWithResponse call
-func ParseGetQueryFormResponse(rsp *http.Response) (*GetQueryFormResponse, error) {
-	bodyBytes, err := io.ReadAll(rsp.Body)
-	defer func() { _ = rsp.Body.Close() }()
-	if err != nil {
-		return nil, err
-	}
-
-	response := &GetQueryFormResponse{
-		Body:         bodyBytes,
-		HTTPResponse: rsp,
-	}
-
-	return response, nil
-}
-
-// ParseGetSimpleExplodeArrayResponse parses an HTTP response from a GetSimpleExplodeArrayWithResponse call
-func ParseGetSimpleExplodeArrayResponse(rsp *http.Response) (*GetSimpleExplodeArrayResponse, error) {
-	bodyBytes, err := io.ReadAll(rsp.Body)
-	defer func() { _ = rsp.Body.Close() }()
-	if err != nil {
-		return nil, err
-	}
-
-	response := &GetSimpleExplodeArrayResponse{
-		Body:         bodyBytes,
-		HTTPResponse: rsp,
-	}
-
-	return response, nil
-}
-
-// ParseGetSimpleExplodeObjectResponse parses an HTTP response from a GetSimpleExplodeObjectWithResponse call
-func ParseGetSimpleExplodeObjectResponse(rsp *http.Response) (*GetSimpleExplodeObjectResponse, error) {
-	bodyBytes, err := io.ReadAll(rsp.Body)
-	defer func() { _ = rsp.Body.Close() }()
-	if err != nil {
-		return nil, err
-	}
-
-	response := &GetSimpleExplodeObjectResponse{
-		Body:         bodyBytes,
-		HTTPResponse: rsp,
-	}
-
-	return response, nil
-}
-
-// ParseGetSimpleNoExplodeArrayResponse parses an HTTP response from a GetSimpleNoExplodeArrayWithResponse call
-func ParseGetSimpleNoExplodeArrayResponse(rsp *http.Response) (*GetSimpleNoExplodeArrayResponse, error) {
-	bodyBytes, err := io.ReadAll(rsp.Body)
-	defer func() { _ = rsp.Body.Close() }()
-	if err != nil {
-		return nil, err
-	}
-
-	response := &GetSimpleNoExplodeArrayResponse{
-		Body:         bodyBytes,
-		HTTPResponse: rsp,
-	}
-
-	return response, nil
-}
-
-// ParseGetSimpleNoExplodeObjectResponse parses an HTTP response from a GetSimpleNoExplodeObjectWithResponse call
-func ParseGetSimpleNoExplodeObjectResponse(rsp *http.Response) (*GetSimpleNoExplodeObjectResponse, error) {
-	bodyBytes, err := io.ReadAll(rsp.Body)
-	defer func() { _ = rsp.Body.Close() }()
-	if err != nil {
-		return nil, err
-	}
-
-	response := &GetSimpleNoExplodeObjectResponse{
-		Body:         bodyBytes,
-		HTTPResponse: rsp,
-	}
-
-	return response, nil
-}
-
-// ParseGetSimplePrimitiveResponse parses an HTTP response from a GetSimplePrimitiveWithResponse call
-func ParseGetSimplePrimitiveResponse(rsp *http.Response) (*GetSimplePrimitiveResponse, error) {
-	bodyBytes, err := io.ReadAll(rsp.Body)
-	defer func() { _ = rsp.Body.Close() }()
-	if err != nil {
-		return nil, err
-	}
-
-	response := &GetSimplePrimitiveResponse{
-		Body:         bodyBytes,
-		HTTPResponse: rsp,
-	}
-
-	return response, nil
-}
-
-// ParseGetStartingWithNumberResponse parses an HTTP response from a GetStartingWithNumberWithResponse call
-func ParseGetStartingWithNumberResponse(rsp *http.Response) (*GetStartingWithNumberResponse, error) {
-	bodyBytes, err := io.ReadAll(rsp.Body)
-	defer func() { _ = rsp.Body.Close() }()
-	if err != nil {
-		return nil, err
-	}
-
-	response := &GetStartingWithNumberResponse{
-		Body:         bodyBytes,
-		HTTPResponse: rsp,
-	}
-
-	return response, nil
+	return u.String()
 }
 
 // ServerInterface represents all server handlers.

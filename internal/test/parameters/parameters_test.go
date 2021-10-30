@@ -1,6 +1,7 @@
 package parameters
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -516,9 +517,10 @@ func TestClientPathParams(t *testing.T) {
 
 	var expectedPrimitive int32 = 5
 
-	req, err := NewGetPassThroughRequest(server, "some string")
+	c, _ := NewClient(server)
+
+	err := c.GetPassThrough(context.Background(), GetPassThroughClientParams{Param: "some string"})
 	assert.NoError(t, err)
-	doRequest(t, handler, http.StatusOK, req)
 	require.NotNil(t, ts.passThrough)
 	assert.Equal(t, "some string", *ts.passThrough)
 	ts.reset()

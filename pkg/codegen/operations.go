@@ -250,6 +250,10 @@ func (o *OperationDefinition) RequiresParamObject() bool {
 	return len(o.Params()) > 0
 }
 
+func (o *OperationDefinition) RequiresAllParamObject() bool {
+	return len(o.AllParams()) > 0
+}
+
 // HasBody returns whether to define a body for the marshaling code on the
 // client. This is true for all body types, whether or not we generate types
 // for them.
@@ -693,13 +697,14 @@ func GenerateChiServer(t *template.Template, operations []OperationDefinition) (
 
 // GenerateClient generates code for the client for ops.
 func GenerateClient(t *template.Template, ops []OperationDefinition) (string, error) {
-	return GenerateTemplates([]string{"client.tmpl"}, t, ops)
-}
-
-// GenerateClientWithResponses generates client code alongside response
-// unmarshaling.
-func GenerateClientWithResponses(t *template.Template, ops []OperationDefinition) (string, error) {
-	return GenerateTemplates([]string{"client-with-responses.tmpl"}, t, ops)
+	return GenerateTemplates([]string{
+		"client-interface.tmpl",
+		"http.tmpl",
+		"types.tmpl",
+		"types-decoder.tmpl",
+		"methods.tmpl",
+		"build-url.tmpl",
+	}, t, ops)
 }
 
 // GenerateTemplates generates templates
