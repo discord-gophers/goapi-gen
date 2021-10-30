@@ -22,6 +22,7 @@ type flagConfig struct {
 	ImportMapping   *cli.StringSlice
 	ExcludeSchemas  *cli.StringSlice
 	AliasTypes      bool
+	Initialisms     *cli.StringSlice
 }
 
 type config struct {
@@ -34,6 +35,7 @@ type config struct {
 	ImportMapping  map[string]string `yaml:"import-mapping"`
 	ExcludeSchemas []string          `yaml:"exclude-schemas"`
 	Alias          bool              `yaml:"alias"`
+	Initialisms    []string          `yaml:"initialisms"`
 }
 
 // parseConfig parses the flags and configuration file (if provided). all
@@ -84,6 +86,9 @@ func parseConfig(c *cli.Context, f *flagConfig) (*config, error) {
 	}
 	if c.IsSet(AliasKey) {
 		cfg.Alias = f.AliasTypes
+	}
+	if cfg.Initialisms == nil || c.IsSet(InitialismsKey) {
+		cfg.Initialisms = splitString(f.Initialisms, ',')
 	}
 
 	return &cfg, nil
