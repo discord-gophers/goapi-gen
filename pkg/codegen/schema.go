@@ -352,6 +352,7 @@ func resolveType(schema *openapi3.Schema, path []string, outSchema *Schema) erro
 		outSchema.GoType = "[]" + arrayType.TypeDecl()
 		outSchema.AdditionalTypes = arrayType.AdditionalTypes
 		outSchema.Properties = arrayType.Properties
+		outSchema.SkipOptionalPointer = true
 	case "integer":
 		// We default to int if format doesn't ask for something else.
 		switch f {
@@ -400,6 +401,7 @@ func resolveType(schema *openapi3.Schema, path []string, outSchema *Schema) erro
 		switch f {
 		case "byte":
 			outSchema.GoType = "[]byte"
+			outSchema.SkipOptionalPointer = true
 		case "email":
 			outSchema.GoType = "openapi_types.Email"
 		case "date":

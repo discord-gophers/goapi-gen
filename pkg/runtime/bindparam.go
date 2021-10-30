@@ -290,10 +290,13 @@ func BindQueryParameter(style string, explode bool, required bool, paramName str
 	// them.
 	output := dest
 
+	// slices are always going to be non-pointers, required or not.
+	isSlice := v.Type().Kind() == reflect.Slice
+
 	// For optional parameters, we have an extra indirect. An optional
 	// parameter of type "int" will be *int on the struct. We pass that
 	// in by pointer, and have **int.
-	if !required {
+	if !required && !isSlice {
 		// If the destination isn't nil, just use that.
 		output = v.Interface()
 
@@ -366,7 +369,7 @@ func BindQueryParameter(style string, explode bool, required bool, paramName str
 
 			// If the parameter is required, and we've successfully unmarshaled
 			// it, this assigns the new object to the pointer pointer.
-			if !required {
+			if !required && !isSlice {
 				dv.Set(reflect.ValueOf(output))
 			}
 			return nil
@@ -406,7 +409,7 @@ func BindQueryParameter(style string, explode bool, required bool, paramName str
 		if err != nil {
 			return err
 		}
-		if !required {
+		if !required && !isSlice {
 			dv.Set(reflect.ValueOf(output))
 		}
 		return nil
