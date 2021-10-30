@@ -11,6 +11,7 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+
 package codegen
 
 import (
@@ -122,7 +123,7 @@ func genResponseUnmarshal(op *OperationDefinition) string {
 
 		// We can't do much without a value:
 		if responseRef.Value == nil {
-			fmt.Fprintf(os.Stderr, "Response %s.%s has nil value\n", op.OperationId, typeDefinition.ResponseName)
+			fmt.Fprintf(os.Stderr, "Response %s.%s has nil value\n", op.OperationID, typeDefinition.ResponseName)
 			continue
 		}
 
@@ -290,8 +291,8 @@ func responseNameToStatusCode(responseName string) string {
 	}
 }
 
-// This function map is passed to the template engine, and we can call each
-// function here by keyName from the template code.
+// TemplateFunctions generates the list of utlity and helpfer functions used by
+// the templates.
 var TemplateFunctions = template.FuncMap{
 	"genParamArgs":               genParamArgs,
 	"genParamTypes":              genParamTypes,
@@ -305,7 +306,7 @@ var TemplateFunctions = template.FuncMap{
 	"stripNewLines":              stripNewLines,
 
 	"genParamFmtString":  ReplacePathParamsWithStr,
-	"swaggerUriToChiUri": SwaggerUriToChiUri,
+	"swaggerURIToChiURI": SwaggerURIToChiURI,
 	"sanitizeGoIdentity": SanitizeGoIdentity,
 
 	"statusCode": responseNameToStatusCode,

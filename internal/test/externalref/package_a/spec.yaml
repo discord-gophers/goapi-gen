@@ -5,5 +5,5 @@ components:
       properties:
         name:
           type: string
-        object_b:
-          $ref: ../packageB/spec.yaml#/components/schemas/ObjectB
+        ObjectB:
+          $ref: ../package_b/spec.yaml#/components/schemas/ObjectB

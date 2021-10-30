@@ -11,6 +11,7 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+
 package runtime
 
 import (
@@ -23,12 +24,12 @@ import (
 	"github.com/discord-gophers/goapi-gen/pkg/types"
 )
 
-// This function takes a string, and attempts to assign it to the destination
-// interface via whatever type conversion is necessary. We have to do this
-// via reflection instead of a much simpler type switch so that we can handle
-// type aliases. This function was the easy way out, the better way, since we
-// know the destination type each place that we use this, is to generate code
-// to read each specific type.
+// BindStringToObject takes a string, and attempts to assign it to the
+// destination interface via whatever type conversion is necessary. We have to
+// do this via reflection instead of a much simpler type switch so that we can
+// handle type aliases. This function was the easy way out, the better way,
+// since we know the destination type each place that we use this, is to
+// generate code to read each specific type.
 func BindStringToObject(src string, dst interface{}) error {
 	var err error
 

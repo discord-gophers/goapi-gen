@@ -158,7 +158,7 @@ func TestExamplePetStoreCodeGenerationWithUserTemplates(t *testing.T) {
 	// Check that we have a package:
 	assert.Contains(t, code, "package api")
 
-	// Check that the built-in template has been overriden
+	// Check that the built-in template has been overridden
 	assert.Contains(t, code, "//blah")
 }
 
@@ -447,7 +447,7 @@ func TestGenerateEnumTypes(t *testing.T) {
 			name: "string",
 
 			types: []TypeDefinition{{
-				JsonName: "my_type",
+				JSONName: "my_type",
 				TypeName: "MyType",
 				Schema: Schema{
 					GoType:     "string",
@@ -455,13 +455,41 @@ func TestGenerateEnumTypes(t *testing.T) {
 					EnumValues: map[string]string{"some": "value"},
 				},
 			}},
-			want: "\n// MyType defines model for my_type.\ntype MyType struct {\n    value string\n}\nfunc (t MyType) ToValue() string {\n    return t.value\n}\nfunc (t MyType) MarshalJSON() ([]byte, error) {\n    return json.Marshal(t.value)\n}\nfunc (t MyType) UnmarshalJSON(data []byte) error {\n    var value string\n    if err := json.Unmarshal(data, &value); err != nil {\n        return err\n    }\n    return nil\n}\nfunc (t MyType) FromValue(value string) error {\n    switch value {\n    \n    case some.value:\n        t.value = value\n        return nil\n    \n    }\n    return fmt.Errorf(\"unknown enum value: %v\", value)\n}",
+			want: `
+// MyType defines model for my_type.
+type MyType struct {
+    value string
+}
+func (t MyType) ToValue() string {
+    return t.value
+}
+func (t MyType) MarshalJSON() ([]byte, error) {
+    return json.Marshal(t.value)
+}
+func (t MyType) UnmarshalJSON(data []byte) error {
+    var value string
+    if err := json.Unmarshal(data, &value); err != nil {
+        return err
+    }
+    return nil
+}
+func (t MyType) FromValue(value string) error {
+    switch value {
+    
+    case some.value:
+        t.value = value
+        return nil
+    
+    }
+    return fmt.Errorf("unknown enum value: %v", value)
+}
+`,
 		},
 		{
 			name: "int64",
 
 			types: []TypeDefinition{{
-				JsonName: "my_type",
+				JSONName: "my_type",
 				TypeName: "MyType",
 				Schema: Schema{
 					GoType:     "int64",
@@ -469,7 +497,35 @@ func TestGenerateEnumTypes(t *testing.T) {
 					EnumValues: map[string]string{"some": "value"},
 				},
 			}},
-			want: "\n// MyType defines model for my_type.\ntype MyType struct {\n    value int64\n}\nfunc (t MyType) ToValue() int64 {\n    return t.value\n}\nfunc (t MyType) MarshalJSON() ([]byte, error) {\n    return json.Marshal(t.value)\n}\nfunc (t MyType) UnmarshalJSON(data []byte) error {\n    var value int64\n    if err := json.Unmarshal(data, &value); err != nil {\n        return err\n    }\n    return nil\n}\nfunc (t MyType) FromValue(value int64) error {\n    switch value {\n    \n    case some.value:\n        t.value = value\n        return nil\n    \n    }\n    return fmt.Errorf(\"unknown enum value: %v\", value)\n}",
+			want: `
+// MyType defines model for my_type.
+type MyType struct {
+    value int64
+}
+func (t MyType) ToValue() int64 {
+    return t.value
+}
+func (t MyType) MarshalJSON() ([]byte, error) {
+    return json.Marshal(t.value)
+}
+func (t MyType) UnmarshalJSON(data []byte) error {
+    var value int64
+    if err := json.Unmarshal(data, &value); err != nil {
+        return err
+    }
+    return nil
+}
+func (t MyType) FromValue(value int64) error {
+    switch value {
+    
+    case some.value:
+        t.value = value
+        return nil
+    
+    }
+    return fmt.Errorf("unknown enum value: %v", value)
+}
+`,
 		},
 	}
 	for _, tt := range tests {

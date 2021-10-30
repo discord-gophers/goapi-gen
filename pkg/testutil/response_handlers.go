@@ -17,8 +17,10 @@ var (
 	knownHandlers   map[string]ResponseHandler
 )
 
+// ResponseHandler is the signature for tests handling responses.
 type ResponseHandler func(contentType string, raw io.Reader, obj interface{}, strict bool) error
 
+// RegisterResponseHandler registers handler.
 func RegisterResponseHandler(mime string, handler ResponseHandler) {
 	knownHandlersMu.Lock()
 	defer knownHandlersMu.Unlock()

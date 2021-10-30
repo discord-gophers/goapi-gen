@@ -11,6 +11,7 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+
 package runtime
 
 import (
@@ -26,9 +27,10 @@ import (
 	"github.com/discord-gophers/goapi-gen/pkg/types"
 )
 
-// Parameter escaping works differently based on where a header is found
+// ParamLocation escaping works differently based on where a header is found
 type ParamLocation int
 
+// List of locations where Params can be.
 const (
 	ParamLocationUndefined ParamLocation = iota
 	ParamLocationQuery
@@ -37,17 +39,8 @@ const (
 	ParamLocationCookie
 )
 
-// This function is used by older generated code, and must remain compatible
-// with that code. It is not to be used in new templates. Please see the
-// function below, which can specialize its output based on the location of
-// the parameter.
-func StyleParam(style string, explode bool, paramName string, value interface{}) (string, error) {
-	return StyleParamWithLocation(style, explode, paramName, ParamLocationUndefined, value)
-}
-
-// Given an input value, such as a primitive type, array or object, turn it
-// into a parameter based on style/explode definition, performing whatever
-// escaping is necessary based on parameter location
+// StyleParamWithLocation converts value into a parameter based on the options
+// provided, and necessary escaping necessary.
 func StyleParamWithLocation(style string, explode bool, paramName string, paramLocation ParamLocation, value interface{}) (string, error) {
 	t := reflect.TypeOf(value)
 	v := reflect.ValueOf(value)
@@ -180,7 +173,6 @@ func marshalDateTimeValue(value interface{}) (string, bool) {
 }
 
 func styleStruct(style string, explode bool, paramName string, paramLocation ParamLocation, value interface{}) (string, error) {
-
 	if timeVal, ok := marshalDateTimeValue(value); ok {
 		styledVal, err := stylePrimitive(style, explode, paramName, paramLocation, timeVal)
 		if err != nil {

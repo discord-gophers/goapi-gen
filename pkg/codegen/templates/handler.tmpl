@@ -43,7 +43,7 @@ func Handler(si ServerInterface, opts ...ServerOption) http.Handler {
 
 	r.Route(options.BaseURL, func(r chi.Router) {
 	{{range . -}}
-		r.{{.Method | lower | title }}("{{.Path | swaggerUriToChiUri}}", wrapper.{{.OperationId}})
+		r.{{.Method | lower | title }}("{{.Path | swaggerURIToChiURI}}", wrapper.{{.OperationID}})
 	{{ end }}
 	})
 	return r

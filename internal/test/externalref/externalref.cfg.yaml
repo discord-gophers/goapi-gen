@@ -6,5 +6,5 @@ generate:
   - skip-prune
   - spec
 import-mapping:
-  ./packageA/spec.yaml: github.com/discord-gophers/goapi-gen/internal/test/externalref/packageA
-  ./packageB/spec.yaml: github.com/discord-gophers/goapi-gen/internal/test/externalref/packageB
+  ./package_a/spec.yaml: github.com/discord-gophers/goapi-gen/internal/test/externalref/package_a
+  ./package_b/spec.yaml: github.com/discord-gophers/goapi-gen/internal/test/externalref/package_b

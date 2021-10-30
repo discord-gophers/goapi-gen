@@ -12,23 +12,23 @@ import (
 	"path"
 	"strings"
 
-	externalRef0 "github.com/discord-gophers/goapi-gen/internal/test/externalref/packageA"
-	externalRef1 "github.com/discord-gophers/goapi-gen/internal/test/externalref/packageB"
+	externalRef0 "github.com/discord-gophers/goapi-gen/internal/test/externalref/package_a"
+	externalRef1 "github.com/discord-gophers/goapi-gen/internal/test/externalref/package_b"
 	"github.com/getkin/kin-openapi/openapi3"
 )
 
 // Container defines model for Container.
 type Container struct {
-	ObjectA *externalRef0.ObjectA `json:"object_a,omitempty"`
-	ObjectB *externalRef1.ObjectB `json:"object_b,omitempty"`
+	ObjectA *externalRef0.ObjectA `json:"objectA,omitempty"`
+	ObjectB *externalRef1.ObjectB `json:"objectB,omitempty"`
 }
 
 // Base64 encoded, gzipped, json marshaled Swagger object
 var swaggerSpec = []string{
 
-	"H4sIAAAAAAAC/4zPQcrCMBAF4Lu8/1+GROguu9YDeASZhqmNtsmQBEFK7i4pihsXZvUeYb5hNri4Sgwc",
-	"SobdkN3MK+3xGEMhHzi1IikKp+J5/4rjlV05U8v/iSdYaCPkbnTh3mRhpx+0Ln/mg5uXbE77bI+q3sz4",
-	"jRl+YgbU9hR8mGJjii8LwwIKd07Zx9BK2yUcSDwsOn3QHRSEytyuqfUZAAD//5jZ1TEFAQAA",
+	"H4sIAAAAAAAC/4zPQQrCMBAF0Lt8XYZE6C476wE8gkzD1EbbZEiCICV3l5SCGxdm9T9h3jArXFwkBg4l",
+	"w67IbuKFtniJoZAPnFqRFIVT8bx9xeHBrpxbPCYeYaGNkHvSnW9ksrDTb1rmg/niZpfNdZ+tamf6n8zw",
+	"F9OjtqfgwxibU3yZGRZQeHHKPoZW2i7hQOJh0emT7qAgVKZ2Ta2fAAAA//+a0KqwBQEAAA==",
 }
 
 // GetSwagger returns the content of the embedded swagger specification file
@@ -70,13 +70,13 @@ func PathToRawSpec(pathToFile string) map[string]func() ([]byte, error) {
 
 	pathPrefix := path.Dir(pathToFile)
 
-	for rawPath, rawFunc := range externalRef0.PathToRawSpec(path.Join(pathPrefix, "./packageA/spec.yaml")) {
+	for rawPath, rawFunc := range externalRef0.PathToRawSpec(path.Join(pathPrefix, "./package_a/spec.yaml")) {
 		if _, ok := res[rawPath]; ok {
 			// it is not possible to compare functions in golang, so always overwrite the old value
 		}
 		res[rawPath] = rawFunc
 	}
-	for rawPath, rawFunc := range externalRef1.PathToRawSpec(path.Join(pathPrefix, "./packageB/spec.yaml")) {
+	for rawPath, rawFunc := range externalRef1.PathToRawSpec(path.Join(pathPrefix, "./package_b/spec.yaml")) {
 		if _, ok := res[rawPath]; ok {
 			// it is not possible to compare functions in golang, so always overwrite the old value
 		}

@@ -11,6 +11,7 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+
 package codegen
 
 import (
@@ -23,8 +24,8 @@ import (
 	"github.com/getkin/kin-openapi/openapi3"
 )
 
-// This generates a gzipped, base64 encoded JSON representation of the
-// swagger definition, which we embed inside the generated code.
+// GenerateInlinedSpec generates a gzipped, base64 encoded JSON representation
+// of the swagger definition, which is embedded inside the generated code.
 func GenerateInlinedSpec(t *template.Template, importMapping importMap, swagger *openapi3.T) (string, error) {
 	// Marshal to json
 	encoded, err := swagger.MarshalJSON()

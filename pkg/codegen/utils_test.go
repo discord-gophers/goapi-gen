@@ -11,6 +11,7 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+
 package codegen
 
 import (
@@ -230,27 +231,27 @@ func TestIsGoTypeReference(t *testing.T) {
 }
 
 func TestSwaggerUriToChiUri(t *testing.T) {
-	assert.Equal(t, "/path", SwaggerUriToChiUri("/path"))
-	assert.Equal(t, "/path/{arg}", SwaggerUriToChiUri("/path/{arg}"))
-	assert.Equal(t, "/path/{arg1}/{arg2}", SwaggerUriToChiUri("/path/{arg1}/{arg2}"))
-	assert.Equal(t, "/path/{arg1}/{arg2}/foo", SwaggerUriToChiUri("/path/{arg1}/{arg2}/foo"))
+	assert.Equal(t, "/path", SwaggerURIToChiURI("/path"))
+	assert.Equal(t, "/path/{arg}", SwaggerURIToChiURI("/path/{arg}"))
+	assert.Equal(t, "/path/{arg1}/{arg2}", SwaggerURIToChiURI("/path/{arg1}/{arg2}"))
+	assert.Equal(t, "/path/{arg1}/{arg2}/foo", SwaggerURIToChiURI("/path/{arg1}/{arg2}/foo"))
 
 	// Make sure all the exploded and alternate formats match too
-	assert.Equal(t, "/path/{arg}/foo", SwaggerUriToChiUri("/path/{arg}/foo"))
-	assert.Equal(t, "/path/{arg}/foo", SwaggerUriToChiUri("/path/{arg*}/foo"))
-	assert.Equal(t, "/path/{arg}/foo", SwaggerUriToChiUri("/path/{.arg}/foo"))
-	assert.Equal(t, "/path/{arg}/foo", SwaggerUriToChiUri("/path/{.arg*}/foo"))
-	assert.Equal(t, "/path/{arg}/foo", SwaggerUriToChiUri("/path/{;arg}/foo"))
-	assert.Equal(t, "/path/{arg}/foo", SwaggerUriToChiUri("/path/{?arg*}/foo"))
-	assert.Equal(t, "/path/{arg}/foo", SwaggerUriToChiUri("/path/{;arg*}/foo"))
-	assert.Equal(t, "/path/{arg}/foo", SwaggerUriToChiUri("/path/{?arg}/foo"))
+	assert.Equal(t, "/path/{arg}/foo", SwaggerURIToChiURI("/path/{arg}/foo"))
+	assert.Equal(t, "/path/{arg}/foo", SwaggerURIToChiURI("/path/{arg*}/foo"))
+	assert.Equal(t, "/path/{arg}/foo", SwaggerURIToChiURI("/path/{.arg}/foo"))
+	assert.Equal(t, "/path/{arg}/foo", SwaggerURIToChiURI("/path/{.arg*}/foo"))
+	assert.Equal(t, "/path/{arg}/foo", SwaggerURIToChiURI("/path/{;arg}/foo"))
+	assert.Equal(t, "/path/{arg}/foo", SwaggerURIToChiURI("/path/{?arg*}/foo"))
+	assert.Equal(t, "/path/{arg}/foo", SwaggerURIToChiURI("/path/{;arg*}/foo"))
+	assert.Equal(t, "/path/{arg}/foo", SwaggerURIToChiURI("/path/{?arg}/foo"))
 }
 
 func TestOrderedParamsFromUri(t *testing.T) {
-	result := OrderedParamsFromUri("/path/{param1}/{.param2}/{;param3*}/foo")
+	result := OrderedParamsFromURI("/path/{param1}/{.param2}/{;param3*}/foo")
 	assert.EqualValues(t, []string{"param1", "param2", "param3"}, result)
 
-	result = OrderedParamsFromUri("/path/foo")
+	result = OrderedParamsFromURI("/path/foo")
 	assert.EqualValues(t, []string{}, result)
 }
 

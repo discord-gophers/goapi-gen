@@ -10,66 +10,66 @@ import (
 )
 
 const (
-	// ErrSecurityProviderApiKeyInvalidIn indicates a usage of an invalid In.
+	// ErrAPIKeyInvalidIn indicates a usage of an invalid In.
 	// Should be cookie, header or query
-	ErrSecurityProviderApiKeyInvalidIn = SecurityProviderError("invalid 'in' specified for apiKey")
+	ErrAPIKeyInvalidIn = Error("invalid 'in' specified for apiKey")
 )
 
-// SecurityProviderError defines error values of a security provider.
-type SecurityProviderError string
+// Error defines error values of a security provider.
+type Error string
 
 // Error implements the error interface.
-func (e SecurityProviderError) Error() string {
+func (e Error) Error() string {
 	return string(e)
 }
 
-// NewSecurityProviderBasicAuth provides a SecurityProvider, which can solve
+// NewBasicAuth provides a BasicAuth, which can solve
 // the BasicAuth challenge for api-calls.
-func NewSecurityProviderBasicAuth(username, password string) (*SecurityProviderBasicAuth, error) {
-	return &SecurityProviderBasicAuth{
+func NewBasicAuth(username, password string) (*BasicAuth, error) {
+	return &BasicAuth{
 		username: username,
 		password: password,
 	}, nil
 }
 
-// SecurityProviderBasicAuth sends a base64-encoded combination of
+// BasicAuth sends a base64-encoded combination of
 // username, password along with a request.
-type SecurityProviderBasicAuth struct {
+type BasicAuth struct {
 	username string
 	password string
 }
 
 // Intercept will attach an Authorization header to the request and ensures that
 // the username, password are base64 encoded and attached to the header.
-func (s *SecurityProviderBasicAuth) Intercept(ctx context.Context, req *http.Request) error {
+func (s *BasicAuth) Intercept(ctx context.Context, req *http.Request) error {
 	req.SetBasicAuth(s.username, s.password)
 	return nil
 }
 
-// NewSecurityProviderBearerToken provides a SecurityProvider, which can solve
+// NewBearerToken provides a BearerToken, which can solve
 // the Bearer Auth challende for api-calls.
-func NewSecurityProviderBearerToken(token string) (*SecurityProviderBearerToken, error) {
-	return &SecurityProviderBearerToken{
+func NewBearerToken(token string) (*BearerToken, error) {
+	return &BearerToken{
 		token: token,
 	}, nil
 }
 
-// SecurityProviderBearerToken sends a token as part of an
+// BearerToken sends a token as part of an
 // Authorization: Bearer header along with a request.
-type SecurityProviderBearerToken struct {
+type BearerToken struct {
 	token string
 }
 
 // Intercept will attach an Authorization header to the request
 // and ensures that the bearer token is attached to the header.
-func (s *SecurityProviderBearerToken) Intercept(ctx context.Context, req *http.Request) error {
+func (s *BearerToken) Intercept(ctx context.Context, req *http.Request) error {
 	req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", s.token))
 	return nil
 }
 
-// NewSecurityProviderApiKey will attach a generic apiKey for a given name
+// NewAPIKey will attach a generic apiKey for a given name
 // either to a cookie, header or as a query parameter.
-func NewSecurityProviderApiKey(in, name, apiKey string) (*SecurityProviderApiKey, error) {
+func NewAPIKey(in, name, apiKey string) (*APIKey, error) {
 	interceptors := map[string]func(ctx context.Context, req *http.Request) error{
 		"cookie": func(ctx context.Context, req *http.Request) error {
 			req.AddCookie(&http.Cookie{Name: name, Value: apiKey})
@@ -89,22 +89,22 @@ func NewSecurityProviderApiKey(in, name, apiKey string) (*SecurityProviderApiKey
 
 	interceptor, ok := interceptors[in]
 	if !ok {
-		return nil, ErrSecurityProviderApiKeyInvalidIn
+		return nil, ErrAPIKeyInvalidIn
 	}
 
-	return &SecurityProviderApiKey{
+	return &APIKey{
 		interceptor: interceptor,
 	}, nil
 }
 
-// SecurityProviderApiKey will attach an apiKey either to a
+// APIKey will attach an apiKey either to a
 // cookie, header or query.
-type SecurityProviderApiKey struct {
+type APIKey struct {
 	interceptor func(ctx context.Context, req *http.Request) error
 }
 
 // Intercept will attach a cookie, header or query param for the configured
 // name and apiKey.
-func (s *SecurityProviderApiKey) Intercept(ctx context.Context, req *http.Request) error {
+func (s *APIKey) Intercept(ctx context.Context, req *http.Request) error {
 	return s.interceptor(ctx, req)
 }
