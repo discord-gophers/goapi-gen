@@ -1,3 +1,3 @@
 package main
 
-//go:generate go run . docs --out docs.md
+//go:generate go run . -p "" docs --out docs.md
