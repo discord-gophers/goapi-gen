@@ -162,6 +162,7 @@ func main() {
 				Usage:       "The package name for generated code.",
 				DefaultText: "swagger file name",
 				Destination: &f.PackageName,
+				Required:    true,
 			},
 			&cli.StringSliceFlag{
 				Name:        GenerateKey,
