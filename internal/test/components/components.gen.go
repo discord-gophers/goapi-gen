@@ -1004,12 +1004,8 @@ func (c *Client) EnsureEverythingIsReferenced(ctx context.Context, respBody inte
 func (c *Client) ParamsWithAddProps(ctx context.Context, params ParamsWithAddPropsClientParams, opts ...func(*http.Request) error) error {
 
 	queryParams := make(map[string]string)
-	if params.P1 != nil {
-		queryParams["p1"] = *params.P1
-	}
-	if params.P2 != nil {
-		queryParams["p2"] = *params.P2
-	}
+	queryParams["p1"] = params.P1
+	queryParams["p2"] = params.P2
 
 	// Create the request
 	req, err := http.NewRequestWithContext(

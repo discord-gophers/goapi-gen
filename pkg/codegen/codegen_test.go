@@ -1,10 +1,7 @@
 package codegen
 
 import (
-	"bytes"
 	"go/format"
-	"io"
-	"net/http"
 	"testing"
 	"text/template"
 
@@ -159,25 +156,6 @@ func TestExamplePetStoreCodeGenerationWithUserTemplates(t *testing.T) {
 
 	// Check that the built-in template has been overridden
 	assert.Contains(t, code, "//blah")
-}
-
-func TestExamplePetStoreParseFunction(t *testing.T) {
-	bodyBytes := []byte(`{"id": 5, "name": "testpet", "tag": "cat"}`)
-
-	cannedResponse := &http.Response{
-		StatusCode: 200,
-		Body:       io.NopCloser(bytes.NewReader(bodyBytes)),
-		Header:     http.Header{},
-	}
-	cannedResponse.Header.Add("Content-type", "application/json")
-
-	findPetByIDResponse, err := examplePetstoreClient.ParseFindPetByIDResponse(cannedResponse)
-	assert.NoError(t, err)
-	assert.NotNil(t, findPetByIDResponse.JSON200)
-	assert.Equal(t, int64(5), findPetByIDResponse.JSON200.ID)
-	assert.Equal(t, "testpet", findPetByIDResponse.JSON200.Name)
-	assert.NotNil(t, findPetByIDResponse.JSON200.Tag)
-	assert.Equal(t, "cat", *findPetByIDResponse.JSON200.Tag)
 }
 
 func TestExampleOpenAPICodeGeneration(t *testing.T) {

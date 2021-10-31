@@ -6,12 +6,12 @@ func (c *Client) {{template "method-signature" .}} {
 	{{ if .QueryParams }}
 		queryParams := make(map[string]string)
 		{{- range .QueryParams }}
-			{{- if not .Spec.Required }}
-				queryParams["{{ .ParamName }}"] = params.{{- .GoVariableName | ucFirst -}}
-			{{- else }}
+			{{- if .IndirectOptional  }}
 				if params.{{- .GoVariableName | ucFirst -}} != nil {
 					queryParams["{{ .ParamName }}"] = *params.{{- .GoVariableName | ucFirst -}}
 				}
+			{{- else }}
+				queryParams["{{ .ParamName }}"] = params.{{- .GoVariableName | ucFirst -}}
 			{{- end }}
 		{{- end }}
 	{{- end }}
@@ -61,10 +61,10 @@ func (c *Client) {{template "method-signature" .}} {
 	// Set the headers
 
 	{{ range .HeaderParams }}
-		{{- if not .Spec.Required }}
-			req.Header.Set("{{.ParamName}}", params.{{- .GoVariableName | ucFirst -}})
-		{{- else }}
+		{{- if .IndirectOptional }}
 			req.Header.Set("{{.ParamName}}", *params.{{- .GoVariableName | ucFirst -}})
+		{{- else }}
+			req.Header.Set("{{.ParamName}}", params.{{- .GoVariableName | ucFirst -}})
 		{{- end}}
 	{{- end }}
 
@@ -73,12 +73,8 @@ func (c *Client) {{template "method-signature" .}} {
 	{{- if .CookieParams -}}
 
 	// Set the cookies
-	{{ range .CookieParams }}
-		{{- if not .Spec.Required }}
-			req.AddCookie(params.{{ .GoVariableName | ucFirst }})
-		{{- else }}
-			req.AddCookie(*params.{{ .GoVariableName | ucFirst }})
-		{{- end}}
+	{{- range .CookieParams }}
+		req.AddCookie(params.{{ .GoVariableName | ucFirst }})
 	{{- end }}
 
 	{{- end }}

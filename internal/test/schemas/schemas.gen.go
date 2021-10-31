@@ -371,6 +371,7 @@ type Issue41ClientParams struct {
 }
 
 type Issue9ClientParams struct {
+	// Optional body
 	Body io.Reader
 	Foo  string `json:"foo"`
 }
@@ -643,9 +644,7 @@ func (c *Client) Issue41(ctx context.Context, params Issue41ClientParams, opts .
 func (c *Client) Issue9(ctx context.Context, respBody interface{}, params Issue9ClientParams, opts ...func(*http.Request) error) (*ReqResponse, error) {
 
 	queryParams := make(map[string]string)
-	if params.Foo != nil {
-		queryParams["foo"] = *params.Foo
-	}
+	queryParams["foo"] = params.Foo
 
 	// Create the request
 	req, err := http.NewRequestWithContext(

@@ -286,13 +286,14 @@ func defaultDecoder(resp *http.Response, v interface{}) error {
 // Returns all pets
 type FindPetsClientParams struct {
 	// tags to filter by
-	Tags string `json:"tags,omitempty"`
+	Tags *string `json:"tags,omitempty"`
 	// maximum number of results to return
-	Limit *string `json:"limit"`
+	Limit *string `json:"limit,omitempty"`
 }
 
 // Creates a new pet
 type AddPetClientParams struct {
+	// Pet to add to the store
 	Body io.Reader
 }
 
@@ -333,7 +334,9 @@ func buildURL(baseURL string, pathParams map[string]string, queryParams map[stri
 func (c *Client) FindPets(ctx context.Context, params FindPetsClientParams, opts ...func(*http.Request) error) error {
 
 	queryParams := make(map[string]string)
-	queryParams["tags"] = params.Tags
+	if params.Tags != nil {
+		queryParams["tags"] = *params.Tags
+	}
 	if params.Limit != nil {
 		queryParams["limit"] = *params.Limit
 	}

@@ -617,23 +617,13 @@ func genClientParams(op OperationDefinition) string {
 	b := &strings.Builder{}
 	b.WriteRune('\n')
 
-	if op.Summary != "" {
-		b.WriteString("// ")
-		// Handle multiline summaries
-		b.WriteString(strings.ReplaceAll(op.Summary, "\n", "\n// "))
-		b.WriteString("\n")
-	}
+	comment(b, op.Summary)
 
 	b.WriteString("type ")
 	b.WriteString(snaker.ForceCamelIdentifier(op.OperationID))
 	b.WriteString("ClientParams struct {\n")
 
-	if len(op.Bodies) > 0 {
-		if op.Bodies[0].Schema.Description != "" {
-			b.WriteString("// ")
-			b.WriteString(strings.ReplaceAll(op.Bodies[0].Schema.Description, "\n", "\n// "))
-			b.WriteString("\n")
-		}
+	if op.HasBody() {
 
 		b.WriteString("Body ")
 		// TODO(@Karitham): Currently we accept an io.Reader as a body,
@@ -645,20 +635,13 @@ func genClientParams(op OperationDefinition) string {
 	}
 
 	for _, param := range op.AllParams() {
-		if param.Spec.Description != "" {
-			b.WriteString("// ")
-			b.WriteString(strings.ReplaceAll(param.Spec.Description, "\n", "\n// "))
-			b.WriteString("\n")
-		}
+		comment(b, param.Spec.Description)
 
 		b.WriteString(snaker.ForceCamelIdentifier(param.GoVariableName()))
 		b.WriteRune(' ')
 
 		// optionals
-		if !param.Required && !strings.HasPrefix(param.TypeDef(), "[]") {
-			param.Spec.Required = true
-			param.Required = true
-
+		if param.IndirectOptional() {
 			b.WriteRune('*')
 		}
 		switch param.Spec.In {
@@ -666,7 +649,7 @@ func genClientParams(op OperationDefinition) string {
 			b.WriteString("string")
 		case "cookie":
 			// http.Cookie accepts a pointer, we just gotta check if it's already a ptr
-			if param.Required || strings.HasPrefix(param.TypeDef(), "[]") {
+			if !param.IndirectOptional() {
 				b.WriteString("*")
 			}
 			b.WriteString("http.Cookie")
@@ -677,7 +660,7 @@ func genClientParams(op OperationDefinition) string {
 		b.WriteString(" `json:\"")
 		b.WriteString(param.ParamName)
 
-		if !param.Required {
+		if param.IndirectOptional() {
 			b.WriteString(",omitempty")
 		}
 
@@ -686,6 +669,15 @@ func genClientParams(op OperationDefinition) string {
 
 	b.WriteString("}\n")
 	return b.String()
+}
+
+// comment writes a comment
+func comment(b *strings.Builder, s string) {
+	if s != "" {
+		b.WriteString("// ")
+		b.WriteString(strings.ReplaceAll(s, "\n", "\n// "))
+		b.WriteRune('\n')
+	}
 }
 
 // GenerateParamsTypes defines the schema for a parameters definition object

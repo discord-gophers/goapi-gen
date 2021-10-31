@@ -316,40 +316,40 @@ type GetContentObjectClientParams struct {
 
 type GetCookieClientParams struct {
 	// primitive
-	P **http.Cookie `json:"p"`
+	P *http.Cookie `json:"p,omitempty"`
 	// primitive
-	Ep **http.Cookie `json:"ep"`
+	Ep *http.Cookie `json:"ep,omitempty"`
 	// exploded array
 	Ea *http.Cookie `json:"ea,omitempty"`
 	// array
 	A *http.Cookie `json:"a,omitempty"`
 	// exploded object
-	Eo **http.Cookie `json:"eo"`
+	Eo *http.Cookie `json:"eo,omitempty"`
 	// object
-	O **http.Cookie `json:"o"`
+	O *http.Cookie `json:"o,omitempty"`
 	// complex object
-	Co **http.Cookie `json:"co"`
+	Co *http.Cookie `json:"co,omitempty"`
 	// name starting with number
-	N1s **http.Cookie `json:"1s"`
+	N1s *http.Cookie `json:"1s,omitempty"`
 }
 
 type GetHeaderClientParams struct {
 	// primitive
-	XPrimitive *string `json:"X-Primitive"`
+	XPrimitive *string `json:"X-Primitive,omitempty"`
 	// primitive
-	XPrimitiveExploded *string `json:"X-Primitive-Exploded"`
+	XPrimitiveExploded *string `json:"X-Primitive-Exploded,omitempty"`
 	// exploded array
-	XArrayExploded string `json:"X-Array-Exploded,omitempty"`
+	XArrayExploded *string `json:"X-Array-Exploded,omitempty"`
 	// array
-	XArray string `json:"X-Array,omitempty"`
+	XArray *string `json:"X-Array,omitempty"`
 	// exploded object
-	XObjectExploded *string `json:"X-Object-Exploded"`
+	XObjectExploded *string `json:"X-Object-Exploded,omitempty"`
 	// object
-	XObject *string `json:"X-Object"`
+	XObject *string `json:"X-Object,omitempty"`
 	// complex object
-	XComplexObject *string `json:"X-Complex-Object"`
+	XComplexObject *string `json:"X-Complex-Object,omitempty"`
 	// name starting with number
-	N1startingWithNumber *string `json:"1-Starting-With-Number"`
+	N1startingWithNumber *string `json:"1-Starting-With-Number,omitempty"`
 }
 
 type GetLabelExplodeArrayClientParams struct {
@@ -395,23 +395,23 @@ type GetDeepObjectClientParams struct {
 
 type GetQueryFormClientParams struct {
 	// exploded array
-	Ea string `json:"ea,omitempty"`
+	Ea *string `json:"ea,omitempty"`
 	// array
-	A string `json:"a,omitempty"`
+	A *string `json:"a,omitempty"`
 	// exploded object
-	Eo *string `json:"eo"`
+	Eo *string `json:"eo,omitempty"`
 	// object
-	O *string `json:"o"`
+	O *string `json:"o,omitempty"`
 	// exploded primitive
-	Ep *string `json:"ep"`
+	Ep *string `json:"ep,omitempty"`
 	// primitive
-	P *string `json:"p"`
+	P *string `json:"p,omitempty"`
 	// primitive string
-	Ps *string `json:"ps"`
+	Ps *string `json:"ps,omitempty"`
 	// complex object
-	Co *string `json:"co"`
+	Co *string `json:"co,omitempty"`
 	// name starting with number
-	N1s *string `json:"1s"`
+	N1s *string `json:"1s,omitempty"`
 }
 
 type GetSimpleExplodeArrayClientParams struct {
@@ -509,15 +509,14 @@ func (c *Client) GetCookie(ctx context.Context, params GetCookieClientParams, op
 	if err != nil {
 		return fmt.Errorf("failed to build request: %w", err)
 	} // Set the cookies
-
-	req.AddCookie(*params.P)
-	req.AddCookie(*params.Ep)
+	req.AddCookie(params.P)
+	req.AddCookie(params.Ep)
 	req.AddCookie(params.Ea)
 	req.AddCookie(params.A)
-	req.AddCookie(*params.Eo)
-	req.AddCookie(*params.O)
-	req.AddCookie(*params.Co)
-	req.AddCookie(*params.N1s)
+	req.AddCookie(params.Eo)
+	req.AddCookie(params.O)
+	req.AddCookie(params.Co)
+	req.AddCookie(params.N1s)
 
 	// Apply any request editors
 	for _, fn := range c.reqEditors {
@@ -551,8 +550,8 @@ func (c *Client) GetHeader(ctx context.Context, params GetHeaderClientParams, op
 
 	req.Header.Set("X-Primitive", *params.XPrimitive)
 	req.Header.Set("X-Primitive-Exploded", *params.XPrimitiveExploded)
-	req.Header.Set("X-Array-Exploded", params.XArrayExploded)
-	req.Header.Set("X-Array", params.XArray)
+	req.Header.Set("X-Array-Exploded", *params.XArrayExploded)
+	req.Header.Set("X-Array", *params.XArray)
 	req.Header.Set("X-Object-Exploded", *params.XObjectExploded)
 	req.Header.Set("X-Object", *params.XObject)
 	req.Header.Set("X-Complex-Object", *params.XComplexObject)
@@ -911,9 +910,7 @@ func (c *Client) GetPassThrough(ctx context.Context, params GetPassThroughClient
 func (c *Client) GetDeepObject(ctx context.Context, params GetDeepObjectClientParams, opts ...func(*http.Request) error) error {
 
 	queryParams := make(map[string]string)
-	if params.DeepObj != nil {
-		queryParams["deepObj"] = *params.DeepObj
-	}
+	queryParams["deepObj"] = params.DeepObj
 
 	// Create the request
 	req, err := http.NewRequestWithContext(
@@ -951,8 +948,12 @@ func (c *Client) GetDeepObject(ctx context.Context, params GetDeepObjectClientPa
 func (c *Client) GetQueryForm(ctx context.Context, params GetQueryFormClientParams, opts ...func(*http.Request) error) error {
 
 	queryParams := make(map[string]string)
-	queryParams["ea"] = params.Ea
-	queryParams["a"] = params.A
+	if params.Ea != nil {
+		queryParams["ea"] = *params.Ea
+	}
+	if params.A != nil {
+		queryParams["a"] = *params.A
+	}
 	if params.Eo != nil {
 		queryParams["eo"] = *params.Eo
 	}
@@ -2123,25 +2124,25 @@ func WithErrorHandler(handler func(w http.ResponseWriter, r *http.Request, err e
 // Base64 encoded, gzipped, json marshaled Swagger object
 var swaggerSpec = []string{
 
-	"H4sIAAAAAAAC/9xaS4/bNhD+K8a0p0K27OSmW5C+Fmg2ab1ACgR74Epji6kkMiS99cLQfy9IypZEybL8",
-	"0NrpLSvN45uPw8/kKBsIWcpZhpmSEGxAoOQsk2j+mNOUJ/hX8Ug/CVmmMFP6nwrXyucJoZn+S4YxpsQ8",
-	"f+EIAUglaLaEPM89iFCGgnJFWQYBvBtJE3e0zTViT18xVKBNbRyT/T3TVuuP9mWwAS4YR6GoBXcXVbLR",
-	"TOESBeQe3Ml3UWpBFS+fGEuQZPplGexHgQsI4Ae/rN8vkvsfSzwCv62owAiCL1tnT6cu8zzWwtYxLqiQ",
-	"6p6k2EKMB4IlbS+crMbKq4R6NJzSbMG0c0JDLBYnM4ngw92Djq6o0uHhAaUazVE8owAPnlFIuwyzyXQy",
-	"1YaMY0Y4hQDeTqaTGXjAiYoNfr9Yb1ufv+FEkDTXb5ZoytXFEr2uejXgN1Tvqw4mlCApKhQSgi+1/iGc",
-	"JzQ0zv5XyZwu6lqeemMUbEBgYIO3pcFkhiqXSqwwf/TqPf5mOt2Xb2fnOxshNzn9kLF/KHazYSwaNNQ3",
-	"BBc0pYo+a0Nc84RFCMGCJBKLwsJtmG1pjbK8CnULJlKi7KZ4+wa8xh7JvV4IbNxWAHhxBEXWaESEIC99",
-	"YRCopqUKU9kr/+6JzdaCpwGjaz2Gg7GjhW03VC9eWOfy9JM+F0oTQRcll0EwlFzUKwutQclxa0Vhs6Qm",
-	"Sdp2JBURimbL0b9UxaNslT4Z6W2NOpOdRLk/DXX1ylZJYpQoRhKh6FKi363FuUoUb8MU8P8ef6q4vKom",
-	"dUAZ/1Jsm6uoVBPYO21dBXUFzdqD6srK1URlt2m/FRxCyPYh+u71rFlYEWhfgSeom5tjNp4X1uPPVMXj",
-	"+6312YqXkCdMiiYxjexvJkbafuo8nv7hujUVsa1N+5wsL7ORPJDqxZzbTYVwyfNqlbPtif5Y0vYd7C/B",
-	"Wp9dNDg/96ytqw7zU/frIKgqNv+jvtrVX++sI4g72FrnMHft3kqJEnTttBaNujfeh4bTKRuPRoP3lK1u",
-	"OMJ2PXUUY6drFY0u2EyDkdOQKhr1IOcCQvU9d1RTp45j7QyVuvWu4kTKh1iw1TLuM+r7VJp3DvqOGBRf",
-	"ZYz3bYXi5WdEXk5x95VcsTpwk44QeffVx6Qt64xs6JM7xLkVlI0SlZj3HaYNlF+ZSLtq/3NndKD0Xpdk",
-	"p/qLTfLKurUrHHlJdlC9Gqh+l2WXs9ef8jkIhgCwo+LQ/Mdl43WG4h1sDAdgVGjknrzHjRCvPIZwwF9m",
-	"quoEPWuoetZvif2yWT+W9bhhzxtutzuXsCXCYKzVvjUeQdvtTCYGY8g98B8+o81b/G54NjE8c/2/ZM/b",
-	"HG9iOjEYS7sPKP35qX7+cZg5iYkezTMkDcVvzGeqYjur9jezHlQ03Aa8EM0GvhFphs3/FrG4VyKBAGKl",
-	"eOD7uCbafhKyFPLH/L8AAAD//8E4OSo9JAAA",
+	"H4sIAAAAAAAC/9xa34+jNhD+V6JpnyoSkrs33lbXXyv19q7NSlfptA9emARfAftsZ5tVxP9e2UAAQwgk",
+	"YTfbtwvMzDfzefydPewOfBZzlmCiJHg7ECg5SySaH0sa8wj/yh/pJz5LFCZK/1PhVrk8IjTRv6QfYkzM",
+	"82eO4IFUgiZrSNPUgQClLyhXlCXgwc1EmriTAmvCHr+hr0CbZnEM+gemrbafspfeDrhgHIWiWXK3QQWN",
+	"JgrXKCB14FbeBHGWVP7ykbEISaJflsF+FLgCD35wy/rdHNz9VOYj8PuGCgzA+1o4Oxq6xHmoha3nuKJC",
+	"qjsSYwsxDggWtb2wUI2VUwn1YDilyYpp54j6mC9OYoDg4+29jq6o0uHhHqWaLFE8oQAHnlDIbBkWs/ls",
+	"rg0Zx4RwCh68n81nC3CAExWa/N18vbP63B0ngsSpfrNGU64uluh11asBv6H6UHUwoQSJUaGQ4H2t9Q/h",
+	"PKK+cXa/SWZ1Udfy1BsjZwM8kzY4BQ0GGapcKrHB9MGp9/i7+fwQ3t7OtTZCajBdn7F/KHazYSwaNNQ3",
+	"BBc0poo+aUPc8ogFCN6KRBLzwvwiTFEaOBWqVkzERGWb4P07cBp7InV6IWp6DgDi2Yg5SjAhQpDnvrCk",
+	"BksVxrIX/v5JhtaSTyONLr7HS2NPCys2TC9eWC2hflJmQzcRuyg4DXGs7V6vxM8MSg5bK/AZNEnQ7yZS",
+	"EaFosp78S1U4STbxo5HK1igLWSPClu66uiSbKDJKESIJUHQpxe+ZxblKERZh8nT/nn6uuIyqGR3Q01/y",
+	"Nn8RFWkmcqOt25N4MU05kNUrK0szq2ybtZM1htAcyuDN6U2zkDxQUdAJ6mPHXEyXufX0C1Xh9K6wHqxI",
+	"EXnEKF9k04jubmak56fO490ftltTsdrarM/J7DIbwQGpns2511QIlzzvVTkrTsRDSTt0ML4Ea312yej8",
+	"3LG2rjrOT92vg6CqePyP+mpff72zBhB3tLXOYe61eysmStCt1Vo06N54HxtOp2w8GozeU1l14xG276lB",
+	"jJ2uVUcoG9ZMo5HTkCoa9CDnAkL1ljuqqVPDWDtDpa69qziR8j4UbLMO+4zKPpfmnYOyAYPWVxmDfd+g",
+	"eP4ZkZdT0EMlV6yO3HQDRN59dTGwZZ1BFvrkDrFO/WWjBGXOhw7TJpVfmYi7av9zb3Sk9F6XXKv6i03K",
+	"yrq1Kwy85FpZvVhS/S67NmfjT9EsxEsA7ks9No+xqx1naNxR7eUAJ7nGHcDpHsm98ljASva0KaQVZNAQ",
+	"8ixtz77U1Y9JPW68y4bb9c4JshJhNNZq384G0HY9k4LRGLIP4MfPTMsWvyueFYzPXP8vs8s2x6uYFozG",
+	"0v4DRH9+qp9LLGZOYqJH84xJQ/5/yheqwmxW7O4WPahouI14QVmMfEPRDJu/fsjy3ogIPAiV4p7r4pZo",
+	"+5nPYkgf0v8CAAD//0duf5cNIwAA",
 }
 
 // GetSwagger returns the content of the embedded swagger specification file

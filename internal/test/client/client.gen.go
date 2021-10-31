@@ -222,6 +222,7 @@ type PostJSONClientParams struct {
 }
 
 type PostOtherClientParams struct {
+	Body io.Reader
 }
 
 func buildURL(baseURL string, pathParams map[string]string, queryParams map[string]string) string {
