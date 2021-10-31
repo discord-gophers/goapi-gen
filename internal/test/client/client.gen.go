@@ -98,15 +98,15 @@ func (resp *Response) MarshalXML(e *xml.Encoder, start xml.StartElement) error {
 // ClientInterface is implemented by Client
 type ClientInterface interface {
 	// PostBoth makes the request to the API endpoint.
-	PostBoth(ctx context.Context, respBody render.Binder, params PostBothClientParams, opts ...func(*http.Request) error) (*ReqResponse, error)
+	PostBoth(ctx context.Context, respBody interface{}, params PostBothClientParams, opts ...func(*http.Request) error) (*ReqResponse, error)
 	// GetBoth makes the request to the API endpoint.
 	GetBoth(ctx context.Context, opts ...func(*http.Request) error) error
 	// PostJSON makes the request to the API endpoint.
-	PostJSON(ctx context.Context, respBody render.Binder, params PostJSONClientParams, opts ...func(*http.Request) error) (*ReqResponse, error)
+	PostJSON(ctx context.Context, respBody interface{}, params PostJSONClientParams, opts ...func(*http.Request) error) (*ReqResponse, error)
 	// GetJSON makes the request to the API endpoint.
 	GetJSON(ctx context.Context, opts ...func(*http.Request) error) error
 	// PostOther makes the request to the API endpoint.
-	PostOther(ctx context.Context, respBody render.Binder, params PostOtherClientParams, opts ...func(*http.Request) error) (*ReqResponse, error)
+	PostOther(ctx context.Context, respBody interface{}, params PostOtherClientParams, opts ...func(*http.Request) error) (*ReqResponse, error)
 	// GetOther makes the request to the API endpoint.
 	GetOther(ctx context.Context, opts ...func(*http.Request) error) error
 	// GetJSONWithTrailingSlash makes the request to the API endpoint.
@@ -183,18 +183,6 @@ type ReqResponse struct {
 	*http.Response
 }
 
-type PostBothClientParams struct {
-	Body io.Reader
-}
-
-type PostJSONClientParams struct {
-	Body io.Reader
-}
-
-type PostOtherClientParams struct {
-	Body io.Reader
-}
-
 // Decode is a package-level variable set to our default Decoder. We do this
 // because it allows you to set Decode to another function with the
 // same function signature, while also utilizing the Decoder() function
@@ -220,18 +208,51 @@ func defaultDecoder(resp *http.Response, v interface{}) error {
 	return err
 }
 
+// We generate a new type for each client function such that we have all required in this parameter.
+// Having a parameter like this is good because we don't break the function signature if things change inside.
+// This is also cleaner than having all parameters as function parameters.
+// The only issue is that it easily gets quite big
+
+type PostBothClientParams struct {
+	Body io.Reader
+}
+
+type PostJSONClientParams struct {
+	Body io.Reader
+}
+
+type PostOtherClientParams struct {
+}
+
+func buildURL(baseURL string, pathParams map[string]string, queryParams map[string]string) string {
+	u, err := url.Parse(baseURL)
+	if err != nil {
+		panic(err)
+	}
+
+	// add path parameters
+	for name, value := range pathParams {
+		u.Path = strings.Replace(u.Path, "{"+name+"}", value, 1)
+	}
+
+	// add query parameters
+	q := u.Query()
+	for key, value := range queryParams {
+		q.Set(key, value)
+	}
+	u.RawQuery = q.Encode()
+
+	return u.String()
+}
+
 // PostBoth makes the request to the API endpoint.
-func (c *Client) PostBoth(ctx context.Context, respBody render.Binder, params PostBothClientParams, opts ...func(*http.Request) error) (*ReqResponse, error) {
+func (c *Client) PostBoth(ctx context.Context, respBody interface{}, params PostBothClientParams, opts ...func(*http.Request) error) (*ReqResponse, error) {
 
 	// Create the request
 	req, err := http.NewRequestWithContext(
 		ctx,
 		"POST",
-		buildURL(
-			c.BaseURL,
-			nil,
-			nil,
-		),
+		c.BaseURL,
 		params.Body,
 	)
 	if err != nil {
@@ -273,11 +294,7 @@ func (c *Client) GetBoth(ctx context.Context, opts ...func(*http.Request) error)
 	req, err := http.NewRequestWithContext(
 		ctx,
 		"GET",
-		buildURL(
-			c.BaseURL,
-			nil,
-			nil,
-		),
+		c.BaseURL,
 		nil,
 	)
 	if err != nil {
@@ -301,17 +318,13 @@ func (c *Client) GetBoth(ctx context.Context, opts ...func(*http.Request) error)
 }
 
 // PostJSON makes the request to the API endpoint.
-func (c *Client) PostJSON(ctx context.Context, respBody render.Binder, params PostJSONClientParams, opts ...func(*http.Request) error) (*ReqResponse, error) {
+func (c *Client) PostJSON(ctx context.Context, respBody interface{}, params PostJSONClientParams, opts ...func(*http.Request) error) (*ReqResponse, error) {
 
 	// Create the request
 	req, err := http.NewRequestWithContext(
 		ctx,
 		"POST",
-		buildURL(
-			c.BaseURL,
-			nil,
-			nil,
-		),
+		c.BaseURL,
 		params.Body,
 	)
 	if err != nil {
@@ -353,11 +366,7 @@ func (c *Client) GetJSON(ctx context.Context, opts ...func(*http.Request) error)
 	req, err := http.NewRequestWithContext(
 		ctx,
 		"GET",
-		buildURL(
-			c.BaseURL,
-			nil,
-			nil,
-		),
+		c.BaseURL,
 		nil,
 	)
 	if err != nil {
@@ -381,17 +390,13 @@ func (c *Client) GetJSON(ctx context.Context, opts ...func(*http.Request) error)
 }
 
 // PostOther makes the request to the API endpoint.
-func (c *Client) PostOther(ctx context.Context, respBody render.Binder, params PostOtherClientParams, opts ...func(*http.Request) error) (*ReqResponse, error) {
+func (c *Client) PostOther(ctx context.Context, respBody interface{}, params PostOtherClientParams, opts ...func(*http.Request) error) (*ReqResponse, error) {
 
 	// Create the request
 	req, err := http.NewRequestWithContext(
 		ctx,
 		"POST",
-		buildURL(
-			c.BaseURL,
-			nil,
-			nil,
-		),
+		c.BaseURL,
 		params.Body,
 	)
 	if err != nil {
@@ -433,11 +438,7 @@ func (c *Client) GetOther(ctx context.Context, opts ...func(*http.Request) error
 	req, err := http.NewRequestWithContext(
 		ctx,
 		"GET",
-		buildURL(
-			c.BaseURL,
-			nil,
-			nil,
-		),
+		c.BaseURL,
 		nil,
 	)
 	if err != nil {
@@ -467,11 +468,7 @@ func (c *Client) GetJSONWithTrailingSlash(ctx context.Context, opts ...func(*htt
 	req, err := http.NewRequestWithContext(
 		ctx,
 		"GET",
-		buildURL(
-			c.BaseURL,
-			nil,
-			nil,
-		),
+		c.BaseURL,
 		nil,
 	)
 	if err != nil {
@@ -492,27 +489,6 @@ func (c *Client) GetJSONWithTrailingSlash(ctx context.Context, opts ...func(*htt
 	}
 
 	return nil
-}
-
-func buildURL(baseURL string, pathParams map[string]interface{}, queryParams map[string]interface{}) string {
-	u, err := url.Parse(baseURL)
-	if err != nil {
-		panic(err)
-	}
-
-	// add path parameters
-	for name, value := range pathParams {
-		u.Path = strings.Replace(u.Path, "{"+name+"}", fmt.Sprint(value), 1)
-	}
-
-	// add query parameters
-	q := u.Query()
-	for key, value := range queryParams {
-		q.Set(key, fmt.Sprint(value))
-	}
-	u.RawQuery = q.Encode()
-
-	return u.String()
 }
 
 // ServerInterface represents all server handlers.

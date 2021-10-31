@@ -608,6 +608,86 @@ func GenerateTypeDefsForOperation(op OperationDefinition) []TypeDefinition {
 	return typeDefs
 }
 
+// genClientParams generates the parameters for the client methods
+func genClientParams(op OperationDefinition) string {
+	if !typeShouldExist(op) {
+		return ""
+	}
+
+	b := &strings.Builder{}
+	b.WriteRune('\n')
+
+	if op.Summary != "" {
+		b.WriteString("// ")
+		// Handle multiline summaries
+		b.WriteString(strings.ReplaceAll(op.Summary, "\n", "\n// "))
+		b.WriteString("\n")
+	}
+
+	b.WriteString("type ")
+	b.WriteString(snaker.ForceCamelIdentifier(op.OperationID))
+	b.WriteString("ClientParams struct {\n")
+
+	if len(op.Bodies) > 0 {
+		if op.Bodies[0].Schema.Description != "" {
+			b.WriteString("// ")
+			b.WriteString(strings.ReplaceAll(op.Bodies[0].Schema.Description, "\n", "\n// "))
+			b.WriteString("\n")
+		}
+
+		b.WriteString("Body ")
+		// TODO(@Karitham): Currently we accept an io.Reader as a body,
+		// This is suboptimal and we should probably accept the struct body.
+		// We just need to find a good way to marshal it.
+		// b.WriteString(op.Bodies[0].Schema.TypeDecl())
+		b.WriteString("io.Reader")
+		b.WriteString("\n")
+	}
+
+	for _, param := range op.AllParams() {
+		if param.Spec.Description != "" {
+			b.WriteString("// ")
+			b.WriteString(strings.ReplaceAll(param.Spec.Description, "\n", "\n// "))
+			b.WriteString("\n")
+		}
+
+		b.WriteString(snaker.ForceCamelIdentifier(param.GoVariableName()))
+		b.WriteRune(' ')
+
+		// optionals
+		if !param.Required && !strings.HasPrefix(param.TypeDef(), "[]") {
+			param.Spec.Required = true
+			param.Required = true
+
+			b.WriteRune('*')
+		}
+		switch param.Spec.In {
+		case "header", "query", "path":
+			b.WriteString("string")
+		case "cookie":
+			// http.Cookie accepts a pointer, we just gotta check if it's already a ptr
+			if param.Required || strings.HasPrefix(param.TypeDef(), "[]") {
+				b.WriteString("*")
+			}
+			b.WriteString("http.Cookie")
+		default:
+			b.WriteString(param.Schema.TypeDecl())
+		}
+
+		b.WriteString(" `json:\"")
+		b.WriteString(param.ParamName)
+
+		if !param.Required {
+			b.WriteString(",omitempty")
+		}
+
+		b.WriteString("\"`\n")
+	}
+
+	b.WriteString("}\n")
+	return b.String()
+}
+
 // GenerateParamsTypes defines the schema for a parameters definition object
 // which encapsulates all the query, header and cookie parameters for an
 // operation.
@@ -625,7 +705,7 @@ func GenerateParamsTypes(op OperationDefinition) []TypeDefinition {
 		pSchema := param.Schema
 		if pSchema.HasAdditionalProperties {
 			propRefName := strings.Join([]string{typeName, param.GoName()}, "_")
-			pSchema.RefType = propRefName
+			pSchema.RefType = snaker.CamelToSnakeIdentifier(propRefName)
 			typeDefs = append(typeDefs, TypeDefinition{
 				TypeName: propRefName,
 				Schema:   param.Schema,
@@ -701,9 +781,8 @@ func GenerateClient(t *template.Template, ops []OperationDefinition) (string, er
 		"client-interface.tmpl",
 		"http.tmpl",
 		"types.tmpl",
-		"types-decoder.tmpl",
-		"methods.tmpl",
 		"build-url.tmpl",
+		"methods.tmpl",
 	}, t, ops)
 }
 

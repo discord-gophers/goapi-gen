@@ -93,7 +93,7 @@ type ParamsWithAddPropsParams_P1 struct {
 // ParamsWithAddPropsParams defines parameters for ParamsWithAddProps.
 type ParamsWithAddPropsParams struct {
 	// This parameter has additional properties
-	P1 ParamsWithAddPropsParams_P1 `json:"p1"`
+	P1 params_with_add_props_params_p1 `json:"p1"`
 
 	// This parameter has an anonymous inner property which needs to be
 	// turned into a proper type for additionalProperties to work
@@ -812,11 +812,11 @@ func (a AdditionalPropertiesObject5) MarshalJSON() ([]byte, error) {
 // ClientInterface is implemented by Client
 type ClientInterface interface {
 	// EnsureEverythingIsReferenced makes the request to the API endpoint.
-	EnsureEverythingIsReferenced(ctx context.Context, respBody render.Binder, params EnsureEverythingIsReferencedClientParams, opts ...func(*http.Request) error) (*ReqResponse, error)
+	EnsureEverythingIsReferenced(ctx context.Context, respBody interface{}, params EnsureEverythingIsReferencedClientParams, opts ...func(*http.Request) error) (*ReqResponse, error)
 	// ParamsWithAddProps makes the request to the API endpoint.
 	ParamsWithAddProps(ctx context.Context, params ParamsWithAddPropsClientParams, opts ...func(*http.Request) error) error
 	// BodyWithAddProps makes the request to the API endpoint.
-	BodyWithAddProps(ctx context.Context, respBody render.Binder, params BodyWithAddPropsClientParams, opts ...func(*http.Request) error) (*ReqResponse, error)
+	BodyWithAddProps(ctx context.Context, respBody interface{}, params BodyWithAddPropsClientParams, opts ...func(*http.Request) error) (*ReqResponse, error)
 }
 
 // Doer performs HTTP requests.
@@ -889,24 +889,6 @@ type ReqResponse struct {
 	*http.Response
 }
 
-type EnsureEverythingIsReferencedClientParams struct {
-	Body io.Reader
-}
-
-type ParamsWithAddPropsClientParams struct {
-	P1 struct {
-		AdditionalProperties map[string]interface{} `json:"-"`
-	}
-
-	P2 struct {
-		Inner ParamsWithAddPropsParams_P2_Inner `json:"inner"`
-	}
-}
-
-type BodyWithAddPropsClientParams struct {
-	Body io.Reader
-}
-
 // Decode is a package-level variable set to our default Decoder. We do this
 // because it allows you to set Decode to another function with the
 // same function signature, while also utilizing the Decoder() function
@@ -932,18 +914,58 @@ func defaultDecoder(resp *http.Response, v interface{}) error {
 	return err
 }
 
+// We generate a new type for each client function such that we have all required in this parameter.
+// Having a parameter like this is good because we don't break the function signature if things change inside.
+// This is also cleaner than having all parameters as function parameters.
+// The only issue is that it easily gets quite big
+
+type EnsureEverythingIsReferencedClientParams struct {
+	Body io.Reader
+}
+
+type ParamsWithAddPropsClientParams struct {
+	// This parameter has additional properties
+	//
+	P1 string `json:"p1"`
+	// This parameter has an anonymous inner property which needs to be
+	// turned into a proper type for additionalProperties to work
+	//
+	P2 string `json:"p2"`
+}
+
+type BodyWithAddPropsClientParams struct {
+	Body io.Reader
+}
+
+func buildURL(baseURL string, pathParams map[string]string, queryParams map[string]string) string {
+	u, err := url.Parse(baseURL)
+	if err != nil {
+		panic(err)
+	}
+
+	// add path parameters
+	for name, value := range pathParams {
+		u.Path = strings.Replace(u.Path, "{"+name+"}", value, 1)
+	}
+
+	// add query parameters
+	q := u.Query()
+	for key, value := range queryParams {
+		q.Set(key, value)
+	}
+	u.RawQuery = q.Encode()
+
+	return u.String()
+}
+
 // EnsureEverythingIsReferenced makes the request to the API endpoint.
-func (c *Client) EnsureEverythingIsReferenced(ctx context.Context, respBody render.Binder, params EnsureEverythingIsReferencedClientParams, opts ...func(*http.Request) error) (*ReqResponse, error) {
+func (c *Client) EnsureEverythingIsReferenced(ctx context.Context, respBody interface{}, params EnsureEverythingIsReferencedClientParams, opts ...func(*http.Request) error) (*ReqResponse, error) {
 
 	// Create the request
 	req, err := http.NewRequestWithContext(
 		ctx,
 		"GET",
-		buildURL(
-			c.BaseURL,
-			nil,
-			nil,
-		),
+		c.BaseURL,
 		params.Body,
 	)
 	if err != nil {
@@ -981,17 +1003,23 @@ func (c *Client) EnsureEverythingIsReferenced(ctx context.Context, respBody rend
 // ParamsWithAddProps makes the request to the API endpoint.
 func (c *Client) ParamsWithAddProps(ctx context.Context, params ParamsWithAddPropsClientParams, opts ...func(*http.Request) error) error {
 
+	queryParams := make(map[string]string)
+	if params.P1 != nil {
+		queryParams["p1"] = *params.P1
+	}
+	if params.P2 != nil {
+		queryParams["p2"] = *params.P2
+	}
+
 	// Create the request
 	req, err := http.NewRequestWithContext(
 		ctx,
 		"GET",
+
 		buildURL(
 			c.BaseURL,
 			nil,
-			map[string]interface{}{
-				"p1": params.P1,
-				"p2": params.P2,
-			},
+			queryParams,
 		),
 		nil,
 	)
@@ -1016,17 +1044,13 @@ func (c *Client) ParamsWithAddProps(ctx context.Context, params ParamsWithAddPro
 }
 
 // BodyWithAddProps makes the request to the API endpoint.
-func (c *Client) BodyWithAddProps(ctx context.Context, respBody render.Binder, params BodyWithAddPropsClientParams, opts ...func(*http.Request) error) (*ReqResponse, error) {
+func (c *Client) BodyWithAddProps(ctx context.Context, respBody interface{}, params BodyWithAddPropsClientParams, opts ...func(*http.Request) error) (*ReqResponse, error) {
 
 	// Create the request
 	req, err := http.NewRequestWithContext(
 		ctx,
 		"POST",
-		buildURL(
-			c.BaseURL,
-			nil,
-			nil,
-		),
+		c.BaseURL,
 		params.Body,
 	)
 	if err != nil {
@@ -1059,27 +1083,6 @@ func (c *Client) BodyWithAddProps(ctx context.Context, respBody render.Binder, p
 	return &ReqResponse{
 		Response: resp,
 	}, nil
-}
-
-func buildURL(baseURL string, pathParams map[string]interface{}, queryParams map[string]interface{}) string {
-	u, err := url.Parse(baseURL)
-	if err != nil {
-		panic(err)
-	}
-
-	// add path parameters
-	for name, value := range pathParams {
-		u.Path = strings.Replace(u.Path, "{"+name+"}", fmt.Sprint(value), 1)
-	}
-
-	// add query parameters
-	q := u.Query()
-	for key, value := range queryParams {
-		q.Set(key, fmt.Sprint(value))
-	}
-	u.RawQuery = q.Encode()
-
-	return u.String()
 }
 
 // ServerInterface represents all server handlers.

@@ -2,10 +2,10 @@
 {{ .OperationID -}}
 	(ctx context.Context,
 		{{- if .HasBody -}}
-		respBody render.Binder,
+		respBody interface{},
 		{{- end -}}
 		
-		{{- if or (.HasBody) (.RequiresAllParamObject) -}}
+		{{- if typeShouldExist . -}}
 		params {{ .OperationID }}ClientParams,
 		{{- end -}}
 		opts ...func(*http.Request) error) ({{- if .HasBody }} *ReqResponse, {{ end -}} error)

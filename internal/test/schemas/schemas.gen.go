@@ -240,7 +240,7 @@ type ClientInterface interface {
 	// Issue127 makes the request to the API endpoint.
 	Issue127(ctx context.Context, opts ...func(*http.Request) error) error
 	// Issue185 makes the request to the API endpoint.
-	Issue185(ctx context.Context, respBody render.Binder, params Issue185ClientParams, opts ...func(*http.Request) error) (*ReqResponse, error)
+	Issue185(ctx context.Context, respBody interface{}, params Issue185ClientParams, opts ...func(*http.Request) error) (*ReqResponse, error)
 	// Issue209 makes the request to the API endpoint.
 	Issue209(ctx context.Context, params Issue209ClientParams, opts ...func(*http.Request) error) error
 	// Issue30 makes the request to the API endpoint.
@@ -250,7 +250,7 @@ type ClientInterface interface {
 	// Issue41 makes the request to the API endpoint.
 	Issue41(ctx context.Context, params Issue41ClientParams, opts ...func(*http.Request) error) error
 	// Issue9 makes the request to the API endpoint.
-	Issue9(ctx context.Context, respBody render.Binder, params Issue9ClientParams, opts ...func(*http.Request) error) (*ReqResponse, error)
+	Issue9(ctx context.Context, respBody interface{}, params Issue9ClientParams, opts ...func(*http.Request) error) (*ReqResponse, error)
 }
 
 // Doer performs HTTP requests.
@@ -323,28 +323,6 @@ type ReqResponse struct {
 	*http.Response
 }
 
-type Issue185ClientParams struct {
-	Body io.Reader
-}
-
-type Issue209ClientParams struct {
-	Str StringInPath
-}
-
-type Issue30ClientParams struct {
-	PFallthrough string
-}
-
-type Issue41ClientParams struct {
-	N1param N5startsWithNumber
-}
-
-type Issue9ClientParams struct {
-	Body io.Reader
-
-	Foo string
-}
-
 // Decode is a package-level variable set to our default Decoder. We do this
 // because it allows you to set Decode to another function with the
 // same function signature, while also utilizing the Decoder() function
@@ -370,6 +348,54 @@ func defaultDecoder(resp *http.Response, v interface{}) error {
 	return err
 }
 
+// We generate a new type for each client function such that we have all required in this parameter.
+// Having a parameter like this is good because we don't break the function signature if things change inside.
+// This is also cleaner than having all parameters as function parameters.
+// The only issue is that it easily gets quite big
+
+type Issue185ClientParams struct {
+	Body io.Reader
+}
+
+type Issue209ClientParams struct {
+	// A string path parameter
+	Str string `json:"str"`
+}
+
+type Issue30ClientParams struct {
+	PFallthrough string `json:"fallthrough"`
+}
+
+type Issue41ClientParams struct {
+	N1param string `json:"1param"`
+}
+
+type Issue9ClientParams struct {
+	Body io.Reader
+	Foo  string `json:"foo"`
+}
+
+func buildURL(baseURL string, pathParams map[string]string, queryParams map[string]string) string {
+	u, err := url.Parse(baseURL)
+	if err != nil {
+		panic(err)
+	}
+
+	// add path parameters
+	for name, value := range pathParams {
+		u.Path = strings.Replace(u.Path, "{"+name+"}", value, 1)
+	}
+
+	// add query parameters
+	q := u.Query()
+	for key, value := range queryParams {
+		q.Set(key, value)
+	}
+	u.RawQuery = q.Encode()
+
+	return u.String()
+}
+
 // EnsureEverythingIsReferenced makes the request to the API endpoint.
 func (c *Client) EnsureEverythingIsReferenced(ctx context.Context, opts ...func(*http.Request) error) error {
 
@@ -377,11 +403,7 @@ func (c *Client) EnsureEverythingIsReferenced(ctx context.Context, opts ...func(
 	req, err := http.NewRequestWithContext(
 		ctx,
 		"GET",
-		buildURL(
-			c.BaseURL,
-			nil,
-			nil,
-		),
+		c.BaseURL,
 		nil,
 	)
 	if err != nil {
@@ -411,11 +433,7 @@ func (c *Client) Issue127(ctx context.Context, opts ...func(*http.Request) error
 	req, err := http.NewRequestWithContext(
 		ctx,
 		"GET",
-		buildURL(
-			c.BaseURL,
-			nil,
-			nil,
-		),
+		c.BaseURL,
 		nil,
 	)
 	if err != nil {
@@ -439,17 +457,13 @@ func (c *Client) Issue127(ctx context.Context, opts ...func(*http.Request) error
 }
 
 // Issue185 makes the request to the API endpoint.
-func (c *Client) Issue185(ctx context.Context, respBody render.Binder, params Issue185ClientParams, opts ...func(*http.Request) error) (*ReqResponse, error) {
+func (c *Client) Issue185(ctx context.Context, respBody interface{}, params Issue185ClientParams, opts ...func(*http.Request) error) (*ReqResponse, error) {
 
 	// Create the request
 	req, err := http.NewRequestWithContext(
 		ctx,
 		"GET",
-		buildURL(
-			c.BaseURL,
-			nil,
-			nil,
-		),
+		c.BaseURL,
 		params.Body,
 	)
 	if err != nil {
@@ -491,9 +505,10 @@ func (c *Client) Issue209(ctx context.Context, params Issue209ClientParams, opts
 	req, err := http.NewRequestWithContext(
 		ctx,
 		"GET",
+
 		buildURL(
 			c.BaseURL,
-			map[string]interface{}{
+			map[string]string{
 				"str": params.Str,
 			},
 			nil,
@@ -527,9 +542,10 @@ func (c *Client) Issue30(ctx context.Context, params Issue30ClientParams, opts .
 	req, err := http.NewRequestWithContext(
 		ctx,
 		"GET",
+
 		buildURL(
 			c.BaseURL,
-			map[string]interface{}{
+			map[string]string{
 				"fallthrough": params.PFallthrough,
 			},
 			nil,
@@ -563,11 +579,7 @@ func (c *Client) GetIssues375(ctx context.Context, opts ...func(*http.Request) e
 	req, err := http.NewRequestWithContext(
 		ctx,
 		"GET",
-		buildURL(
-			c.BaseURL,
-			nil,
-			nil,
-		),
+		c.BaseURL,
 		nil,
 	)
 	if err != nil {
@@ -597,9 +609,10 @@ func (c *Client) Issue41(ctx context.Context, params Issue41ClientParams, opts .
 	req, err := http.NewRequestWithContext(
 		ctx,
 		"GET",
+
 		buildURL(
 			c.BaseURL,
-			map[string]interface{}{
+			map[string]string{
 				"1param": params.N1param,
 			},
 			nil,
@@ -627,18 +640,22 @@ func (c *Client) Issue41(ctx context.Context, params Issue41ClientParams, opts .
 }
 
 // Issue9 makes the request to the API endpoint.
-func (c *Client) Issue9(ctx context.Context, respBody render.Binder, params Issue9ClientParams, opts ...func(*http.Request) error) (*ReqResponse, error) {
+func (c *Client) Issue9(ctx context.Context, respBody interface{}, params Issue9ClientParams, opts ...func(*http.Request) error) (*ReqResponse, error) {
+
+	queryParams := make(map[string]string)
+	if params.Foo != nil {
+		queryParams["foo"] = *params.Foo
+	}
 
 	// Create the request
 	req, err := http.NewRequestWithContext(
 		ctx,
 		"GET",
+
 		buildURL(
 			c.BaseURL,
 			nil,
-			map[string]interface{}{
-				"foo": params.Foo,
-			},
+			queryParams,
 		),
 		params.Body,
 	)
@@ -672,27 +689,6 @@ func (c *Client) Issue9(ctx context.Context, respBody render.Binder, params Issu
 	return &ReqResponse{
 		Response: resp,
 	}, nil
-}
-
-func buildURL(baseURL string, pathParams map[string]interface{}, queryParams map[string]interface{}) string {
-	u, err := url.Parse(baseURL)
-	if err != nil {
-		panic(err)
-	}
-
-	// add path parameters
-	for name, value := range pathParams {
-		u.Path = strings.Replace(u.Path, "{"+name+"}", fmt.Sprint(value), 1)
-	}
-
-	// add query parameters
-	q := u.Query()
-	for key, value := range queryParams {
-		q.Set(key, fmt.Sprint(value))
-	}
-	u.RawQuery = q.Encode()
-
-	return u.String()
 }
 
 // ServerInterface represents all server handlers.

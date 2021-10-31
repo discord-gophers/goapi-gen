@@ -284,6 +284,10 @@ func getConditionOfResponseName(statusCodeVar, responseName string) string {
 	}
 }
 
+func typeShouldExist(op OperationDefinition) bool {
+	return op.HasBody() || len(op.AllParams()) > 0
+}
+
 func responseNameToStatusCode(responseName string) string {
 	switch strings.ToUpper(responseName) {
 	case "DEFAULT":
@@ -298,9 +302,12 @@ func responseNameToStatusCode(responseName string) string {
 // TemplateFunctions generates the list of utlity and helpfer functions used by
 // the templates.
 var TemplateFunctions = template.FuncMap{
-	"genParam":                   genParam,
-	"genParamArgs":               genParamArgs,
-	"genParamTypes":              genParamTypes,
+	"genParamArgs":  genParamArgs,
+	"genParamTypes": genParamTypes,
+
+	"genParams":       genClientParams,
+	"typeShouldExist": typeShouldExist,
+
 	"genParamNames":              genParamNames,
 	"genResponsePayload":         genResponsePayload,
 	"genResponseTypeName":        genResponseTypeName,

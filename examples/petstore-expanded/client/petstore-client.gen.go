@@ -5,6 +5,8 @@ package client
 
 import (
 	"context"
+	"encoding/json"
+	"encoding/xml"
 	"errors"
 	"fmt"
 	"io"
@@ -15,12 +17,166 @@ import (
 	"github.com/go-chi/render"
 )
 
+// Error defines model for Error.
+type Error struct {
+	// Error message
+	Message string `json:"message"`
+}
+
+// NewPet defines model for NewPet.
+type NewPet struct {
+	// Name of the pet
+	Name string `json:"name"`
+
+	// Type of the pet
+	Tag *string `json:"tag,omitempty"`
+}
+
+// Pet defines model for Pet.
+type Pet struct {
+	// Embedded struct due to allOf(#/components/schemas/NewPet)
+	NewPet `yaml:",inline"`
+	// Embedded fields due to inline allOf schema
+	// Unique id of the pet
+	ID int64 `json:"id"`
+}
+
+// FindPetsParams defines parameters for FindPets.
+type FindPetsParams struct {
+	// tags to filter by
+	Tags *[]string `json:"tags,omitempty"`
+
+	// maximum number of results to return
+	Limit *int32 `json:"limit,omitempty"`
+}
+
+// AddPetJSONBody defines parameters for AddPet.
+type AddPetJSONBody NewPet
+
+// AddPetJSONRequestBody defines body for AddPet for application/json ContentType.
+type AddPetJSONRequestBody AddPetJSONBody
+
+// Bind implements render.Binder.
+func (AddPetJSONRequestBody) Bind(*http.Request) error {
+	return nil
+}
+
+// Response is a common response struct for all the API calls.
+// A Response object may be instantiated via functions for specific operation responses.
+type Response struct {
+	body        interface{}
+	statusCode  int
+	contentType string
+}
+
+// Render implements the render.Renderer interface. It sets the Content-Type header
+// and status code based on the response definition.
+func (resp *Response) Render(w http.ResponseWriter, r *http.Request) error {
+	w.Header().Set("Content-Type", resp.contentType)
+	render.Status(r, resp.statusCode)
+	return nil
+}
+
+// Status is a builder method to override the default status code for a response.
+func (resp *Response) Status(statusCode int) *Response {
+	resp.statusCode = statusCode
+	return resp
+}
+
+// ContentType is a builder method to override the default content type for a response.
+func (resp *Response) ContentType(contentType string) *Response {
+	resp.contentType = contentType
+	return resp
+}
+
+// MarshalJSON implements the json.Marshaler interface.
+// This is used to only marshal the body of the response.
+func (resp *Response) MarshalJSON() ([]byte, error) {
+	return json.Marshal(resp.body)
+}
+
+// MarshalXML implements the xml.Marshaler interface.
+// This is used to only marshal the body of the response.
+func (resp *Response) MarshalXML(e *xml.Encoder, start xml.StartElement) error {
+	return e.Encode(resp.body)
+}
+
+// FindPetsJSON200Response is a constructor method for a FindPets response.
+// A *Response is returned with the configured status code and content type from the spec.
+func FindPetsJSON200Response(body []Pet) *Response {
+	return &Response{
+		body:        body,
+		statusCode:  200,
+		contentType: "application/json",
+	}
+}
+
+// FindPetsJSONDefaultResponse is a constructor method for a FindPets response.
+// A *Response is returned with the configured status code and content type from the spec.
+func FindPetsJSONDefaultResponse(body Error) *Response {
+	return &Response{
+		body:        body,
+		statusCode:  200,
+		contentType: "application/json",
+	}
+}
+
+// AddPetJSON201Response is a constructor method for a AddPet response.
+// A *Response is returned with the configured status code and content type from the spec.
+func AddPetJSON201Response(body Pet) *Response {
+	return &Response{
+		body:        body,
+		statusCode:  201,
+		contentType: "application/json",
+	}
+}
+
+// AddPetJSONDefaultResponse is a constructor method for a AddPet response.
+// A *Response is returned with the configured status code and content type from the spec.
+func AddPetJSONDefaultResponse(body Error) *Response {
+	return &Response{
+		body:        body,
+		statusCode:  200,
+		contentType: "application/json",
+	}
+}
+
+// DeletePetJSONDefaultResponse is a constructor method for a DeletePet response.
+// A *Response is returned with the configured status code and content type from the spec.
+func DeletePetJSONDefaultResponse(body Error) *Response {
+	return &Response{
+		body:        body,
+		statusCode:  200,
+		contentType: "application/json",
+	}
+}
+
+// FindPetByIDJSON200Response is a constructor method for a FindPetByID response.
+// A *Response is returned with the configured status code and content type from the spec.
+func FindPetByIDJSON200Response(body Pet) *Response {
+	return &Response{
+		body:        body,
+		statusCode:  200,
+		contentType: "application/json",
+	}
+}
+
+// FindPetByIDJSONDefaultResponse is a constructor method for a FindPetByID response.
+// A *Response is returned with the configured status code and content type from the spec.
+func FindPetByIDJSONDefaultResponse(body Error) *Response {
+	return &Response{
+		body:        body,
+		statusCode:  200,
+		contentType: "application/json",
+	}
+}
+
 // ClientInterface is implemented by Client
 type ClientInterface interface {
 	// FindPets makes the request to the API endpoint.
 	FindPets(ctx context.Context, params FindPetsClientParams, opts ...func(*http.Request) error) error
 	// AddPet makes the request to the API endpoint.
-	AddPet(ctx context.Context, respBody render.Binder, params AddPetClientParams, opts ...func(*http.Request) error) (*ReqResponse, error)
+	AddPet(ctx context.Context, respBody interface{}, params AddPetClientParams, opts ...func(*http.Request) error) (*ReqResponse, error)
 	// DeletePet makes the request to the API endpoint.
 	DeletePet(ctx context.Context, params DeletePetClientParams, opts ...func(*http.Request) error) error
 	// FindPetByID makes the request to the API endpoint.
@@ -97,24 +253,6 @@ type ReqResponse struct {
 	*http.Response
 }
 
-type FindPetsClientParams struct {
-	Tags []string
-
-	Limit int32
-}
-
-type AddPetClientParams struct {
-	Body io.Reader
-}
-
-type DeletePetClientParams struct {
-	ID int64
-}
-
-type FindPetByIDClientParams struct {
-	ID int64
-}
-
 // Decode is a package-level variable set to our default Decoder. We do this
 // because it allows you to set Decode to another function with the
 // same function signature, while also utilizing the Decoder() function
@@ -140,20 +278,75 @@ func defaultDecoder(resp *http.Response, v interface{}) error {
 	return err
 }
 
+// We generate a new type for each client function such that we have all required in this parameter.
+// Having a parameter like this is good because we don't break the function signature if things change inside.
+// This is also cleaner than having all parameters as function parameters.
+// The only issue is that it easily gets quite big
+
+// Returns all pets
+type FindPetsClientParams struct {
+	// tags to filter by
+	Tags string `json:"tags,omitempty"`
+	// maximum number of results to return
+	Limit *string `json:"limit"`
+}
+
+// Creates a new pet
+type AddPetClientParams struct {
+	Body io.Reader
+}
+
+// Deletes a pet by ID
+type DeletePetClientParams struct {
+	// ID of pet to delete
+	ID string `json:"id"`
+}
+
+// Returns a pet by ID
+type FindPetByIDClientParams struct {
+	// ID of pet to fetch
+	ID string `json:"id"`
+}
+
+func buildURL(baseURL string, pathParams map[string]string, queryParams map[string]string) string {
+	u, err := url.Parse(baseURL)
+	if err != nil {
+		panic(err)
+	}
+
+	// add path parameters
+	for name, value := range pathParams {
+		u.Path = strings.Replace(u.Path, "{"+name+"}", value, 1)
+	}
+
+	// add query parameters
+	q := u.Query()
+	for key, value := range queryParams {
+		q.Set(key, value)
+	}
+	u.RawQuery = q.Encode()
+
+	return u.String()
+}
+
 // FindPets makes the request to the API endpoint.
 func (c *Client) FindPets(ctx context.Context, params FindPetsClientParams, opts ...func(*http.Request) error) error {
+
+	queryParams := make(map[string]string)
+	queryParams["tags"] = params.Tags
+	if params.Limit != nil {
+		queryParams["limit"] = *params.Limit
+	}
 
 	// Create the request
 	req, err := http.NewRequestWithContext(
 		ctx,
 		"GET",
+
 		buildURL(
 			c.BaseURL,
 			nil,
-			map[string]interface{}{
-				"tags":  params.Tags,
-				"limit": params.Limit,
-			},
+			queryParams,
 		),
 		nil,
 	)
@@ -178,17 +371,13 @@ func (c *Client) FindPets(ctx context.Context, params FindPetsClientParams, opts
 }
 
 // AddPet makes the request to the API endpoint.
-func (c *Client) AddPet(ctx context.Context, respBody render.Binder, params AddPetClientParams, opts ...func(*http.Request) error) (*ReqResponse, error) {
+func (c *Client) AddPet(ctx context.Context, respBody interface{}, params AddPetClientParams, opts ...func(*http.Request) error) (*ReqResponse, error) {
 
 	// Create the request
 	req, err := http.NewRequestWithContext(
 		ctx,
 		"POST",
-		buildURL(
-			c.BaseURL,
-			nil,
-			nil,
-		),
+		c.BaseURL,
 		params.Body,
 	)
 	if err != nil {
@@ -230,9 +419,10 @@ func (c *Client) DeletePet(ctx context.Context, params DeletePetClientParams, op
 	req, err := http.NewRequestWithContext(
 		ctx,
 		"DELETE",
+
 		buildURL(
 			c.BaseURL,
-			map[string]interface{}{
+			map[string]string{
 				"id": params.ID,
 			},
 			nil,
@@ -266,9 +456,10 @@ func (c *Client) FindPetByID(ctx context.Context, params FindPetByIDClientParams
 	req, err := http.NewRequestWithContext(
 		ctx,
 		"GET",
+
 		buildURL(
 			c.BaseURL,
-			map[string]interface{}{
+			map[string]string{
 				"id": params.ID,
 			},
 			nil,
@@ -293,25 +484,4 @@ func (c *Client) FindPetByID(ctx context.Context, params FindPetByIDClientParams
 	}
 
 	return nil
-}
-
-func buildURL(baseURL string, pathParams map[string]interface{}, queryParams map[string]interface{}) string {
-	u, err := url.Parse(baseURL)
-	if err != nil {
-		panic(err)
-	}
-
-	// add path parameters
-	for name, value := range pathParams {
-		u.Path = strings.Replace(u.Path, "{"+name+"}", fmt.Sprint(value), 1)
-	}
-
-	// add query parameters
-	q := u.Query()
-	for key, value := range queryParams {
-		q.Set(key, fmt.Sprint(value))
-	}
-	u.RawQuery = q.Encode()
-
-	return u.String()
 }

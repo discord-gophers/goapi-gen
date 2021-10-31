@@ -2,38 +2,54 @@
 // {{ .OperationID }} makes the request to the API endpoint.
 func (c *Client) {{template "method-signature" .}} {
 
+	
+	{{ if .QueryParams }}
+		queryParams := make(map[string]string)
+		{{- range .QueryParams }}
+			{{- if not .Spec.Required }}
+				queryParams["{{ .ParamName }}"] = params.{{- .GoVariableName | ucFirst -}}
+			{{- else }}
+				if params.{{- .GoVariableName | ucFirst -}} != nil {
+					queryParams["{{ .ParamName }}"] = *params.{{- .GoVariableName | ucFirst -}}
+				}
+			{{- end }}
+		{{- end }}
+	{{- end }}
+
 	// Create the request
 	{{/* Yes this is absolutely painful, :cry: */ -}}
 	req, err := http.NewRequestWithContext(
 		ctx,
 		"{{ .Method }}",
-		buildURL(
-			c.BaseURL,
-			{{- if .PathParams }}
-			map[string]interface{}{
-				{{- range .PathParams }}
-				"{{ .ParamName }}": params.{{- .GoVariableName | ucFirst -}},
-				{{ end }}
-			},
+		{{- if or .PathParams .QueryParams }}
 
-			{{- else }}
-			nil,
-			{{- end }}
-			{{- if .QueryParams }}
-			map[string]interface{}{
-				{{- range .QueryParams }}
-				"{{ .ParamName }}": params.{{- .GoVariableName | ucFirst -}},
+
+			buildURL(
+				c.BaseURL,
+
+				{{- if .PathParams }}
+				map[string]string{
+					{{- range .PathParams }}
+						"{{ .ParamName }}": params.{{- .GoVariableName | ucFirst -}},
+					{{ end }}
+				},
+				{{- else }}
+					nil,
 				{{- end }}
-			},
 
-			{{- else }}
-			nil,
-			{{- end }}
-		),
-		{{- if .HasBody }}
-		params.Body,
+				{{- if .QueryParams }}
+					queryParams,
+				{{- else }}
+					nil,
+				{{- end }}
+			),
 		{{- else }}
-		nil,	
+			c.BaseURL,
+		{{- end }}
+		{{- if .HasBody }}
+			params.Body,
+		{{- else }}
+			nil,	
 		{{- end }}
 	)
 	if err != nil {
@@ -41,19 +57,30 @@ func (c *Client) {{template "method-signature" .}} {
 		fmt.Errorf("failed to build request: %w", err)
 	}
 
-	{{- if .HeaderParams }}
+	{{- if .HeaderParams -}}
 	// Set the headers
-	
+
 	{{ range .HeaderParams }}
-		req.Header.Set("{{.ParamName}}", params.{{- .GoVariableName | ucFirst -}})
-	{{- end }}
+		{{- if not .Spec.Required }}
+			req.Header.Set("{{.ParamName}}", params.{{- .GoVariableName | ucFirst -}})
+		{{- else }}
+			req.Header.Set("{{.ParamName}}", *params.{{- .GoVariableName | ucFirst -}})
+		{{- end}}
 	{{- end }}
 
-	{{- if .CookieParams }}
+	{{- end }}
+
+	{{- if .CookieParams -}}
+
 	// Set the cookies
 	{{ range .CookieParams }}
-		req.AddCookie(params.{{ .GoVariableName | ucFirst }})
+		{{- if not .Spec.Required }}
+			req.AddCookie(params.{{ .GoVariableName | ucFirst }})
+		{{- else }}
+			req.AddCookie(*params.{{ .GoVariableName | ucFirst }})
+		{{- end}}
 	{{- end }}
+
 	{{- end }}
 
 	// Apply any request editors

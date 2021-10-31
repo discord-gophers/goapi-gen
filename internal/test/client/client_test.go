@@ -15,8 +15,8 @@ func TestBuildURL(t *testing.T) {
 	type testCase struct {
 		name    string
 		baseURL string
-		path    map[string]interface{}
-		params  map[string]interface{}
+		path    map[string]string
+		params  map[string]string
 		want    string
 	}
 
@@ -24,12 +24,12 @@ func TestBuildURL(t *testing.T) {
 		{
 			name:    "both",
 			baseURL: "https://my-api.com/some-base-url/v1/{id}/{user}",
-			path: map[string]interface{}{
-				"id":   123,
+			path: map[string]string{
+				"id":   "123",
 				"user": "henry",
 			},
-			params: map[string]interface{}{
-				"message_id": 123456789,
+			params: map[string]string{
+				"message_id": "123456789",
 			},
 			want: "https://my-api.com/some-base-url/v1/123/henry?message_id=123456789",
 		},
@@ -37,9 +37,9 @@ func TestBuildURL(t *testing.T) {
 			name:    "no path",
 			baseURL: "https://my-api.com/some-base-url/v1/?id=123&message_id=123456789&user=henry",
 			path:    nil,
-			params: map[string]interface{}{
-				"message_id": 123456789,
-				"id":         123,
+			params: map[string]string{
+				"message_id": "123456789",
+				"id":         "123",
 				"user":       "henry",
 			},
 			want: "https://my-api.com/some-base-url/v1/?id=123&message_id=123456789&user=henry",
@@ -47,9 +47,9 @@ func TestBuildURL(t *testing.T) {
 		{
 			name:    "no params",
 			baseURL: "https://my-api.com/some-base-url/v1/{id}/{message_id}/{user}",
-			path: map[string]interface{}{
-				"message_id": 123456789,
-				"id":         123,
+			path: map[string]string{
+				"message_id": "123456789",
+				"id":         "123",
 				"user":       "henry",
 			},
 			params: nil,

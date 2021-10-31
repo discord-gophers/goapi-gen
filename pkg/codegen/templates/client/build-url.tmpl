@@ -1,4 +1,4 @@
-func buildURL(baseURL string, pathParams map[string]interface{}, queryParams map[string]interface{}) string {
+func buildURL(baseURL string, pathParams map[string]string, queryParams map[string]string) string {
 	u, err := url.Parse(baseURL)
 	if err != nil {
 		panic(err)
@@ -6,13 +6,13 @@ func buildURL(baseURL string, pathParams map[string]interface{}, queryParams map
 
 	// add path parameters
 	for name, value := range pathParams {
-		u.Path = strings.Replace(u.Path, "{"+name+"}", fmt.Sprint(value), 1)
+		u.Path = strings.Replace(u.Path, "{"+name+"}", value, 1)
 	}
 
 	// add query parameters
 	q := u.Query()
 	for key, value := range queryParams {
-		q.Set(key, fmt.Sprint(value))
+		q.Set(key, value)
 	}
 	u.RawQuery = q.Encode()
 

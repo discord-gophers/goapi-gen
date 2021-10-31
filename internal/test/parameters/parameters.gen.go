@@ -280,130 +280,6 @@ type ReqResponse struct {
 	*http.Response
 }
 
-type GetContentObjectClientParams struct {
-	Param ComplexObject
-}
-
-type GetCookieClientParams struct {
-	P *http.Cookie
-
-	Ep *http.Cookie
-
-	Ea *http.Cookie
-
-	A *http.Cookie
-
-	Eo *http.Cookie
-
-	O *http.Cookie
-
-	Co *http.Cookie
-
-	N1s *http.Cookie
-}
-
-type GetHeaderClientParams struct {
-	XPrimitive string
-
-	XPrimitiveExploded string
-
-	XArrayExploded string
-
-	XArray string
-
-	XObjectExploded string
-
-	XObject string
-
-	XComplexObject string
-
-	N1startingWithNumber string
-}
-
-type GetLabelExplodeArrayClientParams struct {
-	Param []int32
-}
-
-type GetLabelExplodeObjectClientParams struct {
-	Param Object
-}
-
-type GetLabelNoExplodeArrayClientParams struct {
-	Param []int32
-}
-
-type GetLabelNoExplodeObjectClientParams struct {
-	Param Object
-}
-
-type GetMatrixExplodeArrayClientParams struct {
-	ID []int32
-}
-
-type GetMatrixExplodeObjectClientParams struct {
-	ID Object
-}
-
-type GetMatrixNoExplodeArrayClientParams struct {
-	ID []int32
-}
-
-type GetMatrixNoExplodeObjectClientParams struct {
-	ID Object
-}
-
-type GetPassThroughClientParams struct {
-	Param string
-}
-
-type GetDeepObjectClientParams struct {
-	DeepObj ComplexObject
-}
-
-type GetQueryFormClientParams struct {
-	Ea []int32
-
-	A []int32
-
-	Eo Object
-
-	O Object
-
-	Ep int32
-
-	P int32
-
-	Ps string
-
-	Co ComplexObject
-
-	N1s string
-}
-
-type GetSimpleExplodeArrayClientParams struct {
-	Param []int32
-}
-
-type GetSimpleExplodeObjectClientParams struct {
-	Param Object
-}
-
-type GetSimpleNoExplodeArrayClientParams struct {
-	Param []int32
-}
-
-type GetSimpleNoExplodeObjectClientParams struct {
-	Param Object
-}
-
-type GetSimplePrimitiveClientParams struct {
-	Param int32
-}
-
-type GetStartingWithNumberClientParams struct {
-	N1param string
-}
-
 // Decode is a package-level variable set to our default Decoder. We do this
 // because it allows you to set Decode to another function with the
 // same function signature, while also utilizing the Decoder() function
@@ -429,6 +305,160 @@ func defaultDecoder(resp *http.Response, v interface{}) error {
 	return err
 }
 
+// We generate a new type for each client function such that we have all required in this parameter.
+// Having a parameter like this is good because we don't break the function signature if things change inside.
+// This is also cleaner than having all parameters as function parameters.
+// The only issue is that it easily gets quite big
+
+type GetContentObjectClientParams struct {
+	Param string `json:"param"`
+}
+
+type GetCookieClientParams struct {
+	// primitive
+	P **http.Cookie `json:"p"`
+	// primitive
+	Ep **http.Cookie `json:"ep"`
+	// exploded array
+	Ea *http.Cookie `json:"ea,omitempty"`
+	// array
+	A *http.Cookie `json:"a,omitempty"`
+	// exploded object
+	Eo **http.Cookie `json:"eo"`
+	// object
+	O **http.Cookie `json:"o"`
+	// complex object
+	Co **http.Cookie `json:"co"`
+	// name starting with number
+	N1s **http.Cookie `json:"1s"`
+}
+
+type GetHeaderClientParams struct {
+	// primitive
+	XPrimitive *string `json:"X-Primitive"`
+	// primitive
+	XPrimitiveExploded *string `json:"X-Primitive-Exploded"`
+	// exploded array
+	XArrayExploded string `json:"X-Array-Exploded,omitempty"`
+	// array
+	XArray string `json:"X-Array,omitempty"`
+	// exploded object
+	XObjectExploded *string `json:"X-Object-Exploded"`
+	// object
+	XObject *string `json:"X-Object"`
+	// complex object
+	XComplexObject *string `json:"X-Complex-Object"`
+	// name starting with number
+	N1startingWithNumber *string `json:"1-Starting-With-Number"`
+}
+
+type GetLabelExplodeArrayClientParams struct {
+	Param string `json:"param"`
+}
+
+type GetLabelExplodeObjectClientParams struct {
+	Param string `json:"param"`
+}
+
+type GetLabelNoExplodeArrayClientParams struct {
+	Param string `json:"param"`
+}
+
+type GetLabelNoExplodeObjectClientParams struct {
+	Param string `json:"param"`
+}
+
+type GetMatrixExplodeArrayClientParams struct {
+	ID string `json:"id"`
+}
+
+type GetMatrixExplodeObjectClientParams struct {
+	ID string `json:"id"`
+}
+
+type GetMatrixNoExplodeArrayClientParams struct {
+	ID string `json:"id"`
+}
+
+type GetMatrixNoExplodeObjectClientParams struct {
+	ID string `json:"id"`
+}
+
+type GetPassThroughClientParams struct {
+	Param string `json:"param"`
+}
+
+type GetDeepObjectClientParams struct {
+	// deep object
+	DeepObj string `json:"deepObj"`
+}
+
+type GetQueryFormClientParams struct {
+	// exploded array
+	Ea string `json:"ea,omitempty"`
+	// array
+	A string `json:"a,omitempty"`
+	// exploded object
+	Eo *string `json:"eo"`
+	// object
+	O *string `json:"o"`
+	// exploded primitive
+	Ep *string `json:"ep"`
+	// primitive
+	P *string `json:"p"`
+	// primitive string
+	Ps *string `json:"ps"`
+	// complex object
+	Co *string `json:"co"`
+	// name starting with number
+	N1s *string `json:"1s"`
+}
+
+type GetSimpleExplodeArrayClientParams struct {
+	Param string `json:"param"`
+}
+
+type GetSimpleExplodeObjectClientParams struct {
+	Param string `json:"param"`
+}
+
+type GetSimpleNoExplodeArrayClientParams struct {
+	Param string `json:"param"`
+}
+
+type GetSimpleNoExplodeObjectClientParams struct {
+	Param string `json:"param"`
+}
+
+type GetSimplePrimitiveClientParams struct {
+	Param string `json:"param"`
+}
+
+type GetStartingWithNumberClientParams struct {
+	N1param string `json:"1param"`
+}
+
+func buildURL(baseURL string, pathParams map[string]string, queryParams map[string]string) string {
+	u, err := url.Parse(baseURL)
+	if err != nil {
+		panic(err)
+	}
+
+	// add path parameters
+	for name, value := range pathParams {
+		u.Path = strings.Replace(u.Path, "{"+name+"}", value, 1)
+	}
+
+	// add query parameters
+	q := u.Query()
+	for key, value := range queryParams {
+		q.Set(key, value)
+	}
+	u.RawQuery = q.Encode()
+
+	return u.String()
+}
+
 // GetContentObject makes the request to the API endpoint.
 func (c *Client) GetContentObject(ctx context.Context, params GetContentObjectClientParams, opts ...func(*http.Request) error) error {
 
@@ -436,9 +466,10 @@ func (c *Client) GetContentObject(ctx context.Context, params GetContentObjectCl
 	req, err := http.NewRequestWithContext(
 		ctx,
 		"GET",
+
 		buildURL(
 			c.BaseURL,
-			map[string]interface{}{
+			map[string]string{
 				"param": params.Param,
 			},
 			nil,
@@ -472,26 +503,21 @@ func (c *Client) GetCookie(ctx context.Context, params GetCookieClientParams, op
 	req, err := http.NewRequestWithContext(
 		ctx,
 		"GET",
-		buildURL(
-			c.BaseURL,
-			nil,
-			nil,
-		),
+		c.BaseURL,
 		nil,
 	)
 	if err != nil {
 		return fmt.Errorf("failed to build request: %w", err)
-	}
-	// Set the cookies
+	} // Set the cookies
 
-	req.AddCookie(params.P)
-	req.AddCookie(params.Ep)
+	req.AddCookie(*params.P)
+	req.AddCookie(*params.Ep)
 	req.AddCookie(params.Ea)
 	req.AddCookie(params.A)
-	req.AddCookie(params.Eo)
-	req.AddCookie(params.O)
-	req.AddCookie(params.Co)
-	req.AddCookie(params.N1s)
+	req.AddCookie(*params.Eo)
+	req.AddCookie(*params.O)
+	req.AddCookie(*params.Co)
+	req.AddCookie(*params.N1s)
 
 	// Apply any request editors
 	for _, fn := range c.reqEditors {
@@ -516,26 +542,21 @@ func (c *Client) GetHeader(ctx context.Context, params GetHeaderClientParams, op
 	req, err := http.NewRequestWithContext(
 		ctx,
 		"GET",
-		buildURL(
-			c.BaseURL,
-			nil,
-			nil,
-		),
+		c.BaseURL,
 		nil,
 	)
 	if err != nil {
 		return fmt.Errorf("failed to build request: %w", err)
-	}
-	// Set the headers
+	} // Set the headers
 
-	req.Header.Set("X-Primitive", params.XPrimitive)
-	req.Header.Set("X-Primitive-Exploded", params.XPrimitiveExploded)
+	req.Header.Set("X-Primitive", *params.XPrimitive)
+	req.Header.Set("X-Primitive-Exploded", *params.XPrimitiveExploded)
 	req.Header.Set("X-Array-Exploded", params.XArrayExploded)
 	req.Header.Set("X-Array", params.XArray)
-	req.Header.Set("X-Object-Exploded", params.XObjectExploded)
-	req.Header.Set("X-Object", params.XObject)
-	req.Header.Set("X-Complex-Object", params.XComplexObject)
-	req.Header.Set("1-Starting-With-Number", params.N1startingWithNumber)
+	req.Header.Set("X-Object-Exploded", *params.XObjectExploded)
+	req.Header.Set("X-Object", *params.XObject)
+	req.Header.Set("X-Complex-Object", *params.XComplexObject)
+	req.Header.Set("1-Starting-With-Number", *params.N1startingWithNumber)
 
 	// Apply any request editors
 	for _, fn := range c.reqEditors {
@@ -560,9 +581,10 @@ func (c *Client) GetLabelExplodeArray(ctx context.Context, params GetLabelExplod
 	req, err := http.NewRequestWithContext(
 		ctx,
 		"GET",
+
 		buildURL(
 			c.BaseURL,
-			map[string]interface{}{
+			map[string]string{
 				"param": params.Param,
 			},
 			nil,
@@ -596,9 +618,10 @@ func (c *Client) GetLabelExplodeObject(ctx context.Context, params GetLabelExplo
 	req, err := http.NewRequestWithContext(
 		ctx,
 		"GET",
+
 		buildURL(
 			c.BaseURL,
-			map[string]interface{}{
+			map[string]string{
 				"param": params.Param,
 			},
 			nil,
@@ -632,9 +655,10 @@ func (c *Client) GetLabelNoExplodeArray(ctx context.Context, params GetLabelNoEx
 	req, err := http.NewRequestWithContext(
 		ctx,
 		"GET",
+
 		buildURL(
 			c.BaseURL,
-			map[string]interface{}{
+			map[string]string{
 				"param": params.Param,
 			},
 			nil,
@@ -668,9 +692,10 @@ func (c *Client) GetLabelNoExplodeObject(ctx context.Context, params GetLabelNoE
 	req, err := http.NewRequestWithContext(
 		ctx,
 		"GET",
+
 		buildURL(
 			c.BaseURL,
-			map[string]interface{}{
+			map[string]string{
 				"param": params.Param,
 			},
 			nil,
@@ -704,9 +729,10 @@ func (c *Client) GetMatrixExplodeArray(ctx context.Context, params GetMatrixExpl
 	req, err := http.NewRequestWithContext(
 		ctx,
 		"GET",
+
 		buildURL(
 			c.BaseURL,
-			map[string]interface{}{
+			map[string]string{
 				"id": params.ID,
 			},
 			nil,
@@ -740,9 +766,10 @@ func (c *Client) GetMatrixExplodeObject(ctx context.Context, params GetMatrixExp
 	req, err := http.NewRequestWithContext(
 		ctx,
 		"GET",
+
 		buildURL(
 			c.BaseURL,
-			map[string]interface{}{
+			map[string]string{
 				"id": params.ID,
 			},
 			nil,
@@ -776,9 +803,10 @@ func (c *Client) GetMatrixNoExplodeArray(ctx context.Context, params GetMatrixNo
 	req, err := http.NewRequestWithContext(
 		ctx,
 		"GET",
+
 		buildURL(
 			c.BaseURL,
-			map[string]interface{}{
+			map[string]string{
 				"id": params.ID,
 			},
 			nil,
@@ -812,9 +840,10 @@ func (c *Client) GetMatrixNoExplodeObject(ctx context.Context, params GetMatrixN
 	req, err := http.NewRequestWithContext(
 		ctx,
 		"GET",
+
 		buildURL(
 			c.BaseURL,
-			map[string]interface{}{
+			map[string]string{
 				"id": params.ID,
 			},
 			nil,
@@ -848,9 +877,10 @@ func (c *Client) GetPassThrough(ctx context.Context, params GetPassThroughClient
 	req, err := http.NewRequestWithContext(
 		ctx,
 		"GET",
+
 		buildURL(
 			c.BaseURL,
-			map[string]interface{}{
+			map[string]string{
 				"param": params.Param,
 			},
 			nil,
@@ -880,16 +910,20 @@ func (c *Client) GetPassThrough(ctx context.Context, params GetPassThroughClient
 // GetDeepObject makes the request to the API endpoint.
 func (c *Client) GetDeepObject(ctx context.Context, params GetDeepObjectClientParams, opts ...func(*http.Request) error) error {
 
+	queryParams := make(map[string]string)
+	if params.DeepObj != nil {
+		queryParams["deepObj"] = *params.DeepObj
+	}
+
 	// Create the request
 	req, err := http.NewRequestWithContext(
 		ctx,
 		"GET",
+
 		buildURL(
 			c.BaseURL,
 			nil,
-			map[string]interface{}{
-				"deepObj": params.DeepObj,
-			},
+			queryParams,
 		),
 		nil,
 	)
@@ -916,24 +950,40 @@ func (c *Client) GetDeepObject(ctx context.Context, params GetDeepObjectClientPa
 // GetQueryForm makes the request to the API endpoint.
 func (c *Client) GetQueryForm(ctx context.Context, params GetQueryFormClientParams, opts ...func(*http.Request) error) error {
 
+	queryParams := make(map[string]string)
+	queryParams["ea"] = params.Ea
+	queryParams["a"] = params.A
+	if params.Eo != nil {
+		queryParams["eo"] = *params.Eo
+	}
+	if params.O != nil {
+		queryParams["o"] = *params.O
+	}
+	if params.Ep != nil {
+		queryParams["ep"] = *params.Ep
+	}
+	if params.P != nil {
+		queryParams["p"] = *params.P
+	}
+	if params.Ps != nil {
+		queryParams["ps"] = *params.Ps
+	}
+	if params.Co != nil {
+		queryParams["co"] = *params.Co
+	}
+	if params.N1s != nil {
+		queryParams["1s"] = *params.N1s
+	}
+
 	// Create the request
 	req, err := http.NewRequestWithContext(
 		ctx,
 		"GET",
+
 		buildURL(
 			c.BaseURL,
 			nil,
-			map[string]interface{}{
-				"ea": params.Ea,
-				"a":  params.A,
-				"eo": params.Eo,
-				"o":  params.O,
-				"ep": params.Ep,
-				"p":  params.P,
-				"ps": params.Ps,
-				"co": params.Co,
-				"1s": params.N1s,
-			},
+			queryParams,
 		),
 		nil,
 	)
@@ -964,9 +1014,10 @@ func (c *Client) GetSimpleExplodeArray(ctx context.Context, params GetSimpleExpl
 	req, err := http.NewRequestWithContext(
 		ctx,
 		"GET",
+
 		buildURL(
 			c.BaseURL,
-			map[string]interface{}{
+			map[string]string{
 				"param": params.Param,
 			},
 			nil,
@@ -1000,9 +1051,10 @@ func (c *Client) GetSimpleExplodeObject(ctx context.Context, params GetSimpleExp
 	req, err := http.NewRequestWithContext(
 		ctx,
 		"GET",
+
 		buildURL(
 			c.BaseURL,
-			map[string]interface{}{
+			map[string]string{
 				"param": params.Param,
 			},
 			nil,
@@ -1036,9 +1088,10 @@ func (c *Client) GetSimpleNoExplodeArray(ctx context.Context, params GetSimpleNo
 	req, err := http.NewRequestWithContext(
 		ctx,
 		"GET",
+
 		buildURL(
 			c.BaseURL,
-			map[string]interface{}{
+			map[string]string{
 				"param": params.Param,
 			},
 			nil,
@@ -1072,9 +1125,10 @@ func (c *Client) GetSimpleNoExplodeObject(ctx context.Context, params GetSimpleN
 	req, err := http.NewRequestWithContext(
 		ctx,
 		"GET",
+
 		buildURL(
 			c.BaseURL,
-			map[string]interface{}{
+			map[string]string{
 				"param": params.Param,
 			},
 			nil,
@@ -1108,9 +1162,10 @@ func (c *Client) GetSimplePrimitive(ctx context.Context, params GetSimplePrimiti
 	req, err := http.NewRequestWithContext(
 		ctx,
 		"GET",
+
 		buildURL(
 			c.BaseURL,
-			map[string]interface{}{
+			map[string]string{
 				"param": params.Param,
 			},
 			nil,
@@ -1144,9 +1199,10 @@ func (c *Client) GetStartingWithNumber(ctx context.Context, params GetStartingWi
 	req, err := http.NewRequestWithContext(
 		ctx,
 		"GET",
+
 		buildURL(
 			c.BaseURL,
-			map[string]interface{}{
+			map[string]string{
 				"1param": params.N1param,
 			},
 			nil,
@@ -1171,27 +1227,6 @@ func (c *Client) GetStartingWithNumber(ctx context.Context, params GetStartingWi
 	}
 
 	return nil
-}
-
-func buildURL(baseURL string, pathParams map[string]interface{}, queryParams map[string]interface{}) string {
-	u, err := url.Parse(baseURL)
-	if err != nil {
-		panic(err)
-	}
-
-	// add path parameters
-	for name, value := range pathParams {
-		u.Path = strings.Replace(u.Path, "{"+name+"}", fmt.Sprint(value), 1)
-	}
-
-	// add query parameters
-	q := u.Query()
-	for key, value := range queryParams {
-		q.Set(key, fmt.Sprint(value))
-	}
-	u.RawQuery = q.Encode()
-
-	return u.String()
 }
 
 // ServerInterface represents all server handlers.
@@ -2088,25 +2123,25 @@ func WithErrorHandler(handler func(w http.ResponseWriter, r *http.Request, err e
 // Base64 encoded, gzipped, json marshaled Swagger object
 var swaggerSpec = []string{
 
-	"H4sIAAAAAAAC/9xa34+jNhD+V6JpnyoSkrs33lbXXyv19q7NSlfptA9emARfAftsZ5tVxP9e2UAAQwgk",
-	"YTfbtwvMzDfzefydPewOfBZzlmCiJHg7ECg5SySaH0sa8wj/yh/pJz5LFCZK/1PhVrk8IjTRv6QfYkzM",
-	"82eO4IFUgiZrSNPUgQClLyhXlCXgwc1EmriTAmvCHr+hr0CbZnEM+gemrbafspfeDrhgHIWiWXK3QQWN",
-	"JgrXKCB14FbeBHGWVP7ykbEISaJflsF+FLgCD35wy/rdHNz9VOYj8PuGCgzA+1o4Oxq6xHmoha3nuKJC",
-	"qjsSYwsxDggWtb2wUI2VUwn1YDilyYpp54j6mC9OYoDg4+29jq6o0uHhHqWaLFE8oQAHnlDIbBkWs/ls",
-	"rg0Zx4RwCh68n81nC3CAExWa/N18vbP63B0ngsSpfrNGU64uluh11asBv6H6UHUwoQSJUaGQ4H2t9Q/h",
-	"PKK+cXa/SWZ1Udfy1BsjZwM8kzY4BQ0GGapcKrHB9MGp9/i7+fwQ3t7OtTZCajBdn7F/KHazYSwaNNQ3",
-	"BBc0poo+aUPc8ogFCN6KRBLzwvwiTFEaOBWqVkzERGWb4P07cBp7InV6IWp6DgDi2Yg5SjAhQpDnvrCk",
-	"BksVxrIX/v5JhtaSTyONLr7HS2NPCys2TC9eWC2hflJmQzcRuyg4DXGs7V6vxM8MSg5bK/AZNEnQ7yZS",
-	"EaFosp78S1U4STbxo5HK1igLWSPClu66uiSbKDJKESIJUHQpxe+ZxblKERZh8nT/nn6uuIyqGR3Q01/y",
-	"Nn8RFWkmcqOt25N4MU05kNUrK0szq2ybtZM1htAcyuDN6U2zkDxQUdAJ6mPHXEyXufX0C1Xh9K6wHqxI",
-	"EXnEKF9k04jubmak56fO490ftltTsdrarM/J7DIbwQGpns2511QIlzzvVTkrTsRDSTt0ML4Ea312yej8",
-	"3LG2rjrOT92vg6CqePyP+mpff72zBhB3tLXOYe61eysmStCt1Vo06N54HxtOp2w8GozeU1l14xG276lB",
-	"jJ2uVUcoG9ZMo5HTkCoa9CDnAkL1ljuqqVPDWDtDpa69qziR8j4UbLMO+4zKPpfmnYOyAYPWVxmDfd+g",
-	"eP4ZkZdT0EMlV6yO3HQDRN59dTGwZZ1BFvrkDrFO/WWjBGXOhw7TJpVfmYi7av9zb3Sk9F6XXKv6i03K",
-	"yrq1Kwy85FpZvVhS/S67NmfjT9EsxEsA7ks9No+xqx1naNxR7eUAJ7nGHcDpHsm98ljASva0KaQVZNAQ",
-	"8ixtz77U1Y9JPW68y4bb9c4JshJhNNZq384G0HY9k4LRGLIP4MfPTMsWvyueFYzPXP8vs8s2x6uYFozG",
-	"0v4DRH9+qp9LLGZOYqJH84xJQ/5/yheqwmxW7O4WPahouI14QVmMfEPRDJu/fsjy3ogIPAiV4p7r4pZo",
-	"+5nPYkgf0v8CAAD//0duf5cNIwAA",
+	"H4sIAAAAAAAC/9xaS4/bNhD+K8a0p0K27OSmW5C+Fmg2ab1ACgR74Epji6kkMiS99cLQfy9IypZEybL8",
+	"0NrpLSvN45uPw8/kKBsIWcpZhpmSEGxAoOQsk2j+mNOUJ/hX8Ug/CVmmMFP6nwrXyucJoZn+S4YxpsQ8",
+	"f+EIAUglaLaEPM89iFCGgnJFWQYBvBtJE3e0zTViT18xVKBNbRyT/T3TVuuP9mWwAS4YR6GoBXcXVbLR",
+	"TOESBeQe3Ml3UWpBFS+fGEuQZPplGexHgQsI4Ae/rN8vkvsfSzwCv62owAiCL1tnT6cu8zzWwtYxLqiQ",
+	"6p6k2EKMB4IlbS+crMbKq4R6NJzSbMG0c0JDLBYnM4ngw92Djq6o0uHhAaUazVE8owAPnlFIuwyzyXQy",
+	"1YaMY0Y4hQDeTqaTGXjAiYoNfr9Yb1ufv+FEkDTXb5ZoytXFEr2uejXgN1Tvqw4mlCApKhQSgi+1/iGc",
+	"JzQ0zv5XyZwu6lqeemMUbEBgYIO3pcFkhiqXSqwwf/TqPf5mOt2Xb2fnOxshNzn9kLF/KHazYSwaNNQ3",
+	"BBc0pYo+a0Nc84RFCMGCJBKLwsJtmG1pjbK8CnULJlKi7KZ4+wa8xh7JvV4IbNxWAHhxBEXWaESEIC99",
+	"YRCopqUKU9kr/+6JzdaCpwGjaz2Gg7GjhW03VC9eWOfy9JM+F0oTQRcll0EwlFzUKwutQclxa0Vhs6Qm",
+	"Sdp2JBURimbL0b9UxaNslT4Z6W2NOpOdRLk/DXX1ylZJYpQoRhKh6FKi363FuUoUb8MU8P8ef6q4vKom",
+	"dUAZ/1Jsm6uoVBPYO21dBXUFzdqD6srK1URlt2m/FRxCyPYh+u71rFlYEWhfgSeom5tjNp4X1uPPVMXj",
+	"+6312YqXkCdMiiYxjexvJkbafuo8nv7hujUVsa1N+5wsL7ORPJDqxZzbTYVwyfNqlbPtif5Y0vYd7C/B",
+	"Wp9dNDg/96ytqw7zU/frIKgqNv+jvtrVX++sI4g72FrnMHft3kqJEnTttBaNujfeh4bTKRuPRoP3lK1u",
+	"OMJ2PXUUY6drFY0u2EyDkdOQKhr1IOcCQvU9d1RTp45j7QyVuvWu4kTKh1iw1TLuM+r7VJp3DvqOGBRf",
+	"ZYz3bYXi5WdEXk5x95VcsTpwk44QeffVx6Qt64xs6JM7xLkVlI0SlZj3HaYNlF+ZSLtq/3NndKD0Xpdk",
+	"p/qLTfLKurUrHHlJdlC9Gqh+l2WXs9ef8jkIhgCwo+LQ/Mdl43WG4h1sDAdgVGjknrzHjRCvPIZwwF9m",
+	"quoEPWuoetZvif2yWT+W9bhhzxtutzuXsCXCYKzVvjUeQdvtTCYGY8g98B8+o81b/G54NjE8c/2/ZM/b",
+	"HG9iOjEYS7sPKP35qX7+cZg5iYkezTMkDcVvzGeqYjur9jezHlQ03Aa8EM0GvhFphs3/FrG4VyKBAGKl",
+	"eOD7uCbafhKyFPLH/L8AAAD//8E4OSo9JAAA",
 }
 
 // GetSwagger returns the content of the embedded swagger specification file
