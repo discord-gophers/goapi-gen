@@ -2,8 +2,6 @@
 
 [![Go Reference](https://pkg.go.dev/badge/github.com/discord-gophers/goapi-gen.svg)](https://pkg.go.dev/github.com/discord-gophers/goapi-gen)
 
-⚠️⚠️⚠️ We are currently making large, breaking refactor changes. As such, this library may be in flux until we've tagged an initial release.
-
 This package contains a set of utilities for generating Go boilerplate code for
 services based on
 [OpenAPI 3.0](https://github.com/OAI/OpenAPI-Specification/blob/master/versions/3.0.0.md)
@@ -232,7 +230,13 @@ define types for inner fields which themselves support additionalProperties, and
 all of them are tested via the `internal/test/components` schemas and tests. Please
 look through those tests for more usage examples.
 
-## Generated Client Boilerplate
+## Generating Client Boilerplate
+
+This feature is work-in-progress and in no way stable.
+Use at your own risk. If you actually need to generate client boilerplate code,
+[here is a stable alternative](https://github.com/deepmap/oapi-codegen#generated-server-boilerplate)
+
+<details><summary>Generating Client Boilerplate</summary>
 
 Once your server is up and running, you probably want to make requests to it. If
 you're going to do those requests from your Go code, we also generate a client
@@ -398,6 +402,8 @@ which help you to use the various OpenAPI 3 Authentication mechanism.
         return nil
     }
 ```
+
+</summary></details>
 
 ## Extensions
 
