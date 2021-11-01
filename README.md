@@ -1,4 +1,4 @@
-# OpenAPI Client and Server Code Generator
+# OpenAPI Server Code Generator
 
 [![Go Reference](https://pkg.go.dev/badge/github.com/discord-gophers/goapi-gen.svg)](https://pkg.go.dev/github.com/discord-gophers/goapi-gen)
 
@@ -285,9 +285,9 @@ look through those tests for more usage examples.
 
 [Usage details](docs.md)
 
-The default options for `goapi-gen` will generate everything; client, server,
+The default options for `goapi-gen` will generate everything; server,
 type definitions and embedded swagger spec, but you can generate subsets of
-those via the `-generate` flag. It defaults to `types,client,server,spec`, but
+those via the `-generate` flag. It defaults to `types,server,spec`, but
 you can specify any combination of those.
 
 - `types`: generate all type definitions for all types in the OpenAPI spec. This
@@ -295,8 +295,6 @@ you can specify any combination of those.
  body, and response type objects.
 - `server`: generate the Chi server boilerplate. This code is dependent on
  that produced by the `types` target.
-- `client`: generate the client boilerplate. It, too, requires the types to be
- present in its package.
 - `spec`: embed the OpenAPI spec into the generated code as a gzipped blob. This
 - `skip-fmt`: skip running `goimports` on the generated code. This is useful for debugging
  the generated file in case the spec contains weird strings.
@@ -404,9 +402,8 @@ files. These files **must** be named identically to built-in template files
 on-the-fly at run time. Example:
 
     $ ls -1 my-templates/
-    client.tmpl
     typedef.tmpl
     $ goapi-gen \
         -templates my-templates/ \
-        -generate types,client \
+        -generate types \
         petstore-expanded.yaml
