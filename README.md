@@ -433,8 +433,7 @@ which help you to use the various OpenAPI 3 Authentication mechanism.
 - `x-go-middlewares`: specifies a list of tagged middlewares. These can be specific
   middlewares that are operation-specific, as well as path-specific. This is very useful when you
   want to give a specific routes middleware, but not to all operations. The middleware are always
-  called in the order of definition. If the tagged middleware is not defined, it will be silently
-  skipped.
+  called in the order of definition. If the tagged middleware is not defined, panic will be called while calling `Handler`.
 
     ```yaml
     /pets:
@@ -447,14 +446,8 @@ which help you to use the various OpenAPI 3 Authentication mechanism.
 
   ```go
   // Operation specific middleware
-  if siw.TaggedMiddlewares != nil {
-    if middleware, ok := siw.Middlewares["validateJSON"]; ok {
-      handler = middleware(handler)
-    }
-    if middleware, ok := siw.Middlewares["limit"]; ok {
-      handler = middleware(handler)
-    }
-  }
+  handler = siw.Middlewares["validateJSON"](handler).ServeHTTP
+  handler = siw.Middlewares["limit"](handler).ServeHTTP
   ```
 
 ## Using `goapi-gen`
