@@ -250,13 +250,6 @@ func (o *OperationDefinition) RequiresParamObject() bool {
 	return len(o.Params()) > 0
 }
 
-// HasBody returns whether to define a body for the marshaling code on the
-// client. This is true for all body types, whether or not we generate types
-// for them.
-func (o *OperationDefinition) HasBody() bool {
-	return o.Spec.RequestBody != nil
-}
-
 // SummaryAsComment returns the summary as a multiline comment for o.
 func (o *OperationDefinition) SummaryAsComment() string {
 	if o.Summary == "" {
@@ -273,7 +266,7 @@ func (o *OperationDefinition) SummaryAsComment() string {
 // GetResponseTypeDefinitions produces a list of type definitions for a given
 // Operation for the response types which we know how to parse. These will be
 // turned into fields on a response object for automatic deserialization of
-// responses in the generated Client code. See "client-with-responses.tmpl".
+// responses.
 func (o *OperationDefinition) GetResponseTypeDefinitions() ([]ResponseTypeDefinition, error) {
 	var tds []ResponseTypeDefinition
 
@@ -689,17 +682,6 @@ func GenerateTypesForOperations(t *template.Template, ops []OperationDefinition)
 // GenerateChiServer generates codee for the chi server for ops.
 func GenerateChiServer(t *template.Template, operations []OperationDefinition) (string, error) {
 	return GenerateTemplates([]string{"interface.tmpl", "middleware.tmpl", "handler.tmpl"}, t, operations)
-}
-
-// GenerateClient generates code for the client for ops.
-func GenerateClient(t *template.Template, ops []OperationDefinition) (string, error) {
-	return GenerateTemplates([]string{"client.tmpl"}, t, ops)
-}
-
-// GenerateClientWithResponses generates client code alongside response
-// unmarshaling.
-func GenerateClientWithResponses(t *template.Template, ops []OperationDefinition) (string, error) {
-	return GenerateTemplates([]string{"client-with-responses.tmpl"}, t, ops)
 }
 
 // GenerateTemplates generates templates
