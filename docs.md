@@ -38,7 +38,7 @@ goapi-gen [GLOBAL OPTIONS] command [COMMAND OPTIONS] [ARGUMENTS...]
 
 **--exclude-tags, -T**="": Exclude matching operations in the given tags (default: [])
 
-**--generate, -g**="": List of generation options. (default: [types client server spec])
+**--generate, -g**="": List of generation options. (default: [types server spec])
 
 **--help, -h**: show help
 

@@ -81,10 +81,8 @@ func run(c *cli.Context, cfg *config) error {
 
 	for _, tgt := range cfg.Generate {
 		switch tgt {
-		case "client":
-			opts.GenerateClient = true
 		case "server":
-			opts.GenerateChiServer = true
+			opts.GenerateServer = true
 		case "types":
 			opts.GenerateTypes = true
 		case "spec":
@@ -146,7 +144,7 @@ func run(c *cli.Context, cfg *config) error {
 
 func main() {
 	f := &flagConfig{
-		GenerateTargets: cli.NewStringSlice("types", "client", "server", "spec"),
+		GenerateTargets: cli.NewStringSlice("types", "server", "spec"),
 		IncludeTags:     &cli.StringSlice{},
 		ExcludeTags:     &cli.StringSlice{},
 		ImportMapping:   &cli.StringSlice{},
@@ -166,9 +164,9 @@ func main() {
 			&cli.StringSliceFlag{
 				Name:        GenerateKey,
 				Aliases:     []string{"g"},
-				Value:       cli.NewStringSlice("types", "client", "server", "spec"),
+				Value:       cli.NewStringSlice("types", "server", "spec"),
 				Usage:       `List of generation options.`,
-				DefaultText: "types,client,server,spec",
+				DefaultText: "types,server,spec",
 				Destination: f.GenerateTargets,
 			},
 			&cli.StringFlag{

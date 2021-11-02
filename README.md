@@ -1,4 +1,4 @@
-# OpenAPI Client and Server Code Generator
+# OpenAPI Server Code Generator
 
 [![Go Reference](https://pkg.go.dev/badge/github.com/discord-gophers/goapi-gen.svg)](https://pkg.go.dev/github.com/discord-gophers/goapi-gen)
 
@@ -230,181 +230,6 @@ define types for inner fields which themselves support additionalProperties, and
 all of them are tested via the `internal/test/components` schemas and tests. Please
 look through those tests for more usage examples.
 
-## Generating Client Boilerplate
-
-This feature is work-in-progress and in no way stable.
-Use at your own risk. If you actually need to generate client boilerplate code,
-[here is a stable alternative](https://github.com/deepmap/oapi-codegen#generated-server-boilerplate)
-
-<details><summary>Generating Client Boilerplate</summary>
-
-Once your server is up and running, you probably want to make requests to it. If
-you're going to do those requests from your Go code, we also generate a client
-which is conformant with your schema to help in marshaling objects to JSON. It
-uses the same types and similar function signatures to your request handlers.
-
-The interface for the pet store looks like this:
-
-```go
-// The interface specification for the client above.
-type ClientInterface interface {
-
-	// FindPets request
-	FindPets(ctx context.Context, params *FindPetsParams, reqEditors ...RequestEditorFn) (*http.Response, error)
-
-	// AddPet request with JSON body
-	AddPet(ctx context.Context, body NewPet, reqEditors ...RequestEditorFn) (*http.Response, error)
-
-	// DeletePet request
-	DeletePet(ctx context.Context, id int64, reqEditors ...RequestEditorFn) (*http.Response, error)
-
-	// FindPetById request
-	FindPetById(ctx context.Context, id int64, reqEditors ...RequestEditorFn) (*http.Response, error)
-}
-```
-
-A Client object which implements the above interface is also generated:
-
-```go
-// Client which conforms to the OpenAPI3 specification for this service.
-type Client struct {
-    // The endpoint of the server conforming to this interface, with scheme,
-    // https://api.example.com for example.
-    Server string
-
-    // HTTP client with any customized settings, such as certificate chains.
-    Client http.Client
-
-    // A callback for modifying requests which are generated before sending over
-    // the network.
-    RequestEditors []func(ctx context.Context, req *http.Request) error
-}
-```
-
-Each operation in your OpenAPI spec will result in a client function which
-takes the same arguments. It's difficult to handle any arbitrary body that
-Swagger supports, so we've done some special casing for bodies, and you may get
-more than one function for an operation with a request body.
-
-1) If you have more than one request body type, meaning more than one media
- type, you will have a generic handler of this form:
-
-        AddPet(ctx context.Context, contentType string, body io.Reader)
-
-2) If you have only a JSON request body, you will get:
-
-        AddPet(ctx context.Context, body NewPet)
-
-3) If you have multiple request body types, which include a JSON type you will
- get two functions. We've chosen to give the JSON version a shorter name, as
- we work with JSON and don't want to wear out our keyboards.
-
-        AddPet(ctx context.Context, body NewPet)
-        AddPetWithBody(ctx context.Context, contentType string, body io.Reader)
-
-The Client object above is fairly flexible, since you can pass in your own
-`http.Client` and a request editing callback. You can use that callback to add
-headers. In our middleware stack, we annotate the context with additional
-information such as the request ID and function tracing information, and we
-use the callback to propagate that information into the request headers. Still, we
-can't foresee all possible usages, so those functions call through to helper
-functions which create requests. In the case of the pet store, we have:
-
-```go
-// Request generator for FindPets
-func NewFindPetsRequest(server string, params *FindPetsParams) (*http.Request, error) {...}
-
-// Request generator for AddPet with JSON body
-func NewAddPetRequest(server string, body NewPet) (*http.Request, error) {...}
-
-// Request generator for AddPet with non-JSON body
-func NewAddPetRequestWithBody(server string, contentType string, body io.Reader) (*http.Request, error) {...}
-
-// Request generator for DeletePet
-func NewDeletePetRequest(server string, id int64) (*http.Request, error) {...}
-
-// Request generator for FindPetById
-func NewFindPetByIdRequest(server string, id int64) (*http.Request, error) {...}
-```
-
-You can call these functions to build an `http.Request` from Go objects, which
-will correspond to your request schema. They map one-to-one to the functions on
-the client, except that we always generate the generic non-JSON body handler.
-
-There are some caveats to using this code.
-
-- exploded, form style query arguments, which are the default argument format
- in OpenAPI 3.0 are undecidable. Say that I have two objects, one composed of
- the fields `(name=bob, id=5)` and another which has `(name=shoe, color=brown)`.
- The first parameter is named `person` and the second is named `item`. The
- default marshaling style for query args would result in
- `/path/?name=bob,id=5&name=shoe,color=brown`. In order to tell what belongs
- to which object, we'd have to look at all the parameters and try to deduce it,
- but we're lazy, so we didn't. Don't use exploded form style arguments if
- you're passing around objects which have similar field names. If you
- used unexploded form parameters, you'd have
- `/path/?person=name,bob,id,5&item=name,shoe,color,brown`, which an be
- parsed unambiguously.
-
-- Parameters can be defined via `schema` or via `content`. Use the `content` form
- for anything other than trivial objects, they can marshal to arbitrary JSON
- structures. When you send them as cookie (`in: cookie`) arguments, we will
- URL encode them, since JSON delimiters aren't allowed in cookies.
-
-## Using SecurityProviders
-
-If you generate client-code, you can use some default-provided security providers
-which help you to use the various OpenAPI 3 Authentication mechanism.
-
-```go
-    import (
-        "github.com/discord-gophers/goapi-gen/pkg/securityprovider"
-    )
-
-    func CreateSampleProviders() error {
-        // Example BasicAuth
-        // See: https://swagger.io/docs/specification/authentication/basic-authentication/
-        basicAuthProvider, basicAuthProviderErr := securityprovider.NewBasicAuth("MY_USER", "MY_PASS")
-        if basicAuthProviderErr != nil {
-            panic(basicAuthProviderErr)
-        }
-
-        // Example BearerToken
-        // See: https://swagger.io/docs/specification/authentication/bearer-authentication/
-        bearerTokenProvider, bearerTokenProviderErr := securityprovider.NewBearerToken("MY_TOKEN")
-        if bearerTokenProviderErr != nil {
-            panic(bearerTokenProviderErr)
-        }
-
-        // Example ApiKey provider
-        // See: https://swagger.io/docs/specification/authentication/api-keys/
-        apiKeyProvider, apiKeyProviderErr := securityprovider.NewApiKey("query", "myApiKeyParam", "MY_API_KEY")
-        if apiKeyProviderErr != nil {
-            panic(apiKeyProviderErr)
-        }
-
-        // Example providing your own provider using an anonymous function wrapping in the
-        // InterceptoFn adapter. The behaviour between the InterceptorFn and the Interceptor interface
-        // are the same as http.HandlerFunc and http.Handler.
-        customProvider := func(req *http.Request, ctx context.Context) error {
-            // Just log the request header, nothing else.
-            log.Println(req.Header)
-            return nil
-        }
-
-        // Exhaustive list of some defaults you can use to initialize a Client.
-        // If you need to override the underlying httpClient, you can use the option
-        //
-        // WithHTTPClient(httpClient *http.Client)
-        //
-        client, clientErr := NewClient("https://api.deepmap.com", WithRequestEditorFn(apiKeyProvider.Intercept))
-
-        return nil
-    }
-```
-
-</summary></details>
-
 ## Extensions
 
 `goapi-gen` supports the following extended properties:
@@ -460,9 +285,9 @@ which help you to use the various OpenAPI 3 Authentication mechanism.
 
 [Usage details](docs.md)
 
-The default options for `goapi-gen` will generate everything; client, server,
+The default options for `goapi-gen` will generate everything; server,
 type definitions and embedded swagger spec, but you can generate subsets of
-those via the `-generate` flag. It defaults to `types,client,server,spec`, but
+those via the `-generate` flag. It defaults to `types,server,spec`, but
 you can specify any combination of those.
 
 - `types`: generate all type definitions for all types in the OpenAPI spec. This
@@ -470,8 +295,6 @@ you can specify any combination of those.
  body, and response type objects.
 - `server`: generate the Chi server boilerplate. This code is dependent on
  that produced by the `types` target.
-- `client`: generate the client boilerplate. It, too, requires the types to be
- present in its package.
 - `spec`: embed the OpenAPI spec into the generated code as a gzipped blob. This
 - `skip-fmt`: skip running `goimports` on the generated code. This is useful for debugging
  the generated file in case the spec contains weird strings.
@@ -579,9 +402,8 @@ files. These files **must** be named identically to built-in template files
 on-the-fly at run time. Example:
 
     $ ls -1 my-templates/
-    client.tmpl
     typedef.tmpl
     $ goapi-gen \
         -templates my-templates/ \
-        -generate types,client \
+        -generate types \
         petstore-expanded.yaml
