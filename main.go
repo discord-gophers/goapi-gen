@@ -17,7 +17,6 @@ package main
 import (
 	_ "embed"
 	"errors"
-	"flag"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -50,10 +49,10 @@ func run(c *cli.Context, cfg *config) error {
 	}
 
 	if cfg.Package == "" {
-		path := flag.Arg(0)
+		path := c.Args().First()
 		baseName := filepath.Base(path)
 		nameParts := strings.Split(baseName, ".")
-		cfg.Package = codegen.ToCamelCase(nameParts[0])
+		cfg.Package = codegen.ToSnakeCase(nameParts[0])
 	}
 
 	var err error
