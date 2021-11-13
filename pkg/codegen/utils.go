@@ -64,6 +64,12 @@ func ToCamelCase(str string) string {
 	return snaker.ForceCamelIdentifier(str)
 }
 
+// ToSnakeCase converts a string to snake case.
+func ToSnakeCase(str string) string {
+	str = strings.Replace(str, "-", "_", -1)
+	return snaker.CamelToSnake(str)
+}
+
 // SortedSchemaKeys returns the keys of dict in alphabetically.
 func SortedSchemaKeys(dict map[string]*openapi3.SchemaRef) []string {
 	keys := make([]string, len(dict))
