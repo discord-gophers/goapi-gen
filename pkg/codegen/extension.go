@@ -13,30 +13,28 @@ const (
 	extMiddlewares        = "x-go-middlewares"
 )
 
-func extTypeName(extPropValue interface{}) (string, error) {
-	raw, ok := extPropValue.(json.RawMessage)
-	if !ok {
-		return "", fmt.Errorf("failed to convert type: %T", extPropValue)
-	}
-	var name string
-	if err := json.Unmarshal(raw, &name); err != nil {
-		return "", fmt.Errorf("failed to unmarshal json: %w", err)
-	}
-
-	return name, nil
-}
-
 type extImportPathDetails struct {
 	Import string `json:"import"`
 	Alias  string `json:"alias"`
 	Type   string `json:"type"`
 }
 
-func extImportPath(extPropValue interface{}) (extImportPathDetails, error) {
+func extTypeName(extPropValue interface{}) (extImportPathDetails, error) {
+	var details extImportPathDetails
 	raw, ok := extPropValue.(json.RawMessage)
 	if !ok {
-		return extImportPathDetails{}, fmt.Errorf("failed to convert type: %T", extPropValue)
+		return details, fmt.Errorf("failed to convert type: %T", extPropValue)
 	}
+	var name string
+	if err := json.Unmarshal(raw, &name); err == nil {
+		details.Type = name
+		return details, nil
+	}
+
+	return extImportPath(raw)
+}
+
+func extImportPath(raw json.RawMessage) (extImportPathDetails, error) {
 	var details extImportPathDetails
 	if err := json.Unmarshal(raw, &details); err != nil {
 		return extImportPathDetails{}, fmt.Errorf("failed to unmarshal json: %w", err)

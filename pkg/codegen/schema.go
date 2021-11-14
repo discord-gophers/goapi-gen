@@ -210,21 +210,27 @@ func GenerateGoSchema(sref *openapi3.SchemaRef, path []string) (Schema, error) {
 
 	// Check for custom Go type extension
 	if extension, ok := schema.Extensions[extPropGoType]; ok {
-		typeName, err := extTypeName(extension)
+		typeDetails, err := extTypeName(extension)
 		if err != nil {
 			return outSchema, fmt.Errorf("invalid value for %q: %w", extPropGoType, err)
 		}
-		outSchema.GoType = typeName
-		return outSchema, nil
-	}
 
-	if extension, ok := schema.Extensions[extPropGoTypeExternal]; ok {
-		details, err := extImportPath(extension)
-		if err != nil {
-			return outSchema, fmt.Errorf("invalid value for %q: %w", extPropGoType, err)
+		outSchema.GoType = typeDetails.Type
+		// if we have a custom import for our type as it is an external type we need to the imports
+		if typeDetails.Import != "" {
+			// if the import should have an alias it needs to be specified
+			if typeDetails.Alias != "" {
+				// we need to set the gotype with the correct import name
+				outSchema.GoType = fmt.Sprintf("%s.%s", typeDetails.Alias, typeDetails.Type)
+				outSchema.CustomImports = append(outSchema.CustomImports, fmt.Sprintf("%s \"%s\"", typeDetails.Alias, typeDetails.Import))
+			} else {
+				// as no alias is provided we need to take the import
+				// TODO: the following method fails if the import path is not the same as the used import, e.g. github.com/go-chi/chi/v5 but imports as chi.*
+				splitImport := strings.Split(typeDetails.Import, "/")
+				outSchema.GoType = fmt.Sprintf("%s.%s", splitImport[len(splitImport)-1], typeDetails.Type)
+				outSchema.CustomImports = append(outSchema.CustomImports, fmt.Sprintf("\"%s\"", typeDetails.Import))
+			}
 		}
-		outSchema.GoType = fmt.Sprintf("%s.%s", details.Alias, details.Type)
-		outSchema.CustomImports = append(outSchema.CustomImports, fmt.Sprintf("%s \"%s\"", details.Alias, details.Import))
 		return outSchema, nil
 	}
 

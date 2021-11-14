@@ -235,9 +235,27 @@ look through those tests for more usage examples.
 `goapi-gen` supports the following extended properties:
 
 - `x-go-type`: specifies Go type name. It allows you to specify the type name for a schema, and
-  will override any default value. This extended property isn't supported in all parts of
-  OpenAPI, so please refer to the spec as to where it's allowed. Swagger validation tools will
-  flag incorrect usage of this property.
+  will override any default value. When using this with external types the fields ``type,import`` are required while
+  `alias` is only needed if your import collides with any existing imports. **If no alias is given, the generator 
+  assumes that the import name is the last word from the import path (github.com/example/time => time). This can produce 
+  issues as some projects (like chi with /v5) have different import names than paths. To be sure, always declare an alias.** 
+  This extended property isn't supported in all parts of OpenAPI, so please refer to the spec as to where it's allowed.
+  Swagger validation tools will flag incorrect usage of this property.
+    ````yaml
+  components:
+      schemas:
+        Object:
+          properties:
+            name:
+              type: string
+              x-go-type: MyCustomString
+            time:
+              type: integer
+              x-go-type: 
+                type: MyCustomTime
+                import: github.com/example/time
+                alias: time2
+    ````
 - `x-go-extra-tags`: adds extra Go field tags to the generated struct field. This is
   useful for interfacing with tag based ORM or validation libraries. The extra tags that
   are added are in addition to the regular json tags that are generated. If you specify your

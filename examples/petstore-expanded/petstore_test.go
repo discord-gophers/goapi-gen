@@ -7,6 +7,7 @@ import (
 	"net/http/httptest"
 	"testing"
 
+	"github.com/discord-gophers/goapi-gen/examples/petstore-expanded/types"
 	"github.com/go-chi/chi/v5"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -45,7 +46,7 @@ func TestPetStore(t *testing.T) {
 	t.Run("Add pet", func(t *testing.T) {
 		tag := "TagOfSpot"
 		newPet := api.NewPet{
-			Name: "Spot",
+			Name: types.CustomString("Spot"),
 			Tag:  &tag,
 		}
 
@@ -56,6 +57,7 @@ func TestPetStore(t *testing.T) {
 		err = json.NewDecoder(rr.Body).Decode(&resultPet)
 		assert.NoError(t, err, "error unmarshaling response")
 		assert.Equal(t, newPet.Name, resultPet.Name)
+		assert.IsType(t, types.CustomString("Spot"), resultPet.Name)
 		assert.Equal(t, *newPet.Tag, *resultPet.Tag)
 	})
 

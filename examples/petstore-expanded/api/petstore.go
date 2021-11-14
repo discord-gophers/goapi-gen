@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"sync"
 
+	customTypes "github.com/discord-gophers/goapi-gen/examples/petstore-expanded/types"
 	"github.com/go-chi/render"
 )
 
@@ -108,11 +109,11 @@ func (p *PetStore) FindPetByID(w http.ResponseWriter, r *http.Request, id int64)
 	render.Render(w, r, FindPetByIDJSON200Response(pet))
 }
 
-func (p *PetStore) DeletePet(w http.ResponseWriter, r *http.Request, id int64) {
+func (p *PetStore) DeletePet(w http.ResponseWriter, r *http.Request, id customTypes.CustomInt) {
 	p.Lock.Lock()
 	defer p.Lock.Unlock()
 
-	_, found := p.Pets[id]
+	_, found := p.Pets[int64(id)]
 	if !found {
 		render.Render(
 			w, r,
@@ -120,7 +121,7 @@ func (p *PetStore) DeletePet(w http.ResponseWriter, r *http.Request, id int64) {
 		)
 		return
 	}
-	delete(p.Pets, id)
+	delete(p.Pets, int64(id))
 
 	w.WriteHeader(http.StatusNoContent)
 }

@@ -131,9 +131,14 @@ func Generate(swagger *openapi3.T, packageName string, opts Options) (string, er
 		}
 	}
 
+	var finalCustomImports []string
 	ops, err := OperationDefinitions(swagger)
 	if err != nil {
 		return "", fmt.Errorf("error creating operation definitions: %w", err)
+	}
+
+	for _, op := range ops {
+		finalCustomImports = append(finalCustomImports, op.CustomImports...)
 	}
 
 	var typeDefinitions, constantDefinitions string
@@ -150,6 +155,9 @@ func Generate(swagger *openapi3.T, packageName string, opts Options) (string, er
 		}
 
 	}
+
+	// TODO: check for exact double imports and merge them together with 1 alias, otherwise we might run into double imports under different names
+	finalCustomImports = append(finalCustomImports, customImports...)
 
 	var serverOut string
 	if opts.GenerateServer {
@@ -171,7 +179,7 @@ func Generate(swagger *openapi3.T, packageName string, opts Options) (string, er
 	w := bufio.NewWriter(&buf)
 
 	externalImports := importMapping.GoImports()
-	externalImports = append(externalImports, customImports...)
+	externalImports = append(externalImports, finalCustomImports...)
 	importsOut, err := GenerateImports(t, externalImports, packageName)
 	if err != nil {
 		return "", fmt.Errorf("error generating imports: %w", err)
@@ -279,8 +287,8 @@ func GenerateTypeDefinitions(t *template.Template, swagger *openapi3.T, ops []Op
 	}
 
 	var customImports []string
-	for _, schemaType := range schemaTypes {
-		for _, prop := range schemaType.Schema.Properties {
+	for _, allType := range allTypes {
+		for _, prop := range allType.Schema.Properties {
 			customImports = append(customImports, prop.Schema.CustomImports...)
 		}
 	}
