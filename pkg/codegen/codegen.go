@@ -137,8 +137,9 @@ func Generate(swagger *openapi3.T, packageName string, opts Options) (string, er
 	}
 
 	var typeDefinitions, constantDefinitions string
+	var customImports []string
 	if opts.GenerateTypes {
-		typeDefinitions, err = GenerateTypeDefinitions(t, swagger, ops, opts.ExcludeSchemas)
+		typeDefinitions, customImports, err = GenerateTypeDefinitions(t, swagger, ops, opts.ExcludeSchemas)
 		if err != nil {
 			return "", fmt.Errorf("error generating type definitions: %w", err)
 		}
@@ -170,6 +171,7 @@ func Generate(swagger *openapi3.T, packageName string, opts Options) (string, er
 	w := bufio.NewWriter(&buf)
 
 	externalImports := importMapping.GoImports()
+	externalImports = append(externalImports, customImports...)
 	importsOut, err := GenerateImports(t, externalImports, packageName)
 	if err != nil {
 		return "", fmt.Errorf("error generating imports: %w", err)
@@ -227,57 +229,64 @@ func Generate(swagger *openapi3.T, packageName string, opts Options) (string, er
 
 // GenerateTypeDefinitions produces the type definitions in ops and executes
 // the template.
-func GenerateTypeDefinitions(t *template.Template, swagger *openapi3.T, ops []OperationDefinition, excludeSchemas []string) (string, error) {
+func GenerateTypeDefinitions(t *template.Template, swagger *openapi3.T, ops []OperationDefinition, excludeSchemas []string) (string, []string, error) {
 	schemaTypes, err := GenerateTypesForSchemas(t, swagger.Components.Schemas, excludeSchemas)
 	if err != nil {
-		return "", fmt.Errorf("error generating Go types for component schemas: %w", err)
+		return "", nil, fmt.Errorf("error generating Go types for component schemas: %w", err)
 	}
 
 	paramTypes, err := GenerateTypesForParameters(t, swagger.Components.Parameters)
 	if err != nil {
-		return "", fmt.Errorf("error generating Go types for component parameters: %w", err)
+		return "", nil, fmt.Errorf("error generating Go types for component parameters: %w", err)
 	}
 	allTypes := append(schemaTypes, paramTypes...)
 
 	responseTypes, err := GenerateTypesForResponses(t, swagger.Components.Responses)
 	if err != nil {
-		return "", fmt.Errorf("error generating Go types for component responses: %w", err)
+		return "", nil, fmt.Errorf("error generating Go types for component responses: %w", err)
 	}
 	allTypes = append(allTypes, responseTypes...)
 
 	bodyTypes, err := GenerateTypesForRequestBodies(t, swagger.Components.RequestBodies)
 	if err != nil {
-		return "", fmt.Errorf("error generating Go types for component request bodies: %w", err)
+		return "", nil, fmt.Errorf("error generating Go types for component request bodies: %w", err)
 	}
 	allTypes = append(allTypes, bodyTypes...)
 
 	paramTypesOut, err := GenerateTypesForOperations(t, ops)
 	if err != nil {
-		return "", fmt.Errorf("error generating Go types for component request bodies: %w", err)
+		return "", nil, fmt.Errorf("error generating Go types for component request bodies: %w", err)
 	}
 
 	enumsOut, err := GenerateEnums(t, allTypes)
 	if err != nil {
-		return "", fmt.Errorf("error generating code for type enums: %w", err)
+		return "", nil, fmt.Errorf("error generating code for type enums: %w", err)
 	}
 
 	enumTypesOut, err := GenerateEnumTypes(t, allTypes)
 	if err != nil {
-		return "", fmt.Errorf("error generating code for enum type definitions: %w", err)
+		return "", nil, fmt.Errorf("error generating code for enum type definitions: %w", err)
 	}
 
 	typesOut, err := GenerateTypes(t, allTypes)
 	if err != nil {
-		return "", fmt.Errorf("error generating code for type definitions: %w", err)
+		return "", nil, fmt.Errorf("error generating code for type definitions: %w", err)
 	}
 
 	allOfBoilerplate, err := GenerateAdditionalPropertyBoilerplate(t, allTypes)
 	if err != nil {
-		return "", fmt.Errorf("error generating allOf boilerplate: %w", err)
+		return "", nil, fmt.Errorf("error generating allOf boilerplate: %w", err)
+	}
+
+	var customImports []string
+	for _, schemaType := range schemaTypes {
+		for _, prop := range schemaType.Schema.Properties {
+			customImports = append(customImports, prop.Schema.CustomImports...)
+		}
 	}
 
 	typeDefinitions := enumsOut + typesOut + enumTypesOut + paramTypesOut + allOfBoilerplate
-	return typeDefinitions, nil
+	return typeDefinitions, customImports, nil
 }
 
 // GenerateConstants creates operation ids, context keys, paths, etc. to be

@@ -6,10 +6,11 @@ import (
 )
 
 const (
-	extPropGoType    = "x-go-type"
-	extPropOmitEmpty = "x-omitempty"
-	extPropExtraTags = "x-go-extra-tags"
-	extMiddlewares   = "x-go-middlewares"
+	extPropGoType         = "x-go-type"
+	extPropGoTypeExternal = "x-go-type-external"
+	extPropOmitEmpty      = "x-omitempty"
+	extPropExtraTags      = "x-go-extra-tags"
+	extMiddlewares        = "x-go-middlewares"
 )
 
 func extTypeName(extPropValue interface{}) (string, error) {
@@ -23,6 +24,25 @@ func extTypeName(extPropValue interface{}) (string, error) {
 	}
 
 	return name, nil
+}
+
+type extImportPathDetails struct {
+	Import string `json:"import"`
+	Alias  string `json:"alias"`
+	Type   string `json:"type"`
+}
+
+func extImportPath(extPropValue interface{}) (extImportPathDetails, error) {
+	raw, ok := extPropValue.(json.RawMessage)
+	if !ok {
+		return extImportPathDetails{}, fmt.Errorf("failed to convert type: %T", extPropValue)
+	}
+	var details extImportPathDetails
+	if err := json.Unmarshal(raw, &details); err != nil {
+		return extImportPathDetails{}, fmt.Errorf("failed to unmarshal json: %w", err)
+	}
+
+	return details, nil
 }
 
 func extParseOmitEmpty(extPropValue interface{}) (bool, error) {

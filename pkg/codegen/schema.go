@@ -10,8 +10,9 @@ import (
 
 // Schema represents an OpenAPI type definition.
 type Schema struct {
-	GoType  string // The Go type needed to represent the schema
-	RefType string // If the type has a type name, this is set
+	CustomImports []string // The custom imports which are needed for x-go-type-external
+	GoType        string   // The Go type needed to represent the schema
+	RefType       string   // If the type has a type name, this is set
 
 	ArrayType *Schema // The schema of array element
 
@@ -184,9 +185,10 @@ func GenerateGoSchema(sref *openapi3.SchemaRef, path []string) (Schema, error) {
 	}
 
 	outSchema := Schema{
-		Description: StringToGoComment(schema.Description),
-		OAPISchema:  schema,
-		Bindable:    true,
+		CustomImports: []string{},
+		Description:   StringToGoComment(schema.Description),
+		OAPISchema:    schema,
+		Bindable:      true,
 	}
 
 	// FIXME(hhhapz): We can probably support this in a meaningful way.
@@ -213,6 +215,16 @@ func GenerateGoSchema(sref *openapi3.SchemaRef, path []string) (Schema, error) {
 			return outSchema, fmt.Errorf("invalid value for %q: %w", extPropGoType, err)
 		}
 		outSchema.GoType = typeName
+		return outSchema, nil
+	}
+
+	if extension, ok := schema.Extensions[extPropGoTypeExternal]; ok {
+		details, err := extImportPath(extension)
+		if err != nil {
+			return outSchema, fmt.Errorf("invalid value for %q: %w", extPropGoType, err)
+		}
+		outSchema.GoType = fmt.Sprintf("%s.%s", details.Alias, details.Type)
+		outSchema.CustomImports = append(outSchema.CustomImports, fmt.Sprintf("%s \"%s\"", details.Alias, details.Import))
 		return outSchema, nil
 	}
 

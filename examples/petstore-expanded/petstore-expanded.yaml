@@ -144,6 +144,10 @@ components:
         - name
       properties:
         name:
+          x-go-type-external:
+            type: CustomString
+            import: github.com/discord-gophers/goapi-gen/examples/petstore-expanded/types
+            alias: customTypes
           type: string
           description: Name of the pet
         tag:
