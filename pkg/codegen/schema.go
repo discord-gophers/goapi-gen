@@ -225,9 +225,16 @@ func GenerateGoSchema(sref *openapi3.SchemaRef, path []string) (Schema, error) {
 				outSchema.CustomImports = append(outSchema.CustomImports, fmt.Sprintf("%s \"%s\"", typeDetails.Alias, typeDetails.Import))
 			} else {
 				// as no alias is provided we need to take the import
-				// TODO: the following method fails if the import path is not the same as the used import, e.g. github.com/go-chi/chi/v5 but imports as chi.*
-				splitImport := strings.Split(typeDetails.Import, "/")
-				outSchema.GoType = fmt.Sprintf("%s.%s", splitImport[len(splitImport)-1], typeDetails.Type)
+
+				// if there is an import name specified instead of an alias, take it
+				if strings.Contains(typeDetails.Import, ":") {
+					splitImport := strings.Split(typeDetails.Import, ":")
+					outSchema.GoType = fmt.Sprintf("%s.%s", splitImport[1], typeDetails.Type)
+					typeDetails.Import = splitImport[0]
+				} else {
+					splitImport := strings.Split(typeDetails.Import, "/")
+					outSchema.GoType = fmt.Sprintf("%s.%s", splitImport[len(splitImport)-1], typeDetails.Type)
+				}
 				outSchema.CustomImports = append(outSchema.CustomImports, fmt.Sprintf("\"%s\"", typeDetails.Import))
 			}
 		}

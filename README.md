@@ -238,7 +238,9 @@ look through those tests for more usage examples.
   will override any default value. When using this with external types the fields ``type,import`` are required while
   `alias` is only needed if your import collides with any existing imports. **If no alias is given, the generator 
   assumes that the import name is the last word from the import path (github.com/example/time => time). This can produce 
-  issues as some projects (like chi with /v5) have different import names than paths. To be sure, always declare an alias.** 
+  issues as some projects (like chi with /v5) have different import names than paths. To be sure, always declare an alias.
+  For those cases, please attach a `:[import-name]` to the path like `github.com/go-chi/chi/v5:chi`, this will then also be
+  imported as `chi.*` without the use of an alias.** 
   This extended property isn't supported in all parts of OpenAPI, so please refer to the spec as to where it's allowed.
   Swagger validation tools will flag incorrect usage of this property.
     ````yaml
