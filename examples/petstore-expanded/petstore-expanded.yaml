@@ -90,7 +90,6 @@ paths:
           description: ID of pet to fetch
           required: true
           schema:
-            x-go-type: int64
             type: integer
             format: int64
       responses:
@@ -116,10 +115,6 @@ paths:
           description: ID of pet to delete
           required: true
           schema:
-            x-go-type:
-              type: CustomInt
-              import: github.com/discord-gophers/goapi-gen/examples/petstore-expanded/types
-              alias: customTypes
             type: integer
             format: int64
       responses:
@@ -149,10 +144,6 @@ components:
         - name
       properties:
         name:
-          x-go-type:
-            type: CustomString
-            import: github.com/discord-gophers/goapi-gen/examples/petstore-expanded/types
-#            alias: customTypes
           type: string
           description: Name of the pet
         tag:
