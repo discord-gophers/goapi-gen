@@ -288,6 +288,7 @@ func GenerateTypeDefinitions(t *template.Template, swagger *openapi3.T, ops []Op
 
 	var customImports []string
 	for _, allType := range allTypes {
+		customImports = append(customImports, allType.Schema.CustomImports...)
 		for _, prop := range allType.Schema.Properties {
 			customImports = append(customImports, prop.Schema.CustomImports...)
 		}
