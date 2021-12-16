@@ -84,6 +84,23 @@ paths:
       responses:
         '401':
           description: no content
+    post:
+      operationId: createProtectedResource
+      security:
+        - BearerAuth:
+          - unauthorized
+      responses:
+        '401':
+          description: No content
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              properties:
+                name:
+                  type: string
+
 components:
   securitySchemes:
     BearerAuth:
@@ -186,6 +203,19 @@ func TestOapiRequestValidatorWithOptions(t *testing.T) {
 	// Call a protected function without credentials
 	{
 		rec := doGet(t, r, "http://example.com/protected_resource_401")
+		assert.Equal(t, http.StatusUnauthorized, rec.Code)
+		assert.False(t, called, "Handler should not have been called")
+		called = false
+	}
+
+	// Call a protected function without credentials and malformed request
+	{
+		body := struct {
+			Name int `json:"name"`
+		}{
+			Name: 7,
+		}
+		rec := doPost(t, r, "http://example.com/protected_resource_401", body)
 		assert.Equal(t, http.StatusUnauthorized, rec.Code)
 		assert.False(t, called, "Handler should not have been called")
 		called = false
