@@ -71,6 +71,14 @@ func validateRequest(r *http.Request, router routers.Router, options *Options) (
 		requestValidationInput.Options = &options.Options
 	}
 
+	// Validate security before any other validation, unless options.Options.MultiError is true
+	if options == nil || !options.Options.MultiError {
+		if err := validateSecurity(requestValidationInput); err != nil {
+			return http.StatusUnauthorized, err
+		}
+	}
+
+	// Validate the rest of the request
 	if err := openapi3filter.ValidateRequest(context.Background(), requestValidationInput); err != nil {
 		switch e := err.(type) {
 		case *openapi3filter.RequestError:
@@ -82,11 +90,24 @@ func validateRequest(r *http.Request, router routers.Router, options *Options) (
 		case *openapi3filter.SecurityRequirementsError:
 			return http.StatusUnauthorized, err
 		default:
-			// This should never happen today, but if our upstream code changes,
-			// we don't want to crash the server, so handle the unexpected error.
+			// This case occurs when options.Options.MultiError is true.
+			// TODO(zlb): Find a better way to handle this.
 			return http.StatusInternalServerError, fmt.Errorf("error validating route: %s", err.Error())
 		}
 	}
 
 	return http.StatusOK, nil
+}
+
+func validateSecurity(input *openapi3filter.RequestValidationInput) error {
+
+	security := input.Route.Operation.Security
+	if security == nil {
+		security = &input.Route.Spec.Security
+		if security == nil {
+			return nil
+		}
+	}
+
+	return openapi3filter.ValidateSecurityRequirements(context.Background(), input, *security)
 }
