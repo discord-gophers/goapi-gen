@@ -355,20 +355,20 @@ func TestGenerateEnumTypes(t *testing.T) {
 type MyType struct {
     value string
 }
-func (t MyType) ToValue() string {
+func (t *MyType) ToValue() string {
     return t.value
 }
-func (t MyType) MarshalJSON() ([]byte, error) {
+func (t *MyType) MarshalJSON() ([]byte, error) {
     return json.Marshal(t.value)
 }
-func (t MyType) UnmarshalJSON(data []byte) error {
+func (t *MyType) UnmarshalJSON(data []byte) error {
     var value string
     if err := json.Unmarshal(data, &value); err != nil {
         return err
     }
-    return nil
+    return t.FromValue(value)
 }
-func (t MyType) FromValue(value string) error {
+func (t *MyType) FromValue(value string) error {
     switch value {
     
     case some.value:
@@ -397,20 +397,20 @@ func (t MyType) FromValue(value string) error {
 type MyType struct {
     value int64
 }
-func (t MyType) ToValue() int64 {
+func (t *MyType) ToValue() int64 {
     return t.value
 }
-func (t MyType) MarshalJSON() ([]byte, error) {
+func (t *MyType) MarshalJSON() ([]byte, error) {
     return json.Marshal(t.value)
 }
-func (t MyType) UnmarshalJSON(data []byte) error {
+func (t *MyType) UnmarshalJSON(data []byte) error {
     var value int64
     if err := json.Unmarshal(data, &value); err != nil {
         return err
     }
-    return nil
+    return t.FromValue(value)
 }
-func (t MyType) FromValue(value int64) error {
+func (t *MyType) FromValue(value int64) error {
     switch value {
     
     case some.value:
