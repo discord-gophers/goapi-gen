@@ -73,20 +73,20 @@ type EnumInObjInArrayVal struct {
 	value string
 }
 
-func (t EnumInObjInArrayVal) ToValue() string {
+func (t *EnumInObjInArrayVal) ToValue() string {
 	return t.value
 }
-func (t EnumInObjInArrayVal) MarshalJSON() ([]byte, error) {
+func (t *EnumInObjInArrayVal) MarshalJSON() ([]byte, error) {
 	return json.Marshal(t.value)
 }
-func (t EnumInObjInArrayVal) UnmarshalJSON(data []byte) error {
+func (t *EnumInObjInArrayVal) UnmarshalJSON(data []byte) error {
 	var value string
 	if err := json.Unmarshal(data, &value); err != nil {
 		return err
 	}
-	return nil
+	return t.FromValue(value)
 }
-func (t EnumInObjInArrayVal) FromValue(value string) error {
+func (t *EnumInObjInArrayVal) FromValue(value string) error {
 	switch value {
 
 	case EnumInObjInArrayValFirst.value:
