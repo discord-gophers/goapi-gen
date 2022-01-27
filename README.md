@@ -324,7 +324,7 @@ in the openapi spec.
 Since `go generate` commands must be a single line, all the options above can make
 them pretty unwieldy, so you can specify all of the options in a configuration
 file via the `--config` option. Please see the test under
-[`/internal/test/externalref/`](https://github.com/discord-gophers/goapi-gen/blob/master/internal/test/externalref/externalref.cfg.yaml)
+[`/internal/test/externalref/`](https://github.com/discord-gophers/goapi-gen/blob/main/internal/test/externalref/externalref.cfg.yaml)
 for an example. The structure of the file is as follows:
 
 ```yaml
@@ -339,7 +339,7 @@ import-mapping:
   ./packageB/spec.yaml: github.com/discord-gophers/goapi-gen/internal/test/externalref/packageB
 ```
 
-Have a look at [`goapi-gen.go`](https://github.com/discord-gophers/goapi-gen/blob/master/goapi-gen.go#L48)
+Have a look at [`parse.go`](https://github.com/discord-gophers/goapi-gen/blob/main/parse.go#L28-L39)
 to see all the fields on the configuration structure.
 
 ### Import Mappings
