@@ -339,7 +339,7 @@ import-mapping:
   ./packageB/spec.yaml: github.com/discord-gophers/goapi-gen/internal/test/externalref/packageB
 ```
 
-Have a look at [`goapi-gen.go`](https://github.com/discord-gophers/goapi-gen/blob/main/main.go#L32-L44)
+Have a look at [`parse.go`](https://github.com/discord-gophers/goapi-gen/blob/main/parse.go#L28-L39)
 to see all the fields on the configuration structure.
 
 ### Import Mappings
