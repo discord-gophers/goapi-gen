@@ -52,9 +52,9 @@ func OapiRequestValidatorWithOptions(swagger *openapi3.T, options *Options) func
 
 			// validate request
 			if statusCode, err := validateRequest(r, router, options); err != nil {
-				contentType := options.ErrRespContentType
-				if contentType == "" {
-					contentType = ErrRespContentTypePlain
+				contentType := ErrRespContentTypePlain
+				if options != nil && options.ErrRespContentType != "" {
+					contentType = options.ErrRespContentType
 				}
 				w.Header().Set("Content-Type", string(contentType)+"; charset=utf-8")
 				w.Header().Set("X-Content-Type-Options", "nosniff")
