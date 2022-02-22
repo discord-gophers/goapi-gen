@@ -23,6 +23,7 @@ type Options struct {
 	ErrRespContentType
 }
 
+// ErrRespContentType represents the support content-types for the response when a validation error occurs
 type ErrRespContentType string
 
 // Consts to expose supported Error Response Content-Types
