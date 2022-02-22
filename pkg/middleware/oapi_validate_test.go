@@ -143,6 +143,11 @@ func TestOapiRequestValidator(t *testing.T) {
 }
 
 func TestOapiRequestValidatorWithOptions(t *testing.T) {
+	malformedBody := struct {
+		Name int `json:"name"`
+	}{
+		Name: 7,
+	}
 	swagger, err := openapi3.NewLoader().LoadFromData([]byte(testSchema))
 	require.NoError(t, err, "Error initializing swagger")
 
@@ -210,11 +215,7 @@ func TestOapiRequestValidatorWithOptions(t *testing.T) {
 
 	// Call a protected function without credentials and malformed request
 	{
-		body := struct {
-			Name int `json:"name"`
-		}{
-			Name: 7,
-		}
+		body := malformedBody
 		rec := doPost(t, r, "http://example.com/protected_resource_401", body)
 		assert.Equal(t, http.StatusUnauthorized, rec.Code)
 		assert.False(t, called, "Handler should not have been called")
@@ -225,11 +226,7 @@ func TestOapiRequestValidatorWithOptions(t *testing.T) {
 	// Confirm explicit text/plain content-type is returned
 	{
 		options.ErrRespContentType = ErrRespContentTypePlain
-		body := struct {
-			Name int `json:"name"`
-		}{
-			Name: 7,
-		}
+		body := malformedBody
 		rec := doPost(t, r, "http://example.com/protected_resource_401", body)
 		assert.Contains(t, rec.Result().Header["Content-Type"][0], ErrRespContentTypePlain)
 		called = false
@@ -238,11 +235,7 @@ func TestOapiRequestValidatorWithOptions(t *testing.T) {
 	// Confirm explicit application/json content-type is returned
 	{
 		options.ErrRespContentType = ErrRespContentTypeJSON
-		body := struct {
-			Name int `json:"name"`
-		}{
-			Name: 7,
-		}
+		body := malformedBody
 		rec := doPost(t, r, "http://example.com/protected_resource_401", body)
 		assert.Contains(t, rec.Result().Header["Content-Type"][0], ErrRespContentTypeJSON)
 		called = false
@@ -251,11 +244,7 @@ func TestOapiRequestValidatorWithOptions(t *testing.T) {
 	// Confirm explicit application/xml content-type is returned
 	{
 		options.ErrRespContentType = ErrRespContentTypeXML
-		body := struct {
-			Name int `json:"name"`
-		}{
-			Name: 7,
-		}
+		body := malformedBody
 		rec := doPost(t, r, "http://example.com/protected_resource_401", body)
 		assert.Contains(t, rec.Result().Header["Content-Type"][0], ErrRespContentTypeXML)
 		called = false
