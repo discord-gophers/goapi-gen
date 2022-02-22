@@ -143,6 +143,11 @@ func TestOapiRequestValidator(t *testing.T) {
 }
 
 func TestOapiRequestValidatorWithOptions(t *testing.T) {
+	malformedBody := struct {
+		Name int `json:"name"`
+	}{
+		Name: 7,
+	}
 	swagger, err := openapi3.NewLoader().LoadFromData([]byte(testSchema))
 	require.NoError(t, err, "Error initializing swagger")
 
@@ -150,7 +155,7 @@ func TestOapiRequestValidatorWithOptions(t *testing.T) {
 
 	// Set up an authenticator to check authenticated function. It will allow
 	// access to "someScope", but disallow others.
-	options := Options{
+	options := &Options{
 		Options: openapi3filter.Options{
 			AuthenticationFunc: func(c context.Context, input *openapi3filter.AuthenticationInput) error {
 				for _, s := range input.Scopes {
@@ -164,7 +169,7 @@ func TestOapiRequestValidatorWithOptions(t *testing.T) {
 	}
 
 	// register middleware
-	r.Use(OapiRequestValidatorWithOptions(swagger, &options))
+	r.Use(OapiRequestValidatorWithOptions(swagger, options))
 
 	// basic cases
 	testRequestValidatorBasicFunctions(t, r)
@@ -210,14 +215,38 @@ func TestOapiRequestValidatorWithOptions(t *testing.T) {
 
 	// Call a protected function without credentials and malformed request
 	{
-		body := struct {
-			Name int `json:"name"`
-		}{
-			Name: 7,
-		}
+		body := malformedBody
 		rec := doPost(t, r, "http://example.com/protected_resource_401", body)
 		assert.Equal(t, http.StatusUnauthorized, rec.Code)
 		assert.False(t, called, "Handler should not have been called")
+		assert.Contains(t, rec.Result().Header["Content-Type"][0], ErrRespContentTypePlain)
+		called = false
+	}
+
+	// Confirm explicit text/plain content-type is returned
+	{
+		options.ErrRespContentType = ErrRespContentTypePlain
+		body := malformedBody
+		rec := doPost(t, r, "http://example.com/protected_resource_401", body)
+		assert.Contains(t, rec.Result().Header["Content-Type"][0], ErrRespContentTypePlain)
+		called = false
+	}
+
+	// Confirm explicit application/json content-type is returned
+	{
+		options.ErrRespContentType = ErrRespContentTypeJSON
+		body := malformedBody
+		rec := doPost(t, r, "http://example.com/protected_resource_401", body)
+		assert.Contains(t, rec.Result().Header["Content-Type"][0], ErrRespContentTypeJSON)
+		called = false
+	}
+
+	// Confirm explicit application/xml content-type is returned
+	{
+		options.ErrRespContentType = ErrRespContentTypeXML
+		body := malformedBody
+		rec := doPost(t, r, "http://example.com/protected_resource_401", body)
+		assert.Contains(t, rec.Result().Header["Content-Type"][0], ErrRespContentTypeXML)
 		called = false
 	}
 }

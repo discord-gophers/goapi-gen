@@ -5,6 +5,8 @@ package middleware
 
 import (
 	"context"
+	"encoding/json"
+	"encoding/xml"
 	"fmt"
 	"net/http"
 	"strings"
@@ -18,7 +20,18 @@ import (
 // Options to customize request validation, openapi3filter specified options will be passed through.
 type Options struct {
 	Options openapi3filter.Options
+	ErrRespContentType
 }
+
+// ErrRespContentType represents the support content-types for the response when a validation error occurs
+type ErrRespContentType string
+
+// Consts to expose supported Error Response Content-Types
+const (
+	ErrRespContentTypePlain ErrRespContentType = "text/plain"
+	ErrRespContentTypeJSON  ErrRespContentType = "application/json"
+	ErrRespContentTypeXML   ErrRespContentType = "application/xml"
+)
 
 // OapiRequestValidator Creates middleware to validate request by swagger spec.
 // This middleware is good for net/http either since go-chi is 100% compatible with net/http.
@@ -39,7 +52,22 @@ func OapiRequestValidatorWithOptions(swagger *openapi3.T, options *Options) func
 
 			// validate request
 			if statusCode, err := validateRequest(r, router, options); err != nil {
-				http.Error(w, err.Error(), statusCode)
+				contentType := ErrRespContentTypePlain
+				if options != nil && options.ErrRespContentType != "" {
+					contentType = options.ErrRespContentType
+				}
+				w.Header().Set("Content-Type", string(contentType)+"; charset=utf-8")
+				w.Header().Set("X-Content-Type-Options", "nosniff")
+				w.WriteHeader(statusCode)
+
+				body := []byte(err.Error())
+				switch contentType {
+				case ErrRespContentTypeJSON:
+					body, _ = json.Marshal(err.Error())
+				case ErrRespContentTypeXML:
+					body, _ = xml.Marshal(err.Error())
+				}
+				fmt.Fprintln(w, string(body))
 				return
 			}
 
