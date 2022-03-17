@@ -314,7 +314,7 @@ func (siw *ServerInterfaceWrapper) Issue209(w http.ResponseWriter, r *http.Reque
 
 	if err := runtime.BindStyledParameter("simple", false, "str", chi.URLParam(r, "str"), &str); err != nil {
 		err = fmt.Errorf("invalid format for parameter str: %w", err)
-		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{err})
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{err, "str"})
 		return
 	}
 
@@ -336,7 +336,7 @@ func (siw *ServerInterfaceWrapper) Issue30(w http.ResponseWriter, r *http.Reques
 
 	if err := runtime.BindStyledParameter("simple", false, "fallthrough", chi.URLParam(r, "fallthrough"), &pFallthrough); err != nil {
 		err = fmt.Errorf("invalid format for parameter fallthrough: %w", err)
-		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{err})
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{err, "fallthrough"})
 		return
 	}
 
@@ -371,7 +371,7 @@ func (siw *ServerInterfaceWrapper) Issue41(w http.ResponseWriter, r *http.Reques
 
 	if err := runtime.BindStyledParameter("simple", false, "1param", chi.URLParam(r, "1param"), &n1param); err != nil {
 		err = fmt.Errorf("invalid format for parameter 1param: %w", err)
-		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{err})
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{err, "1param"})
 		return
 	}
 
@@ -397,7 +397,7 @@ func (siw *ServerInterfaceWrapper) Issue9(w http.ResponseWriter, r *http.Request
 
 	if err := runtime.BindQueryParameter("form", true, true, "foo", r.URL.Query(), &params.Foo); err != nil {
 		err = fmt.Errorf("invalid format for parameter foo: %w", err)
-		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{err})
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{err, "foo"})
 		return
 	}
 
@@ -411,21 +411,45 @@ func (siw *ServerInterfaceWrapper) Issue9(w http.ResponseWriter, r *http.Request
 type UnescapedCookieParamError struct {
 	error
 }
+
 type UnmarshalingParamError struct {
 	error
+	paramName string
 }
+
 type RequiredParamError struct {
 	error
+	paramName string
 }
+
 type RequiredHeaderError struct {
 	error
+	paramName string
 }
+
 type InvalidParamFormatError struct {
 	error
+	paramName string
 }
+
 type TooManyValuesForParamError struct {
 	error
+	paramName string
 }
+
+// ParameterName is an interface that is implemented by error types that are
+// relevant to a specific parameter.
+type ParameterError interface {
+	error
+	// ParamName is the name of the parameter that the error is referring to.
+	ParamName() string
+}
+
+func (err UnmarshalingParamError) ParamName() string     { return err.paramName }
+func (err RequiredParamError) ParamName() string         { return err.paramName }
+func (err RequiredHeaderError) ParamName() string        { return err.paramName }
+func (err InvalidParamFormatError) ParamName() string    { return err.paramName }
+func (err TooManyValuesForParamError) ParamName() string { return err.paramName }
 
 type ServerOptions struct {
 	BaseURL          string

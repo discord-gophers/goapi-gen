@@ -209,7 +209,7 @@ func (siw *ServerInterfaceWrapper) FindPets(w http.ResponseWriter, r *http.Reque
 
 	if err := runtime.BindQueryParameter("form", true, false, "tags", r.URL.Query(), &params.Tags); err != nil {
 		err = fmt.Errorf("invalid format for parameter tags: %w", err)
-		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{err})
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{err, "tags"})
 		return
 	}
 
@@ -217,7 +217,7 @@ func (siw *ServerInterfaceWrapper) FindPets(w http.ResponseWriter, r *http.Reque
 
 	if err := runtime.BindQueryParameter("form", true, false, "limit", r.URL.Query(), &params.Limit); err != nil {
 		err = fmt.Errorf("invalid format for parameter limit: %w", err)
-		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{err})
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{err, "limit"})
 		return
 	}
 
@@ -248,7 +248,7 @@ func (siw *ServerInterfaceWrapper) DeletePet(w http.ResponseWriter, r *http.Requ
 
 	if err := runtime.BindStyledParameter("simple", false, "id", chi.URLParam(r, "id"), &id); err != nil {
 		err = fmt.Errorf("invalid format for parameter id: %w", err)
-		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{err})
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{err, "id"})
 		return
 	}
 
@@ -268,7 +268,7 @@ func (siw *ServerInterfaceWrapper) FindPetByID(w http.ResponseWriter, r *http.Re
 
 	if err := runtime.BindStyledParameter("simple", false, "id", chi.URLParam(r, "id"), &id); err != nil {
 		err = fmt.Errorf("invalid format for parameter id: %w", err)
-		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{err})
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{err, "id"})
 		return
 	}
 
@@ -282,21 +282,45 @@ func (siw *ServerInterfaceWrapper) FindPetByID(w http.ResponseWriter, r *http.Re
 type UnescapedCookieParamError struct {
 	error
 }
+
 type UnmarshalingParamError struct {
 	error
+	paramName string
 }
+
 type RequiredParamError struct {
 	error
+	paramName string
 }
+
 type RequiredHeaderError struct {
 	error
+	paramName string
 }
+
 type InvalidParamFormatError struct {
 	error
+	paramName string
 }
+
 type TooManyValuesForParamError struct {
 	error
+	paramName string
 }
+
+// ParameterName is an interface that is implemented by error types that are
+// relevant to a specific parameter.
+type ParameterError interface {
+	error
+	// ParamName is the name of the parameter that the error is referring to.
+	ParamName() string
+}
+
+func (err UnmarshalingParamError) ParamName() string     { return err.paramName }
+func (err RequiredParamError) ParamName() string         { return err.paramName }
+func (err RequiredHeaderError) ParamName() string        { return err.paramName }
+func (err InvalidParamFormatError) ParamName() string    { return err.paramName }
+func (err TooManyValuesForParamError) ParamName() string { return err.paramName }
 
 type ServerOptions struct {
 	BaseURL          string

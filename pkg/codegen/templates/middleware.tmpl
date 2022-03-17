@@ -20,14 +20,14 @@ func (siw *ServerInterfaceWrapper) {{$opid}}(w http.ResponseWriter, r *http.Requ
 	{{if .IsJSON}}
 	if err := json.Unmarshal([]byte(chi.URLParam(r, "{{.ParamName}}")), &{{$varName}}); err != nil {
 		err = fmt.Errorf("error unmarshaling parameter '{{.ParamName}}' as JSON: %w", err)
-		siw.ErrorHandlerFunc(w, r, &UnmarshalingParamError{err})
+		siw.ErrorHandlerFunc(w, r, &UnmarshalingParamError{err, "{{.ParamName}}"})
 		return
 	}
 	{{end}}
 	{{if .IsStyled}}
 	if err := runtime.BindStyledParameter("{{.Style}}",{{.Explode}}, "{{.ParamName}}", chi.URLParam(r, "{{.ParamName}}"), &{{$varName}}); err != nil {
 		err = fmt.Errorf("invalid format for parameter {{.ParamName}}: %w", err)
-		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{err})
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{err, "{{.ParamName}}"})
 		return
 	}
 	{{end}}
@@ -46,7 +46,7 @@ func (siw *ServerInterfaceWrapper) {{$opid}}(w http.ResponseWriter, r *http.Requ
 			{{if .IsStyled}}
 			if err := runtime.BindQueryParameter("{{.Style}}", {{.Explode}}, {{.Required}}, "{{.ParamName}}", r.URL.Query(), &params.{{.GoName}}); err != nil {
 				err = fmt.Errorf("invalid format for parameter {{.ParamName}}: %w", err)
-				siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{err})
+				siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{err, "{{.ParamName}}"})
 				return
 			}
 			{{else}}
@@ -58,14 +58,14 @@ func (siw *ServerInterfaceWrapper) {{$opid}}(w http.ResponseWriter, r *http.Requ
 				var value {{.TypeDef}}
 				if err := json.Unmarshal([]byte(paramValue), &value); err != nil {
 					err = fmt.Errorf("error unmarshaling parameter '{{.ParamName}}' as JSON: %w", err)
-					siw.ErrorHandlerFunc(w, r, &UnmarshalingParamError{err})
+					siw.ErrorHandlerFunc(w, r, &UnmarshalingParamError{err, "{{.ParamName}}"})
 					return
 				}
 				params.{{.GoName}} = {{if .IndirectOptional}}{{if not .Required}}&{{end}}{{end}}value
 			{{end}}
 			}{{if .Required}} else {
 					err := fmt.Errorf("query argument {{.ParamName}} is required, but not found")
-					siw.ErrorHandlerFunc(w, r, &RequiredParamError{err})
+					siw.ErrorHandlerFunc(w, r, &RequiredParamError{err, "{{.ParamName}}"})
 					return
 			}{{end}}
 			{{end}}
@@ -80,7 +80,7 @@ func (siw *ServerInterfaceWrapper) {{$opid}}(w http.ResponseWriter, r *http.Requ
 					n := len(valueList)
 					if n != 1 {
 						err := fmt.Errorf("expected one value for {{.ParamName}}, got %d", n)
-						siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{err})
+						siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{err, "{{.ParamName}}"})
 						return
 					}
 
@@ -91,7 +91,7 @@ func (siw *ServerInterfaceWrapper) {{$opid}}(w http.ResponseWriter, r *http.Requ
 				{{if .IsJSON}}
 					if err := json.Unmarshal([]byte(valueList[0]), &{{.GoName}}); err != nil {
 						err = fmt.Errorf("error unmarshaling parameter '{{.ParamName}}' as JSON: %w", err)
-						siw.ErrorHandlerFunc(w, r, &UnmarshalingParamError{err})
+						siw.ErrorHandlerFunc(w, r, &UnmarshalingParamError{err, "{{.ParamName}}"})
 						return
 					}
 				{{end}}
@@ -99,7 +99,7 @@ func (siw *ServerInterfaceWrapper) {{$opid}}(w http.ResponseWriter, r *http.Requ
 				{{if .IsStyled}}
 					if err := runtime.BindStyledParameterWithLocation("{{.Style}}",{{.Explode}}, "{{.ParamName}}", runtime.ParamLocationHeader, valueList[0], &{{.GoName}}); err != nil {
 						err = fmt.Errorf("invalid format for parameter {{.ParamName}}: %w", err)
-						siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{err})
+						siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{err, "{{.ParamName}}"})
 						return
 					}
 				{{end}}
@@ -108,7 +108,7 @@ func (siw *ServerInterfaceWrapper) {{$opid}}(w http.ResponseWriter, r *http.Requ
 
 				} {{if .Required}}else {
 						err := fmt.Errorf("header parameter {{.ParamName}} is required, but not found")
-						siw.ErrorHandlerFunc(w, r, &RequiredHeaderError{err})
+						siw.ErrorHandlerFunc(w, r, &RequiredHeaderError{err, "{{.ParamName}}"})
 						return
 				}{{end}}
 
@@ -135,7 +135,7 @@ func (siw *ServerInterfaceWrapper) {{$opid}}(w http.ResponseWriter, r *http.Requ
 				err = json.Unmarshal([]byte(decoded), &value)
 				if err != nil {
 					err = fmt.Errorf("error unmarshaling parameter '{{.ParamName}}' as JSON: %w", err)
-					siw.ErrorHandlerFunc(w, r, &UnmarshalingParamError{err})
+					siw.ErrorHandlerFunc(w, r, &UnmarshalingParamError{err, "{{.ParamName}}"})
 					return
 				}
 
@@ -146,7 +146,7 @@ func (siw *ServerInterfaceWrapper) {{$opid}}(w http.ResponseWriter, r *http.Requ
 				var value {{.TypeDef}}
 				if err := runtime.BindStyledParameter("simple",{{.Explode}}, "{{.ParamName}}", cookie.Value, &value); err != nil {
 					err = fmt.Errorf("invalid format for parameter {{.ParamName}}: %w", err)
-					siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{err})
+					siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{err, "{{.ParamName}}"})
 					return
 				}
 				params.{{.GoName}} = {{if .IndirectOptional}}{{if not .Required}}&{{end}}{{end}}value
@@ -156,7 +156,7 @@ func (siw *ServerInterfaceWrapper) {{$opid}}(w http.ResponseWriter, r *http.Requ
 
 			{{- if .Required}} else {
 				err := fmt.Errorf("query argument {{.ParamName}} is required, but not found")
-				siw.ErrorHandlerFunc(w, r, &RequiredParamError{err})
+				siw.ErrorHandlerFunc(w, r, &RequiredParamError{err, "{{.ParamName}}"})
 				return
 			}
 			{{- end}}
@@ -182,20 +182,42 @@ func (siw *ServerInterfaceWrapper) {{$opid}}(w http.ResponseWriter, r *http.Requ
 type UnescapedCookieParamError struct {
 	error
 }
+
 type UnmarshalingParamError struct {
 	error
+	paramName string
 }
+
 type RequiredParamError struct {
 	error
+	paramName string
 }
+
 type RequiredHeaderError struct {
 	error
+	paramName string
 }
+
 type InvalidParamFormatError struct {
 	error
+	paramName string
 }
+
 type TooManyValuesForParamError struct {
 	error
+	paramName string
 }
 
+// ParameterName is an interface that is implemented by error types that are
+// relevant to a specific parameter.
+type ParameterError interface {
+	error
+	// ParamName is the name of the parameter that the error is referring to.
+	ParamName() string
+}
 
+func (err UnmarshalingParamError) ParamName() string     { return err.paramName }
+func (err RequiredParamError) ParamName() string         { return err.paramName }
+func (err RequiredHeaderError) ParamName() string        { return err.paramName }
+func (err InvalidParamFormatError) ParamName() string    { return err.paramName }
+func (err TooManyValuesForParamError) ParamName() string { return err.paramName }
