@@ -810,13 +810,13 @@ func (a AdditionalPropertiesObject5) MarshalJSON() ([]byte, error) {
 type ServerInterface interface {
 
 	// (GET /ensure-everything-is-referenced)
-	EnsureEverythingIsReferenced(w http.ResponseWriter, r *http.Request)
+	EnsureEverythingIsReferenced(w http.ResponseWriter, r *http.Request) *Response
 
 	// (GET /params_with_add_props)
-	ParamsWithAddProps(w http.ResponseWriter, r *http.Request, params ParamsWithAddPropsParams)
+	ParamsWithAddProps(w http.ResponseWriter, r *http.Request, params ParamsWithAddPropsParams) *Response
 
 	// (POST /params_with_add_props)
-	BodyWithAddProps(w http.ResponseWriter, r *http.Request)
+	BodyWithAddProps(w http.ResponseWriter, r *http.Request) *Response
 }
 
 // ServerInterfaceWrapper converts contexts to parameters.
@@ -831,7 +831,10 @@ func (siw *ServerInterfaceWrapper) EnsureEverythingIsReferenced(w http.ResponseW
 	ctx := r.Context()
 
 	var handler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.EnsureEverythingIsReferenced(w, r)
+		resp := siw.Handler.EnsureEverythingIsReferenced(w, r)
+		if resp != nil {
+			render.Render(w, r, resp)
+		}
 	})
 
 	handler(w, r.WithContext(ctx))
@@ -861,7 +864,10 @@ func (siw *ServerInterfaceWrapper) ParamsWithAddProps(w http.ResponseWriter, r *
 	}
 
 	var handler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.ParamsWithAddProps(w, r, params)
+		resp := siw.Handler.ParamsWithAddProps(w, r, params)
+		if resp != nil {
+			render.Render(w, r, resp)
+		}
 	})
 
 	handler(w, r.WithContext(ctx))
@@ -872,7 +878,10 @@ func (siw *ServerInterfaceWrapper) BodyWithAddProps(w http.ResponseWriter, r *ht
 	ctx := r.Context()
 
 	var handler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.BodyWithAddProps(w, r)
+		resp := siw.Handler.BodyWithAddProps(w, r)
+		if resp != nil {
+			render.Render(w, r, resp)
+		}
 	})
 
 	handler(w, r.WithContext(ctx))

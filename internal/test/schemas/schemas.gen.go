@@ -235,28 +235,28 @@ func GetIssues375JSON200Response(body EnumInObjInArray) *Response {
 type ServerInterface interface {
 
 	// (GET /ensure-everything-is-referenced)
-	EnsureEverythingIsReferenced(w http.ResponseWriter, r *http.Request)
+	EnsureEverythingIsReferenced(w http.ResponseWriter, r *http.Request) *Response
 
 	// (GET /issues/127)
-	Issue127(w http.ResponseWriter, r *http.Request)
+	Issue127(w http.ResponseWriter, r *http.Request) *Response
 
 	// (GET /issues/185)
-	Issue185(w http.ResponseWriter, r *http.Request)
+	Issue185(w http.ResponseWriter, r *http.Request) *Response
 
 	// (GET /issues/209/${str})
-	Issue209(w http.ResponseWriter, r *http.Request, str StringInPath)
+	Issue209(w http.ResponseWriter, r *http.Request, str StringInPath) *Response
 
 	// (GET /issues/30/{fallthrough})
-	Issue30(w http.ResponseWriter, r *http.Request, pFallthrough string)
+	Issue30(w http.ResponseWriter, r *http.Request, pFallthrough string) *Response
 
 	// (GET /issues/375)
-	GetIssues375(w http.ResponseWriter, r *http.Request)
+	GetIssues375(w http.ResponseWriter, r *http.Request) *Response
 
 	// (GET /issues/41/{1param})
-	Issue41(w http.ResponseWriter, r *http.Request, n1param N5startsWithNumber)
+	Issue41(w http.ResponseWriter, r *http.Request, n1param N5startsWithNumber) *Response
 
 	// (GET /issues/9)
-	Issue9(w http.ResponseWriter, r *http.Request, params Issue9Params)
+	Issue9(w http.ResponseWriter, r *http.Request, params Issue9Params) *Response
 }
 
 // ServerInterfaceWrapper converts contexts to parameters.
@@ -273,7 +273,10 @@ func (siw *ServerInterfaceWrapper) EnsureEverythingIsReferenced(w http.ResponseW
 	ctx = context.WithValue(ctx, AccessTokenScopes, []string{""})
 
 	var handler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.EnsureEverythingIsReferenced(w, r)
+		resp := siw.Handler.EnsureEverythingIsReferenced(w, r)
+		if resp != nil {
+			render.Render(w, r, resp)
+		}
 	})
 
 	handler(w, r.WithContext(ctx))
@@ -286,7 +289,10 @@ func (siw *ServerInterfaceWrapper) Issue127(w http.ResponseWriter, r *http.Reque
 	ctx = context.WithValue(ctx, AccessTokenScopes, []string{""})
 
 	var handler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.Issue127(w, r)
+		resp := siw.Handler.Issue127(w, r)
+		if resp != nil {
+			render.Render(w, r, resp)
+		}
 	})
 
 	handler(w, r.WithContext(ctx))
@@ -299,7 +305,10 @@ func (siw *ServerInterfaceWrapper) Issue185(w http.ResponseWriter, r *http.Reque
 	ctx = context.WithValue(ctx, AccessTokenScopes, []string{""})
 
 	var handler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.Issue185(w, r)
+		resp := siw.Handler.Issue185(w, r)
+		if resp != nil {
+			render.Render(w, r, resp)
+		}
 	})
 
 	handler(w, r.WithContext(ctx))
@@ -321,7 +330,10 @@ func (siw *ServerInterfaceWrapper) Issue209(w http.ResponseWriter, r *http.Reque
 	ctx = context.WithValue(ctx, AccessTokenScopes, []string{""})
 
 	var handler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.Issue209(w, r, str)
+		resp := siw.Handler.Issue209(w, r, str)
+		if resp != nil {
+			render.Render(w, r, resp)
+		}
 	})
 
 	handler(w, r.WithContext(ctx))
@@ -343,7 +355,10 @@ func (siw *ServerInterfaceWrapper) Issue30(w http.ResponseWriter, r *http.Reques
 	ctx = context.WithValue(ctx, AccessTokenScopes, []string{""})
 
 	var handler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.Issue30(w, r, pFallthrough)
+		resp := siw.Handler.Issue30(w, r, pFallthrough)
+		if resp != nil {
+			render.Render(w, r, resp)
+		}
 	})
 
 	handler(w, r.WithContext(ctx))
@@ -356,7 +371,10 @@ func (siw *ServerInterfaceWrapper) GetIssues375(w http.ResponseWriter, r *http.R
 	ctx = context.WithValue(ctx, AccessTokenScopes, []string{""})
 
 	var handler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.GetIssues375(w, r)
+		resp := siw.Handler.GetIssues375(w, r)
+		if resp != nil {
+			render.Render(w, r, resp)
+		}
 	})
 
 	handler(w, r.WithContext(ctx))
@@ -378,7 +396,10 @@ func (siw *ServerInterfaceWrapper) Issue41(w http.ResponseWriter, r *http.Reques
 	ctx = context.WithValue(ctx, AccessTokenScopes, []string{""})
 
 	var handler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.Issue41(w, r, n1param)
+		resp := siw.Handler.Issue41(w, r, n1param)
+		if resp != nil {
+			render.Render(w, r, resp)
+		}
 	})
 
 	handler(w, r.WithContext(ctx))
@@ -402,7 +423,10 @@ func (siw *ServerInterfaceWrapper) Issue9(w http.ResponseWriter, r *http.Request
 	}
 
 	var handler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.Issue9(w, r, params)
+		resp := siw.Handler.Issue9(w, r, params)
+		if resp != nil {
+			render.Render(w, r, resp)
+		}
 	})
 
 	handler(w, r.WithContext(ctx))
