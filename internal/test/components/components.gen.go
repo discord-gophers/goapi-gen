@@ -848,7 +848,7 @@ func (siw *ServerInterfaceWrapper) ParamsWithAddProps(w http.ResponseWriter, r *
 
 	if err := runtime.BindQueryParameter("simple", true, true, "p1", r.URL.Query(), &params.P1); err != nil {
 		err = fmt.Errorf("invalid format for parameter p1: %w", err)
-		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{err})
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{err, "p1"})
 		return
 	}
 
@@ -856,7 +856,7 @@ func (siw *ServerInterfaceWrapper) ParamsWithAddProps(w http.ResponseWriter, r *
 
 	if err := runtime.BindQueryParameter("form", true, true, "p2", r.URL.Query(), &params.P2); err != nil {
 		err = fmt.Errorf("invalid format for parameter p2: %w", err)
-		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{err})
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{err, "p2"})
 		return
 	}
 
@@ -881,21 +881,45 @@ func (siw *ServerInterfaceWrapper) BodyWithAddProps(w http.ResponseWriter, r *ht
 type UnescapedCookieParamError struct {
 	error
 }
+
 type UnmarshalingParamError struct {
 	error
+	paramName string
 }
+
 type RequiredParamError struct {
 	error
+	paramName string
 }
+
 type RequiredHeaderError struct {
 	error
+	paramName string
 }
+
 type InvalidParamFormatError struct {
 	error
+	paramName string
 }
+
 type TooManyValuesForParamError struct {
 	error
+	paramName string
 }
+
+// ParameterName is an interface that is implemented by error types that are
+// relevant to a specific parameter.
+type ParameterError interface {
+	error
+	// ParamName is the name of the parameter that the error is referring to.
+	ParamName() string
+}
+
+func (err UnmarshalingParamError) ParamName() string     { return err.paramName }
+func (err RequiredParamError) ParamName() string         { return err.paramName }
+func (err RequiredHeaderError) ParamName() string        { return err.paramName }
+func (err InvalidParamFormatError) ParamName() string    { return err.paramName }
+func (err TooManyValuesForParamError) ParamName() string { return err.paramName }
 
 type ServerOptions struct {
 	BaseURL          string
