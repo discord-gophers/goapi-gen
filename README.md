@@ -281,6 +281,35 @@ look through those tests for more usage examples.
   handler = siw.Middlewares["limit"](handler).ServeHTTP
   ```
 
+- `x-go-optional-value`: boolean, forces the generator to output value types (as
+  opposed to pointer nil-able types) for all optional fields. This is
+  particularly useful for when there is no practical difference between an empty
+  omitted `string` and an omitted nil `*string`.
+
+  This property can go in either the property value or the object attribute
+  itself:
+
+    ```yaml
+    components:
+	  schemas:
+	    Object:
+		  x-go-optional-value: true # valid
+		  properties:
+		    name:
+			  type: string
+			  x-go-optional-value: false # valid, overrides
+    ```
+
+- `x-go-string`: boolean, makes the generator add a `,string` attribute into the
+  JSON struct tag of an object's field. This is useful for sending large numbers
+  over JSON to JavaScript (or other dynamically-typed languages) where they
+  would be parsed to floats otherwise.
+
+- `x-go-omitempty`: boolean, makes the generator add a `,omitempty` attribute
+  into the JSON struct tag. Note that if a field doesn't appear in `required`,
+  then it will have an `omitempty` by default and its type will be a nil-able
+  pointer.
+
 ## Using `goapi-gen`
 
 [Usage details](docs.md)
