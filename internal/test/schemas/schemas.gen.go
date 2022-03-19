@@ -397,7 +397,7 @@ func (siw *ServerInterfaceWrapper) Issue9(w http.ResponseWriter, r *http.Request
 
 	if err := runtime.BindQueryParameter("form", true, true, "foo", r.URL.Query(), &params.Foo); err != nil {
 		err = fmt.Errorf("invalid format for parameter foo: %w", err)
-		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{err, "foo"})
+		siw.ErrorHandlerFunc(w, r, &RequiredParamError{err, "foo"})
 		return
 	}
 

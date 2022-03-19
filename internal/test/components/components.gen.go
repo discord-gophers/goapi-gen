@@ -848,7 +848,7 @@ func (siw *ServerInterfaceWrapper) ParamsWithAddProps(w http.ResponseWriter, r *
 
 	if err := runtime.BindQueryParameter("simple", true, true, "p1", r.URL.Query(), &params.P1); err != nil {
 		err = fmt.Errorf("invalid format for parameter p1: %w", err)
-		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{err, "p1"})
+		siw.ErrorHandlerFunc(w, r, &RequiredParamError{err, "p1"})
 		return
 	}
 
@@ -856,7 +856,7 @@ func (siw *ServerInterfaceWrapper) ParamsWithAddProps(w http.ResponseWriter, r *
 
 	if err := runtime.BindQueryParameter("form", true, true, "p2", r.URL.Query(), &params.P2); err != nil {
 		err = fmt.Errorf("invalid format for parameter p2: %w", err)
-		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{err, "p2"})
+		siw.ErrorHandlerFunc(w, r, &RequiredParamError{err, "p2"})
 		return
 	}
 

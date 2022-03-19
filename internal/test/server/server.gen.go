@@ -408,7 +408,7 @@ func (siw *ServerInterfaceWrapper) GetWithArgs(w http.ResponseWriter, r *http.Re
 
 	if err := runtime.BindQueryParameter("form", true, true, "required_argument", r.URL.Query(), &params.RequiredArgument); err != nil {
 		err = fmt.Errorf("invalid format for parameter required_argument: %w", err)
-		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{err, "required_argument"})
+		siw.ErrorHandlerFunc(w, r, &RequiredParamError{err, "required_argument"})
 		return
 	}
 
