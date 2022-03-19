@@ -33,6 +33,29 @@ func TestRawJSON(t *testing.T) {
 
 }
 
+func TestGoStringTag(t *testing.T) {
+	buf := `{"id": "500", "name": "hi"}`
+	var dst GoStringTag
+	err := json.Unmarshal([]byte(buf), &dst)
+	assert.NoError(t, err)
+	assert.Equal(t, 500, dst.ID)
+	assert.Equal(t, "hi", dst.Name)
+}
+
+func TestOptionalValue(t *testing.T) {
+	src := OptionalValue{Str2: "hi"}
+	b, err := json.Marshal(src)
+	assert.NoError(t, err)
+	assert.Equal(t, string(b), `{"str2":"hi"}`)
+}
+
+func TestOptionalObject(t *testing.T) {
+	src := OptionalObject{Str2: "hi", StrPtr2: new(string)}
+	b, err := json.Marshal(src)
+	assert.NoError(t, err)
+	assert.Equal(t, string(b), `{"str2":"hi","str_ptr2":""}`)
+}
+
 func TestAdditionalProperties(t *testing.T) {
 	buf := `{"name": "bob", "id": 5, "optional":"yes", "additional": 42}`
 	var dst AdditionalPropertiesObject1
