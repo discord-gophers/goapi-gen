@@ -917,32 +917,74 @@ func (siw *ServerInterfaceWrapper) BodyWithAddProps(w http.ResponseWriter, r *ht
 }
 
 type UnescapedCookieParamError struct {
-	error
+	err       error
+	paramName string
 }
+
+// Error implements error.
+func (err UnescapedCookieParamError) Error() string {
+	return fmt.Sprintf("error unescaping cookie parameter %s: %v", err.paramName, err.err)
+}
+
+func (err UnescapedCookieParamError) Unwrap() error { return err.err }
 
 type UnmarshalingParamError struct {
-	error
+	err       error
 	paramName string
 }
+
+// Error implements error.
+func (err UnmarshalingParamError) Error() string {
+	return fmt.Sprintf("error unmarshaling parameter %s as JSON: %v", err.paramName, err.err)
+}
+
+func (err UnmarshalingParamError) Unwrap() error { return err.err }
 
 type RequiredParamError struct {
-	error
+	err       error
 	paramName string
 }
 
+// Error implements error.
+func (err RequiredParamError) Error() string {
+	if err.err == nil {
+		return fmt.Sprintf("query parameter %s is required, but not found", err.paramName)
+	} else {
+		return fmt.Sprintf("query parameter %s is required, but errored: %s", err.paramName, err.err)
+	}
+}
+
+func (err RequiredParamError) Unwrap() error { return err.err }
+
 type RequiredHeaderError struct {
-	error
 	paramName string
+}
+
+// Error implements error.
+func (err RequiredHeaderError) Error() string {
+	return fmt.Sprintf("header parameter %s is required, but not found", err.paramName)
 }
 
 type InvalidParamFormatError struct {
-	error
+	err       error
 	paramName string
 }
 
+// Error implements error.
+func (err InvalidParamFormatError) Error() string {
+	return fmt.Sprintf("invalid format for parameter %s: %v", err.paramName, err.err)
+}
+
+func (err InvalidParamFormatError) Unwrap() error { return err.err }
+
 type TooManyValuesForParamError struct {
-	error
+	NumValues int
 	paramName string
+}
+
+// Error implements error.
+func (err TooManyValuesForParamError) Error() string {
+	return fmt.Sprintf("expected one value for %s, got %d", err.paramName, err.NumValues)
 }
 
 // ParameterName is an interface that is implemented by error types that are
@@ -953,6 +995,7 @@ type ParameterError interface {
 	ParamName() string
 }
 
+func (err UnescapedCookieParamError) ParamName() string  { return err.paramName }
 func (err UnmarshalingParamError) ParamName() string     { return err.paramName }
 func (err RequiredParamError) ParamName() string         { return err.paramName }
 func (err RequiredHeaderError) ParamName() string        { return err.paramName }
