@@ -323,41 +323,41 @@ func PostWithTaggedMiddlewareJSON200Response(body struct {
 type ServerInterface interface {
 	// get every type optional
 	// (GET /every-type-optional)
-	GetEveryTypeOptional(w http.ResponseWriter, r *http.Request)
+	GetEveryTypeOptional(w http.ResponseWriter, r *http.Request) *Response
 	// Get resource via simple path
 	// (GET /get-simple)
-	GetSimple(w http.ResponseWriter, r *http.Request)
+	GetSimple(w http.ResponseWriter, r *http.Request) *Response
 	// Getter with referenced parameter and referenced response
 	// (GET /get-with-args)
-	GetWithArgs(w http.ResponseWriter, r *http.Request, params GetWithArgsParams)
+	GetWithArgs(w http.ResponseWriter, r *http.Request, params GetWithArgsParams) *Response
 	// Getter with referenced parameter and referenced response
 	// (GET /get-with-references/{global_argument}/{argument})
-	GetWithReferences(w http.ResponseWriter, r *http.Request, globalArgument int64, argument Argument)
+	GetWithReferences(w http.ResponseWriter, r *http.Request, globalArgument int64, argument Argument) *Response
 	// Get an object by ID
 	// (GET /get-with-type/{content_type})
-	GetWithContentType(w http.ResponseWriter, r *http.Request, contentType GetWithContentTypeParamsContentType)
+	GetWithContentType(w http.ResponseWriter, r *http.Request, contentType GetWithContentTypeParamsContentType) *Response
 	// get with reserved keyword
 	// (GET /reserved-keyword)
-	GetReservedKeyword(w http.ResponseWriter, r *http.Request)
+	GetReservedKeyword(w http.ResponseWriter, r *http.Request) *Response
 	// Create a resource
 	// (POST /resource/{argument})
-	CreateResource(w http.ResponseWriter, r *http.Request, argument Argument)
+	CreateResource(w http.ResponseWriter, r *http.Request, argument Argument) *Response
 	// Create a resource with inline parameter
 	// (POST /resource2/{inline_argument})
-	CreateResource2(w http.ResponseWriter, r *http.Request, inlineArgument int, params CreateResource2Params)
+	CreateResource2(w http.ResponseWriter, r *http.Request, inlineArgument int, params CreateResource2Params) *Response
 	// Update a resource with inline body. The parameter name is a reserved
 	// keyword, so make sure that gets prefixed to avoid syntax errors
 	// (PUT /resource3/{fallthrough})
-	UpdateResource3(w http.ResponseWriter, r *http.Request, pFallthrough int)
+	UpdateResource3(w http.ResponseWriter, r *http.Request, pFallthrough int) *Response
 	// get response with reference
 	// (GET /response-with-reference)
-	GetResponseWithReference(w http.ResponseWriter, r *http.Request)
+	GetResponseWithReference(w http.ResponseWriter, r *http.Request) *Response
 
 	// (GET /with-tagged-middleware)
-	GetWithTaggedMiddleware(w http.ResponseWriter, r *http.Request)
+	GetWithTaggedMiddleware(w http.ResponseWriter, r *http.Request) *Response
 
 	// (POST /with-tagged-middleware)
-	PostWithTaggedMiddleware(w http.ResponseWriter, r *http.Request)
+	PostWithTaggedMiddleware(w http.ResponseWriter, r *http.Request) *Response
 }
 
 // ServerInterfaceWrapper converts contexts to parameters.
@@ -372,7 +372,10 @@ func (siw *ServerInterfaceWrapper) GetEveryTypeOptional(w http.ResponseWriter, r
 	ctx := r.Context()
 
 	var handler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.GetEveryTypeOptional(w, r)
+		resp := siw.Handler.GetEveryTypeOptional(w, r)
+		if resp != nil {
+			render.Render(w, r, resp)
+		}
 	})
 
 	handler(w, r.WithContext(ctx))
@@ -383,7 +386,10 @@ func (siw *ServerInterfaceWrapper) GetSimple(w http.ResponseWriter, r *http.Requ
 	ctx := r.Context()
 
 	var handler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.GetSimple(w, r)
+		resp := siw.Handler.GetSimple(w, r)
+		if resp != nil {
+			render.Render(w, r, resp)
+		}
 	})
 
 	handler(w, r.WithContext(ctx))
@@ -435,7 +441,10 @@ func (siw *ServerInterfaceWrapper) GetWithArgs(w http.ResponseWriter, r *http.Re
 	}
 
 	var handler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.GetWithArgs(w, r, params)
+		resp := siw.Handler.GetWithArgs(w, r, params)
+		if resp != nil {
+			render.Render(w, r, resp)
+		}
 	})
 
 	handler(w, r.WithContext(ctx))
@@ -464,7 +473,10 @@ func (siw *ServerInterfaceWrapper) GetWithReferences(w http.ResponseWriter, r *h
 	}
 
 	var handler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.GetWithReferences(w, r, globalArgument, argument)
+		resp := siw.Handler.GetWithReferences(w, r, globalArgument, argument)
+		if resp != nil {
+			render.Render(w, r, resp)
+		}
 	})
 
 	handler(w, r.WithContext(ctx))
@@ -484,7 +496,10 @@ func (siw *ServerInterfaceWrapper) GetWithContentType(w http.ResponseWriter, r *
 	}
 
 	var handler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.GetWithContentType(w, r, contentType)
+		resp := siw.Handler.GetWithContentType(w, r, contentType)
+		if resp != nil {
+			render.Render(w, r, resp)
+		}
 	})
 
 	handler(w, r.WithContext(ctx))
@@ -495,7 +510,10 @@ func (siw *ServerInterfaceWrapper) GetReservedKeyword(w http.ResponseWriter, r *
 	ctx := r.Context()
 
 	var handler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.GetReservedKeyword(w, r)
+		resp := siw.Handler.GetReservedKeyword(w, r)
+		if resp != nil {
+			render.Render(w, r, resp)
+		}
 	})
 
 	handler(w, r.WithContext(ctx))
@@ -515,7 +533,10 @@ func (siw *ServerInterfaceWrapper) CreateResource(w http.ResponseWriter, r *http
 	}
 
 	var handler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.CreateResource(w, r, argument)
+		resp := siw.Handler.CreateResource(w, r, argument)
+		if resp != nil {
+			render.Render(w, r, resp)
+		}
 	})
 
 	handler(w, r.WithContext(ctx))
@@ -546,7 +567,10 @@ func (siw *ServerInterfaceWrapper) CreateResource2(w http.ResponseWriter, r *htt
 	}
 
 	var handler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.CreateResource2(w, r, inlineArgument, params)
+		resp := siw.Handler.CreateResource2(w, r, inlineArgument, params)
+		if resp != nil {
+			render.Render(w, r, resp)
+		}
 	})
 
 	handler(w, r.WithContext(ctx))
@@ -566,7 +590,10 @@ func (siw *ServerInterfaceWrapper) UpdateResource3(w http.ResponseWriter, r *htt
 	}
 
 	var handler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.UpdateResource3(w, r, pFallthrough)
+		resp := siw.Handler.UpdateResource3(w, r, pFallthrough)
+		if resp != nil {
+			render.Render(w, r, resp)
+		}
 	})
 
 	handler(w, r.WithContext(ctx))
@@ -577,7 +604,10 @@ func (siw *ServerInterfaceWrapper) GetResponseWithReference(w http.ResponseWrite
 	ctx := r.Context()
 
 	var handler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.GetResponseWithReference(w, r)
+		resp := siw.Handler.GetResponseWithReference(w, r)
+		if resp != nil {
+			render.Render(w, r, resp)
+		}
 	})
 
 	handler(w, r.WithContext(ctx))
@@ -588,7 +618,10 @@ func (siw *ServerInterfaceWrapper) GetWithTaggedMiddleware(w http.ResponseWriter
 	ctx := r.Context()
 
 	var handler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.GetWithTaggedMiddleware(w, r)
+		resp := siw.Handler.GetWithTaggedMiddleware(w, r)
+		if resp != nil {
+			render.Render(w, r, resp)
+		}
 	})
 
 	// Operation specific middleware
@@ -602,7 +635,10 @@ func (siw *ServerInterfaceWrapper) PostWithTaggedMiddleware(w http.ResponseWrite
 	ctx := r.Context()
 
 	var handler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.PostWithTaggedMiddleware(w, r)
+		resp := siw.Handler.PostWithTaggedMiddleware(w, r)
+		if resp != nil {
+			render.Render(w, r, resp)
+		}
 	})
 
 	// Operation specific middleware

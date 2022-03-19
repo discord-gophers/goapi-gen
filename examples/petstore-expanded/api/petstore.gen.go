@@ -179,16 +179,16 @@ func FindPetByIDJSONDefaultResponse(body Error) *Response {
 type ServerInterface interface {
 	// Returns all pets
 	// (GET /pets)
-	FindPets(w http.ResponseWriter, r *http.Request, params FindPetsParams)
+	FindPets(w http.ResponseWriter, r *http.Request, params FindPetsParams) *Response
 	// Creates a new pet
 	// (POST /pets)
-	AddPet(w http.ResponseWriter, r *http.Request)
+	AddPet(w http.ResponseWriter, r *http.Request) *Response
 	// Deletes a pet by ID
 	// (DELETE /pets/{id})
-	DeletePet(w http.ResponseWriter, r *http.Request, id int64)
+	DeletePet(w http.ResponseWriter, r *http.Request, id int64) *Response
 	// Returns a pet by ID
 	// (GET /pets/{id})
-	FindPetByID(w http.ResponseWriter, r *http.Request, id int64)
+	FindPetByID(w http.ResponseWriter, r *http.Request, id int64) *Response
 }
 
 // ServerInterfaceWrapper converts contexts to parameters.
@@ -222,7 +222,10 @@ func (siw *ServerInterfaceWrapper) FindPets(w http.ResponseWriter, r *http.Reque
 	}
 
 	var handler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.FindPets(w, r, params)
+		resp := siw.Handler.FindPets(w, r, params)
+		if resp != nil {
+			render.Render(w, r, resp)
+		}
 	})
 
 	handler(w, r.WithContext(ctx))
@@ -233,7 +236,10 @@ func (siw *ServerInterfaceWrapper) AddPet(w http.ResponseWriter, r *http.Request
 	ctx := r.Context()
 
 	var handler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.AddPet(w, r)
+		resp := siw.Handler.AddPet(w, r)
+		if resp != nil {
+			render.Render(w, r, resp)
+		}
 	})
 
 	handler(w, r.WithContext(ctx))
@@ -253,7 +259,10 @@ func (siw *ServerInterfaceWrapper) DeletePet(w http.ResponseWriter, r *http.Requ
 	}
 
 	var handler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.DeletePet(w, r, id)
+		resp := siw.Handler.DeletePet(w, r, id)
+		if resp != nil {
+			render.Render(w, r, resp)
+		}
 	})
 
 	handler(w, r.WithContext(ctx))
@@ -273,7 +282,10 @@ func (siw *ServerInterfaceWrapper) FindPetByID(w http.ResponseWriter, r *http.Re
 	}
 
 	var handler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.FindPetByID(w, r, id)
+		resp := siw.Handler.FindPetByID(w, r, id)
+		if resp != nil {
+			render.Render(w, r, resp)
+		}
 	})
 
 	handler(w, r.WithContext(ctx))

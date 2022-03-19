@@ -164,7 +164,10 @@ func (siw *ServerInterfaceWrapper) {{$opid}}(w http.ResponseWriter, r *http.Requ
 	{{end}}
 
 	var handler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.{{.OperationID}}(w, r{{genParamNames .PathParams}}{{if .RequiresParamObject}}, params{{end}})
+		resp := siw.Handler.{{.OperationID}}(w, r{{genParamNames .PathParams}}{{if .RequiresParamObject}}, params{{end}})
+		if resp != nil {
+			render.Render(w, r, resp)
+		}
 	})
 
 	{{ with .Middlewares -}}
