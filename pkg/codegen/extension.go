@@ -20,10 +20,6 @@ func extTypeName(extPropValue interface{}) (string, error) {
 	return name, err
 }
 
-func extParseOmitEmpty(extPropValue interface{}) (bool, error) {
-	return extParseBool(extPropValue)
-}
-
 func extExtraTags(extPropValue interface{}) (map[string]string, error) {
 	var tags map[string]string
 	err := extParseAny(extPropValue, &tags)
@@ -34,10 +30,6 @@ func extParseMiddlewares(extPropValue interface{}) ([]string, error) {
 	var middlewares []string
 	err := extParseAny(extPropValue, &middlewares)
 	return middlewares, err
-}
-
-func extParseOptionalValue(extPropValue interface{}) (bool, error) {
-	return extParseBool(extPropValue)
 }
 
 func extParseBool(extPropValue interface{}) (bool, error) {

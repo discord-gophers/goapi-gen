@@ -473,7 +473,7 @@ func GenFieldsFromProperties(props []Property) []string {
 		// Support x-omitempty
 		omitEmpty := true
 		if _, ok := p.ExtensionProps.Extensions[extPropOmitEmpty]; ok {
-			if extOmitEmpty, err := extParseOmitEmpty(p.ExtensionProps.Extensions[extPropOmitEmpty]); err == nil {
+			if extOmitEmpty, err := extParseBool(p.ExtensionProps.Extensions[extPropOmitEmpty]); err == nil {
 				omitEmpty = extOmitEmpty
 			}
 		}
