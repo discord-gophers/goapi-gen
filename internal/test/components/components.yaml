@@ -35,6 +35,12 @@ paths:
                     $ref: "#/components/schemas/AdditionalPropertiesObject5"
                   jsonField:
                     $ref: "#/components/schemas/ObjectWithJsonField"
+                  goStringTag:
+                    $ref: "#/components/schemas/GoStringTag"
+                  optionalValue:
+                    $ref: "#/components/schemas/OptionalValue"
+                  optionalObject:
+                    $ref: "#/components/schemas/OptionalObject"
         default:
           $ref: "#/components/responses/ResponseObject"
   /params_with_add_props:
@@ -95,6 +101,41 @@ components:
       required:
         - role
         - firstName
+    GoStringTag:
+      description: Tests x-go-string
+      type: object
+      properties:
+        name:
+          type: string
+        id:
+          type: string
+          x-go-type: int
+          x-go-string: true
+      required: [name, id]
+    OptionalValue:
+      description: Tests x-go-optional-value
+      type: object
+      properties:
+        str1:
+          type: string
+          x-go-optional-value: true
+        str2:
+          type: string
+          x-go-optional-value: true
+    OptionalObject:
+      description: Tests x-go-optional-value on the whole object
+      x-go-optional-value: true
+      properties:
+        str1:
+          type: string
+        str2:
+          type: string
+        str_ptr1:
+          type: string
+          x-go-optional-value: false
+        str_ptr2:
+          type: string
+          x-go-optional-value: false
     AdditionalPropertiesObject1:
       description: Has additional properties of type int
       type: object

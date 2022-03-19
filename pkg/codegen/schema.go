@@ -246,6 +246,22 @@ func GenerateGoSchema(sref *openapi3.SchemaRef, path []string) (Schema, error) {
 					return Schema{}, fmt.Errorf("error generating Go schema for property '%s': %w", pName, err)
 				}
 
+				// Check for x-go-optional-value within the object scope; this
+				// could be moved out of the loop, but it would dirty the code
+				// up more
+				if extension, ok := schema.Extensions[extPropOptionalValue]; ok {
+					if optValue, err := extParseBool(extension); err == nil {
+						pSchema.SkipOptionalPointer = optValue
+					}
+				}
+
+				// Check for x-go-optional-value within this property
+				if extension, ok := p.Value.Extensions[extPropOptionalValue]; ok {
+					if optValue, err := extParseBool(extension); err == nil {
+						pSchema.SkipOptionalPointer = optValue
+					}
+				}
+
 				required := StringInArray(pName, schema.Required)
 
 				if pSchema.HasAdditionalProperties && pSchema.RefType == "" {
@@ -464,9 +480,13 @@ func GenFieldsFromProperties(props []Property) []string {
 
 		fieldTags := make(map[string]string)
 
-		if p.Required || p.Nullable || !omitEmpty {
-			fieldTags["json"] = p.JSONFieldName
-		} else {
+		fieldTags["json"] = p.JSONFieldName
+		if extension, ok := p.ExtensionProps.Extensions[extPropString]; ok {
+			if extString, _ := extParseBool(extension); extString {
+				fieldTags["json"] += ",string"
+			}
+		}
+		if !p.Required && !p.Nullable && omitEmpty {
 			fieldTags["json"] = p.JSONFieldName + ",omitempty"
 		}
 		if extension, ok := p.ExtensionProps.Extensions[extPropExtraTags]; ok {

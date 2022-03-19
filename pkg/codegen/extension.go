@@ -6,59 +6,55 @@ import (
 )
 
 const (
-	extPropGoType    = "x-go-type"
-	extPropOmitEmpty = "x-omitempty"
-	extPropExtraTags = "x-go-extra-tags"
-	extMiddlewares   = "x-go-middlewares"
+	extPropGoType        = "x-go-type"
+	extPropOmitEmpty     = "x-omitempty"
+	extPropExtraTags     = "x-go-extra-tags"
+	extPropOptionalValue = "x-go-optional-value"
+	extPropString        = "x-go-string"
+	extMiddlewares       = "x-go-middlewares"
 )
 
 func extTypeName(extPropValue interface{}) (string, error) {
-	raw, ok := extPropValue.(json.RawMessage)
-	if !ok {
-		return "", fmt.Errorf("failed to convert type: %T", extPropValue)
-	}
 	var name string
-	if err := json.Unmarshal(raw, &name); err != nil {
-		return "", fmt.Errorf("failed to unmarshal json: %w", err)
-	}
-
-	return name, nil
+	err := extParseAny(extPropValue, &name)
+	return name, err
 }
 
 func extParseOmitEmpty(extPropValue interface{}) (bool, error) {
-	raw, ok := extPropValue.(json.RawMessage)
-	if !ok {
-		return false, fmt.Errorf("failed to convert type: %T", extPropValue)
-	}
-
-	var omitEmpty bool
-	if err := json.Unmarshal(raw, &omitEmpty); err != nil {
-		return false, fmt.Errorf("failed to unmarshal json: %w", err)
-	}
-
-	return omitEmpty, nil
+	return extParseBool(extPropValue)
 }
 
 func extExtraTags(extPropValue interface{}) (map[string]string, error) {
-	raw, ok := extPropValue.(json.RawMessage)
-	if !ok {
-		return nil, fmt.Errorf("failed to convert type: %T", extPropValue)
-	}
 	var tags map[string]string
-	if err := json.Unmarshal(raw, &tags); err != nil {
-		return nil, fmt.Errorf("failed to unmarshal json: %w", err)
-	}
-	return tags, nil
+	err := extParseAny(extPropValue, &tags)
+	return tags, err
 }
 
 func extParseMiddlewares(extPropValue interface{}) ([]string, error) {
+	var middlewares []string
+	err := extParseAny(extPropValue, &middlewares)
+	return middlewares, err
+}
+
+func extParseOptionalValue(extPropValue interface{}) (bool, error) {
+	return extParseBool(extPropValue)
+}
+
+func extParseBool(extPropValue interface{}) (bool, error) {
+	var b bool
+	err := extParseAny(extPropValue, &b)
+	return b, err
+}
+
+func extParseAny(extPropValue, target interface{}) error {
 	raw, ok := extPropValue.(json.RawMessage)
 	if !ok {
-		return nil, fmt.Errorf("failed to convert type: %T", extPropValue)
+		return fmt.Errorf("failed to convert type: %T", extPropValue)
 	}
-	var middlewares []string
-	if err := json.Unmarshal(raw, &middlewares); err != nil {
-		return nil, fmt.Errorf("failed to unmarshal json: %w", err)
+
+	if err := json.Unmarshal(raw, target); err != nil {
+		return fmt.Errorf("failed to unmarshal json: %w", err)
 	}
-	return middlewares, nil
+
+	return nil
 }

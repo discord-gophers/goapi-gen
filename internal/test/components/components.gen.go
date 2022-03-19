@@ -59,11 +59,31 @@ type AdditionalPropertiesObject5 struct {
 	AdditionalProperties map[string]SchemaObject `json:"-"`
 }
 
+// Tests x-go-string
+type GoStringTag struct {
+	ID   int    `json:"id,string"`
+	Name string `json:"name"`
+}
+
 // ObjectWithJSONField defines model for ObjectWithJsonField.
 type ObjectWithJSONField struct {
 	Name   string          `json:"name"`
 	Value1 json.RawMessage `json:"value1"`
 	Value2 json.RawMessage `json:"value2,omitempty"`
+}
+
+// Tests x-go-optional-value on the whole object
+type OptionalObject struct {
+	Str1    string  `json:"str1,omitempty"`
+	Str2    string  `json:"str2,omitempty"`
+	StrPtr1 *string `json:"str_ptr1,omitempty"`
+	StrPtr2 *string `json:"str_ptr2,omitempty"`
+}
+
+// Tests x-go-optional-value
+type OptionalValue struct {
+	Str1 string `json:"str1,omitempty"`
+	Str2 string `json:"str2,omitempty"`
 }
 
 // SchemaObject defines model for SchemaObject.
@@ -179,11 +199,20 @@ func EnsureEverythingIsReferencedJSON200Response(body struct {
 	Five *AdditionalPropertiesObject5 `json:"five,omitempty"`
 
 	// Has anonymous field which has additional properties
-	Four      *AdditionalPropertiesObject4 `json:"four,omitempty"`
-	JSONField *ObjectWithJSONField         `json:"jsonField,omitempty"`
+	Four *AdditionalPropertiesObject4 `json:"four,omitempty"`
+
+	// Tests x-go-string
+	GoStringTag *GoStringTag         `json:"goStringTag,omitempty"`
+	JSONField   *ObjectWithJSONField `json:"jsonField,omitempty"`
 
 	// Has additional properties of type int
 	One *AdditionalPropertiesObject1 `json:"one,omitempty"`
+
+	// Tests x-go-optional-value on the whole object
+	OptionalObject OptionalObject `json:"optionalObject,omitempty"`
+
+	// Tests x-go-optional-value
+	OptionalValue *OptionalValue `json:"optionalValue,omitempty"`
 
 	// Allows any additional property
 	Three *AdditionalPropertiesObject3 `json:"three,omitempty"`
@@ -994,23 +1023,25 @@ func WithErrorHandler(handler func(w http.ResponseWriter, r *http.Request, err e
 // Base64 encoded, gzipped, json marshaled Swagger object
 var swaggerSpec = []string{
 
-	"H4sIAAAAAAAC/9RXTW/jNhD9KwTboxLHzvaim4tu0RRoG+wG6GFjBLQ4ipjKQy05sldY6L8XQ8nflNdx",
-	"9rK5RJY5X49v3oy/yswuKouA5GX6VTr4XIOnX602EF582Lxo+GNmkQCJH1VVlSZTZCyOXrxFfuezAhaK",
-	"nypnK3DUe/ndQKn54WcHuUzlT6Nt2FFn5Ecfw/9/5i+QkWzbJCRjHGiZfuo9zPg1wRcaVaUyByGpqUCm",
-	"0pMz+Cxb/mMfvrLo18V0H/oYP1o9idTgM2cqzlGmciq8WVQliHWRwm6D9Vmwo6nWhk1Ueb+poktrHAqP",
-	"fL0T3yDBMzh5FP4P5cXWVmwREjYXbCwMkkwOoDM67hvVAiJVJ9JWXYAYJPuYBhcJR5gl66NrRJITKEyG",
-	"UchV6eGw8N8seIGWhCpLu4pj8Na6v1Npt8OlkauPKptyQV4obCJVNUc1vSL316X97nVpByaixWZhay9y",
-	"bi2xKkxWiGKIo8f3gwjuW2G/a/nnmXd5JZeg+Mup7j5fuc7v+5WhQnRORG6d0CYLh1wH+FHqXYR/DRV/",
-	"eosbUT0L5UQuVVlDULDcuoUimcqg28nA0ckZR+Nt10eKob8H1VHuuXGe/h4qwNnyDAKEU8mOq1kYBQZz",
-	"y8alyQA9bJGSf909sHcyxO7lA3gSH8EtA42W4Hx3jePrm+ubTmABVWVkKm+vb67H3BmKipD/CNDXDq5g",
-	"Ca6hwuDzlfFXDnJwgBmE23qGUPg+Rx4K4wWgrqxBEvDFePLCW0GFIrFlnMgUijmIzIEi0MKgoML4R/QV",
-	"ZEKhDjI7B1G5GkE/8o0xvmFK32mZyvchwfeb/O78h212yc4+0wyRfm/lGe3uO4frw+Tm5g07Q26W8K3G",
-	"O9XLbSJzW7vLXbxjFy+7jXbKT6w3mSz4hiLGgZeFgzf4uA0+VvZyD5PQYged3K9XuapLGmZKT4bRwSLZ",
-	"WY8q5dTCP7EKPimtn/j+/WCLTAW3WaeZwRIInA+kV2JuddOPsF4L4pIb6Yj7kAVf3FTr+5ACd/Q6gEw/",
-	"RZt1c2J4ZoZgvKXKzzW4Zj2UUlmN5a5mdbNy2wenJuqRoHpqgmx1q61sk3OyxZ3xHwbmZmfpQUQA7QVZ",
-	"MYdHpNphEBuyQvUnu4WVh1YsW7ZcWfffMAKTkwi8atWITIpDssZWhFnbzvYEC+uybBNZWR9hXxjiote+",
-	"XbqxuimD/K02DjKKApIwTx/xJPBM7JhthLMstweMdRf+8Dx/fTv3GnaW9Qt3uPX2vr6n9pAr7fHFtW37",
-	"fwAAAP//Xv36ip0PAAA=",
+	"H4sIAAAAAAAC/9RYT2/jthP9KgR/v6Mcx872oluKbtsUaBtsgvawCQJGHFncykMtScURFvruxVCyJduU",
+	"VnZy6V5Wljj/HmceH/ONJ3pdaAR0lsffuIGvJVj3o5YK/ItPuxcV/Uw0OkBHj6IocpUIpzTOv1iN9M4m",
+	"GawFPRVGF2Bc6+VnBbmkh/8bSHnM/zfvws4bIzu/8///+fwFEsfrOvLJKAOSx59bD4/02sGrmxe5UAch",
+	"XVUAj7l1RuGK1/SPfNhCo90W0/xoY/zX6om4BJsYVVCOPObXzKp1kQPbFsl0F6zNghxdS6nIROS3uyqa",
+	"tBa+8MDnXnyFDlZg+FH4X4VlnS3rEGI6ZWTMFDoeHUCnZNg3ijUEqo64LpoAIUj2MfUuIorwGG2XbhGJ",
+	"RlBYDqOQitzCYeE/abAMtWMiz/UmjMFb636n0q6GS3OmPKrsmgqyTGAVqKo6qumE3E9L+8NpaftORI3V",
+	"WpeWpTRabJOpJGPZUI8e7w8imO+Ffdfyp5k3eUXnoPjD2HRPZ67pc79RLmONE5Zqw6RK/CLTAH6U+i/6",
+	"zhd9L1aU0n6Ye7DOstfZSs9aaEZHaremb9Fum3/Vjd57jV0D0N/KZb9ZjbszYVKTRPxF5CV4Ak61WQvH",
+	"Y+6PnWhg6XLC0nD6baRgCS25difi4CZseXjm3TGNzGXANpnOd+fO4QZZZxbB2q0zy6EPT0XQqt3F/Sxa",
+	"gu4Mlyca1gNfqW968PzVvJ2MzkQkxoPbU8rxNnVgh/dm+ag7U2Ws+2OoRY3OJwyJXxX1XD16raIw1WSc",
+	"qwTQQjcL/Pebe/LulCP3HkV2B+bF89wLGNugu7i4vLhsFACgKBSP+dXF5cWCwBUu8/nPAW1pYAYvYCqX",
+	"KVzNlJ0ZSMEAJuDncQWhxs6UZYCy0Aodg1dFO2k1c5lwrKNElghkz8ASA8KBZIq6XtkHtAUkTKD0OuAZ",
+	"WGFKBPlAM0n4ehl5I3nMP/oEP+7yu7GfuuyinuCuhlh5T5PP+4L8UN8uLy/fIGpT9QLfOxnGDps64qku",
+	"zfkuPpCL1f6ZMOapf3zUkafEScI8xNvUZviG8hd9qdpN22ga+6t79ju6mWLeLKZ5ygy8oYIr72Ojz/ew",
+	"5AEGau8tqShzN9zhbRPPD25ojfW8EEas7RPJiych5RP1rR0c7WtG9NCIEW8JDoz1wyrYs5ZVqw1bDgtr",
+	"mcAk3/osqG2upbz1KRATbQPw+HOQZHYrhsWoD0bXP/61BFNt1V7MiwXvc22jZrr5HZOqRweBdZWn2+bO",
+	"yOtoSrbY09Veie4uAy2ICCAtc5o9wwO60qAnSaeZaFc2N0FSg6FsyXKjzT/DCCxHEThJwwdOuMNmDWnv",
+	"x7p+3CNaLPO8jnihbaD7vDpmLWf3241YWSikr1IZSFwQkIj69AFHgafGDtkGepaOiYOONWf+RWf6vWjq",
+	"NvRuwWdejrb6fLtP9WGv1McbV9f1vwEAAP//YqjbhPYSAAA=",
 }
 
 // GetSwagger returns the content of the embedded swagger specification file
