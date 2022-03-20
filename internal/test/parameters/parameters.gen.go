@@ -126,9 +126,10 @@ type GetQueryFormParams struct {
 
 // Response is a common response struct for all the API calls.
 // A Response object may be instantiated via functions for specific operation responses.
+// It may also be instantiated directly, for the purpose of responding with a single status code.
 type Response struct {
 	body        interface{}
-	statusCode  int
+	StatusCode  int
 	contentType string
 }
 
@@ -136,13 +137,13 @@ type Response struct {
 // and status code based on the response definition.
 func (resp *Response) Render(w http.ResponseWriter, r *http.Request) error {
 	w.Header().Set("Content-Type", resp.contentType)
-	render.Status(r, resp.statusCode)
+	render.Status(r, resp.StatusCode)
 	return nil
 }
 
 // Status is a builder method to override the default status code for a response.
-func (resp *Response) Status(statusCode int) *Response {
-	resp.statusCode = statusCode
+func (resp *Response) Status(code int) *Response {
+	resp.StatusCode = code
 	return resp
 }
 
