@@ -110,5 +110,5 @@ func (p *PetStore) DeletePet(w http.ResponseWriter, r *http.Request, id int64) *
 	}
 	delete(p.Pets, id)
 
-	return &Response{StatusCode: http.StatusNoContent}
+	return &Response{Code: http.StatusNoContent}
 }

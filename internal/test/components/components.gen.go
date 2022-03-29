@@ -157,7 +157,7 @@ func (BodyWithAddPropsJSONRequestBody) Bind(*http.Request) error {
 // It may also be instantiated directly, for the purpose of responding with a single status code.
 type Response struct {
 	body        interface{}
-	StatusCode  int
+	Code        int
 	contentType string
 }
 
@@ -165,13 +165,13 @@ type Response struct {
 // and status code based on the response definition.
 func (resp *Response) Render(w http.ResponseWriter, r *http.Request) error {
 	w.Header().Set("Content-Type", resp.contentType)
-	render.Status(r, resp.StatusCode)
+	render.Status(r, resp.Code)
 	return nil
 }
 
 // Status is a builder method to override the default status code for a response.
 func (resp *Response) Status(code int) *Response {
-	resp.StatusCode = code
+	resp.Code = code
 	return resp
 }
 
@@ -223,7 +223,7 @@ func EnsureEverythingIsReferencedJSON200Response(body struct {
 }) *Response {
 	return &Response{
 		body:        body,
-		StatusCode:  200,
+		Code:        200,
 		contentType: "application/json",
 	}
 }
@@ -235,7 +235,7 @@ func EnsureEverythingIsReferencedJSONDefaultResponse(body struct {
 }) *Response {
 	return &Response{
 		body:        body,
-		StatusCode:  200,
+		Code:        200,
 		contentType: "application/json",
 	}
 }
