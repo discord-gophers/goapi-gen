@@ -147,9 +147,10 @@ func (UpdateResource3JSONRequestBody) Bind(*http.Request) error {
 
 // Response is a common response struct for all the API calls.
 // A Response object may be instantiated via functions for specific operation responses.
+// It may also be instantiated directly, for the purpose of responding with a single status code.
 type Response struct {
 	body        interface{}
-	statusCode  int
+	Code        int
 	contentType string
 }
 
@@ -157,13 +158,13 @@ type Response struct {
 // and status code based on the response definition.
 func (resp *Response) Render(w http.ResponseWriter, r *http.Request) error {
 	w.Header().Set("Content-Type", resp.contentType)
-	render.Status(r, resp.statusCode)
+	render.Status(r, resp.Code)
 	return nil
 }
 
 // Status is a builder method to override the default status code for a response.
-func (resp *Response) Status(statusCode int) *Response {
-	resp.statusCode = statusCode
+func (resp *Response) Status(code int) *Response {
+	resp.Code = code
 	return resp
 }
 
@@ -190,7 +191,7 @@ func (resp *Response) MarshalXML(e *xml.Encoder, start xml.StartElement) error {
 func GetEveryTypeOptionalJSON200Response(body EveryTypeOptional) *Response {
 	return &Response{
 		body:        body,
-		statusCode:  200,
+		Code:        200,
 		contentType: "application/json",
 	}
 }
@@ -200,7 +201,7 @@ func GetEveryTypeOptionalJSON200Response(body EveryTypeOptional) *Response {
 func GetSimpleJSON200Response(body SomeObject) *Response {
 	return &Response{
 		body:        body,
-		statusCode:  200,
+		Code:        200,
 		contentType: "application/json",
 	}
 }
@@ -212,7 +213,7 @@ func GetWithArgsJSON200Response(body struct {
 }) *Response {
 	return &Response{
 		body:        body,
-		statusCode:  200,
+		Code:        200,
 		contentType: "application/json",
 	}
 }
@@ -224,7 +225,7 @@ func GetWithReferencesJSON200Response(body struct {
 }) *Response {
 	return &Response{
 		body:        body,
-		statusCode:  200,
+		Code:        200,
 		contentType: "application/json",
 	}
 }
@@ -234,7 +235,7 @@ func GetWithReferencesJSON200Response(body struct {
 func GetWithContentTypeJSON200Response(body SomeObject) *Response {
 	return &Response{
 		body:        body,
-		statusCode:  200,
+		Code:        200,
 		contentType: "application/json",
 	}
 }
@@ -244,7 +245,7 @@ func GetWithContentTypeJSON200Response(body SomeObject) *Response {
 func GetReservedKeywordJSON200Response(body ReservedKeyword) *Response {
 	return &Response{
 		body:        body,
-		statusCode:  200,
+		Code:        200,
 		contentType: "application/json",
 	}
 }
@@ -256,7 +257,7 @@ func CreateResourceJSON200Response(body struct {
 }) *Response {
 	return &Response{
 		body:        body,
-		statusCode:  200,
+		Code:        200,
 		contentType: "application/json",
 	}
 }
@@ -268,7 +269,7 @@ func CreateResource2JSON200Response(body struct {
 }) *Response {
 	return &Response{
 		body:        body,
-		statusCode:  200,
+		Code:        200,
 		contentType: "application/json",
 	}
 }
@@ -280,7 +281,7 @@ func UpdateResource3JSON200Response(body struct {
 }) *Response {
 	return &Response{
 		body:        body,
-		statusCode:  200,
+		Code:        200,
 		contentType: "application/json",
 	}
 }
@@ -290,7 +291,7 @@ func UpdateResource3JSON200Response(body struct {
 func GetResponseWithReferenceJSON200Response(body SomeObject) *Response {
 	return &Response{
 		body:        body,
-		statusCode:  200,
+		Code:        200,
 		contentType: "application/json",
 	}
 }
@@ -302,7 +303,7 @@ func GetWithTaggedMiddlewareJSON200Response(body struct {
 }) *Response {
 	return &Response{
 		body:        body,
-		statusCode:  200,
+		Code:        200,
 		contentType: "application/json",
 	}
 }
@@ -314,7 +315,7 @@ func PostWithTaggedMiddlewareJSON200Response(body struct {
 }) *Response {
 	return &Response{
 		body:        body,
-		statusCode:  200,
+		Code:        200,
 		contentType: "application/json",
 	}
 }

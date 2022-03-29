@@ -125,9 +125,10 @@ type Issue9JSONRequestBody Issue9JSONBody
 
 // Response is a common response struct for all the API calls.
 // A Response object may be instantiated via functions for specific operation responses.
+// It may also be instantiated directly, for the purpose of responding with a single status code.
 type Response struct {
 	body        interface{}
-	statusCode  int
+	Code        int
 	contentType string
 }
 
@@ -135,13 +136,13 @@ type Response struct {
 // and status code based on the response definition.
 func (resp *Response) Render(w http.ResponseWriter, r *http.Request) error {
 	w.Header().Set("Content-Type", resp.contentType)
-	render.Status(r, resp.statusCode)
+	render.Status(r, resp.Code)
 	return nil
 }
 
 // Status is a builder method to override the default status code for a response.
-func (resp *Response) Status(statusCode int) *Response {
-	resp.statusCode = statusCode
+func (resp *Response) Status(code int) *Response {
+	resp.Code = code
 	return resp
 }
 
@@ -176,7 +177,7 @@ func EnsureEverythingIsReferencedJSON200Response(body struct {
 }) *Response {
 	return &Response{
 		body:        body,
-		statusCode:  200,
+		Code:        200,
 		contentType: "application/json",
 	}
 }
@@ -186,7 +187,7 @@ func EnsureEverythingIsReferencedJSON200Response(body struct {
 func Issue127JSON200Response(body GenericObject) *Response {
 	return &Response{
 		body:        body,
-		statusCode:  200,
+		Code:        200,
 		contentType: "application/json",
 	}
 }
@@ -196,7 +197,7 @@ func Issue127JSON200Response(body GenericObject) *Response {
 func Issue127XML200Response(body GenericObject) *Response {
 	return &Response{
 		body:        body,
-		statusCode:  200,
+		Code:        200,
 		contentType: "application/xml",
 	}
 }
@@ -206,7 +207,7 @@ func Issue127XML200Response(body GenericObject) *Response {
 func Issue127YAML200Response(body GenericObject) *Response {
 	return &Response{
 		body:        body,
-		statusCode:  200,
+		Code:        200,
 		contentType: "text/yaml",
 	}
 }
@@ -216,7 +217,7 @@ func Issue127YAML200Response(body GenericObject) *Response {
 func Issue127JSONDefaultResponse(body GenericObject) *Response {
 	return &Response{
 		body:        body,
-		statusCode:  200,
+		Code:        200,
 		contentType: "application/json",
 	}
 }
@@ -226,7 +227,7 @@ func Issue127JSONDefaultResponse(body GenericObject) *Response {
 func GetIssues375JSON200Response(body EnumInObjInArray) *Response {
 	return &Response{
 		body:        body,
-		statusCode:  200,
+		Code:        200,
 		contentType: "application/json",
 	}
 }
