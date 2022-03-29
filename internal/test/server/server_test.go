@@ -1,6 +1,7 @@
 package server
 
 import (
+	"errors"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -40,9 +41,8 @@ func TestErrorHandlerFunc(t *testing.T) {
 		WithMiddlewares(noopMiddlewares),
 		WithErrorHandler(func(w http.ResponseWriter, r *http.Request, err error) {
 			w.Header().Set("Content-Type", "application/json")
-			// FIXME This should likely return a RequiredParamError, however due to binding it never does...
-			// var requiredParamError *RequiredParamError
-			// assert.True(t, errors.As(err, &requiredParamError))
+			var requiredParamError *RequiredParamError
+			assert.True(t, errors.As(err, &requiredParamError))
 		}))
 
 	s := httptest.NewServer(h)

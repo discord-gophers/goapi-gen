@@ -766,7 +766,7 @@ func (siw *ServerInterfaceWrapper) GetDeepObject(w http.ResponseWriter, r *http.
 
 	if err := runtime.BindQueryParameter("deepObject", true, true, "deepObj", r.URL.Query(), &params.DeepObj); err != nil {
 		err = fmt.Errorf("invalid format for parameter deepObj: %w", err)
-		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{err, "deepObj"})
+		siw.ErrorHandlerFunc(w, r, &RequiredParamError{err, "deepObj"})
 		return
 	}
 
