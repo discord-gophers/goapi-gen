@@ -425,13 +425,11 @@ func (siw *ServerInterfaceWrapper) GetWithArgs(w http.ResponseWriter, r *http.Re
 		var HeaderArgument int32
 		n := len(valueList)
 		if n != 1 {
-			err := fmt.Errorf("expected one value for header_argument, got %d", n)
-			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{err, "header_argument"})
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{n, "header_argument"})
 			return
 		}
 
 		if err := runtime.BindStyledParameterWithLocation("simple", false, "header_argument", runtime.ParamLocationHeader, valueList[0], &HeaderArgument); err != nil {
-			err = fmt.Errorf("invalid format for parameter header_argument: %w", err)
 			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{err, "header_argument"})
 			return
 		}
@@ -458,7 +456,6 @@ func (siw *ServerInterfaceWrapper) GetWithReferences(w http.ResponseWriter, r *h
 	var globalArgument int64
 
 	if err := runtime.BindStyledParameter("simple", false, "global_argument", chi.URLParam(r, "global_argument"), &globalArgument); err != nil {
-		err = fmt.Errorf("invalid format for parameter global_argument: %w", err)
 		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{err, "global_argument"})
 		return
 	}
@@ -467,7 +464,6 @@ func (siw *ServerInterfaceWrapper) GetWithReferences(w http.ResponseWriter, r *h
 	var argument Argument
 
 	if err := runtime.BindStyledParameter("simple", false, "argument", chi.URLParam(r, "argument"), &argument); err != nil {
-		err = fmt.Errorf("invalid format for parameter argument: %w", err)
 		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{err, "argument"})
 		return
 	}
@@ -490,7 +486,6 @@ func (siw *ServerInterfaceWrapper) GetWithContentType(w http.ResponseWriter, r *
 	var contentType GetWithContentTypeParamsContentType
 
 	if err := runtime.BindStyledParameter("simple", false, "content_type", chi.URLParam(r, "content_type"), &contentType); err != nil {
-		err = fmt.Errorf("invalid format for parameter content_type: %w", err)
 		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{err, "content_type"})
 		return
 	}
@@ -527,7 +522,6 @@ func (siw *ServerInterfaceWrapper) CreateResource(w http.ResponseWriter, r *http
 	var argument Argument
 
 	if err := runtime.BindStyledParameter("simple", false, "argument", chi.URLParam(r, "argument"), &argument); err != nil {
-		err = fmt.Errorf("invalid format for parameter argument: %w", err)
 		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{err, "argument"})
 		return
 	}
@@ -550,7 +544,6 @@ func (siw *ServerInterfaceWrapper) CreateResource2(w http.ResponseWriter, r *htt
 	var inlineArgument int
 
 	if err := runtime.BindStyledParameter("simple", false, "inline_argument", chi.URLParam(r, "inline_argument"), &inlineArgument); err != nil {
-		err = fmt.Errorf("invalid format for parameter inline_argument: %w", err)
 		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{err, "inline_argument"})
 		return
 	}
@@ -584,7 +577,6 @@ func (siw *ServerInterfaceWrapper) UpdateResource3(w http.ResponseWriter, r *htt
 	var pFallthrough int
 
 	if err := runtime.BindStyledParameter("simple", false, "fallthrough", chi.URLParam(r, "fallthrough"), &pFallthrough); err != nil {
-		err = fmt.Errorf("invalid format for parameter fallthrough: %w", err)
 		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{err, "fallthrough"})
 		return
 	}
@@ -649,32 +641,74 @@ func (siw *ServerInterfaceWrapper) PostWithTaggedMiddleware(w http.ResponseWrite
 }
 
 type UnescapedCookieParamError struct {
-	error
+	err       error
+	paramName string
 }
+
+// Error implements error.
+func (err UnescapedCookieParamError) Error() string {
+	return fmt.Sprintf("error unescaping cookie parameter %s: %v", err.paramName, err.err)
+}
+
+func (err UnescapedCookieParamError) Unwrap() error { return err.err }
 
 type UnmarshalingParamError struct {
-	error
+	err       error
 	paramName string
 }
+
+// Error implements error.
+func (err UnmarshalingParamError) Error() string {
+	return fmt.Sprintf("error unmarshaling parameter %s as JSON: %v", err.paramName, err.err)
+}
+
+func (err UnmarshalingParamError) Unwrap() error { return err.err }
 
 type RequiredParamError struct {
-	error
+	err       error
 	paramName string
 }
 
+// Error implements error.
+func (err RequiredParamError) Error() string {
+	if err.err == nil {
+		return fmt.Sprintf("query parameter %s is required, but not found", err.paramName)
+	} else {
+		return fmt.Sprintf("query parameter %s is required, but errored: %s", err.paramName, err.err)
+	}
+}
+
+func (err RequiredParamError) Unwrap() error { return err.err }
+
 type RequiredHeaderError struct {
-	error
 	paramName string
+}
+
+// Error implements error.
+func (err RequiredHeaderError) Error() string {
+	return fmt.Sprintf("header parameter %s is required, but not found", err.paramName)
 }
 
 type InvalidParamFormatError struct {
-	error
+	err       error
 	paramName string
 }
 
+// Error implements error.
+func (err InvalidParamFormatError) Error() string {
+	return fmt.Sprintf("invalid format for parameter %s: %v", err.paramName, err.err)
+}
+
+func (err InvalidParamFormatError) Unwrap() error { return err.err }
+
 type TooManyValuesForParamError struct {
-	error
+	NumValues int
 	paramName string
+}
+
+// Error implements error.
+func (err TooManyValuesForParamError) Error() string {
+	return fmt.Sprintf("expected one value for %s, got %d", err.paramName, err.NumValues)
 }
 
 // ParameterName is an interface that is implemented by error types that are
@@ -685,6 +719,7 @@ type ParameterError interface {
 	ParamName() string
 }
 
+func (err UnescapedCookieParamError) ParamName() string  { return err.paramName }
 func (err UnmarshalingParamError) ParamName() string     { return err.paramName }
 func (err RequiredParamError) ParamName() string         { return err.paramName }
 func (err RequiredHeaderError) ParamName() string        { return err.paramName }
