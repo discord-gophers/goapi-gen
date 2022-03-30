@@ -7,7 +7,7 @@ import (
 
 	examplePetstore "github.com/discord-gophers/goapi-gen/examples/petstore-expanded/api"
 
-	"github.com/discord-gophers/goapi-gen/pkg/codegen/templates"
+	"github.com/discord-gophers/goapi-gen/templates"
 	"github.com/getkin/kin-openapi/openapi3"
 	"github.com/golangci/lint-1"
 	"github.com/stretchr/testify/assert"

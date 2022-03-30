@@ -12,8 +12,8 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/discord-gophers/goapi-gen/examples/petstore-expanded/api"
-	"github.com/discord-gophers/goapi-gen/pkg/middleware"
-	"github.com/discord-gophers/goapi-gen/pkg/testutil"
+	"github.com/discord-gophers/goapi-gen/internal/testutil"
+	"github.com/discord-gophers/goapi-gen/middleware"
 )
 
 func doGet(t *testing.T, mux *chi.Mux, url string) *httptest.ResponseRecorder {

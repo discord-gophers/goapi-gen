@@ -8,7 +8,7 @@ import (
 	"net/url"
 	"testing"
 
-	"github.com/discord-gophers/goapi-gen/pkg/testutil"
+	"github.com/discord-gophers/goapi-gen/internal/testutil"
 	"github.com/getkin/kin-openapi/openapi3"
 	"github.com/getkin/kin-openapi/openapi3filter"
 	"github.com/go-chi/chi/v5"

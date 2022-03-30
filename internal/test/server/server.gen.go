@@ -10,8 +10,8 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/discord-gophers/goapi-gen/pkg/runtime"
-	openapi_types "github.com/discord-gophers/goapi-gen/pkg/types"
+	"github.com/discord-gophers/goapi-gen/runtime"
+	openapi_types "github.com/discord-gophers/goapi-gen/types"
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/render"
 )

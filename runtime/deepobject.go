@@ -11,7 +11,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/discord-gophers/goapi-gen/pkg/types"
+	"github.com/discord-gophers/goapi-gen/types"
 )
 
 func marshalDeepObject(in interface{}, path []string) ([]string, error) {

@@ -22,7 +22,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/discord-gophers/goapi-gen/pkg/codegen"
+	"github.com/discord-gophers/goapi-gen/codegen"
 	"github.com/kenshaw/snaker"
 	"github.com/urfave/cli/v2"
 )

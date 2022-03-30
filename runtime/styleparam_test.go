@@ -20,7 +20,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
-	"github.com/discord-gophers/goapi-gen/pkg/types"
+	"github.com/discord-gophers/goapi-gen/types"
 )
 
 func TestStyleParam(t *testing.T) {
