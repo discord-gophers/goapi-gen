@@ -108,7 +108,7 @@ func (p *PetStore) DeletePet(w http.ResponseWriter, r *http.Request, id int64) *
 	if !found {
 		return DeletePetJSONDefaultResponse(Error{fmt.Sprintf(petNotFoundMsg, id)}).Status(http.StatusNotFound)
 	}
-	delete(p.Pets, id)
+	delete(p.Pets, int64(id))
 
 	return &Response{Code: http.StatusNoContent}
 }
