@@ -24,7 +24,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/discord-gophers/goapi-gen/pkg/types"
+	"github.com/discord-gophers/goapi-gen/types"
 )
 
 // ParamLocation escaping works differently based on where a header is found
