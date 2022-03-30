@@ -121,6 +121,43 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/EnumInObjInArray"
+  /pr/66:
+    get:
+      description: |
+        This is a test for pull request #66.
+      parameters:
+        - name: foo
+          in: query
+          required: true
+          schema:
+            type: string
+            x-go-type:
+              type: CustomGoType
+              import: github.com/discord-gophers/goapi-gen/internal/test/schemas/types/normal
+      responses:
+        200:
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CustomGoType"
+    post:
+      description: |
+        This is a test for pull request #66.
+      parameters:
+        - name: bar
+          in: query
+          required: true
+          schema:
+            type: string
+            x-go-type:
+              type: CustomGoType
+              import: github.com/discord-gophers/goapi-gen/internal/test/schemas/types/normal
+      responses:
+        200:
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CustomGoTypeWithAlias"
 components:
   schemas:
     GenericObject:
@@ -165,6 +202,17 @@ components:
             enum:
             - first
             - second
+    CustomGoType:
+      type: string
+      x-go-type:
+        type: CustomGoType
+        import: github.com/discord-gophers/goapi-gen/internal/test/schemas/types/normal
+    CustomGoTypeWithAlias:
+      type: string
+      x-go-type:
+        type: CustomGoType
+        import: github.com/discord-gophers/goapi-gen/internal/test/schemas/types/alias
+        alias: customAlias
   parameters:
     StringInPath:
       name: str

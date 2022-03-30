@@ -14,10 +14,29 @@ const (
 	extMiddlewares       = "x-go-middlewares"
 )
 
-func extTypeName(extPropValue interface{}) (string, error) {
+type extImportPathDetails struct {
+	Import string `json:"import"`
+	Alias  string `json:"alias"`
+	Type   string `json:"type"`
+}
+
+
+func extImportPath(extPropValue interface{}) (extImportPathDetails, error) {
+	var details extImportPathDetails
+	raw, ok := extPropValue.(json.RawMessage)
+	if !ok {
+		return details, fmt.Errorf("failed to convert type: %T", extPropValue)
+	}
+	
 	var name string
-	err := extParseAny(extPropValue, &name)
-	return name, err
+	if err := json.Unmarshal(raw, &name); err == nil {
+		details.Type = name
+		return details, nil
+	}
+
+	var path extImportPathDetails
+	err := extParseAny(extPropValue, &path)
+	return path, err
 }
 
 func extExtraTags(extPropValue interface{}) (map[string]string, error) {

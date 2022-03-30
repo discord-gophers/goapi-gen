@@ -211,6 +211,7 @@ func DescribeSecurityDefinition(srs openapi3.SecurityRequirements) []SecurityDef
 type OperationDefinition struct {
 	OperationID string // The operation_id description from Swagger, used to generate function names
 
+	CustomImports       []string              // Custom needed imports due to parameters being of external types
 	PathParams          []ParameterDefinition // Parameters in the path, eg, /path/:param
 	HeaderParams        []ParameterDefinition // Parameters in HTTP headers
 	QueryParams         []ParameterDefinition // Parameters in the query, /path?param
@@ -436,12 +437,18 @@ func OperationDefinitions(swagger *openapi3.T) ([]OperationDefinition, error) {
 				return nil, fmt.Errorf("error generating body definitions: %w", err)
 			}
 
+			var customImports []string
+			for _, allParam := range allParams {
+				customImports = append(customImports, allParam.Schema.CustomImports...)
+			}
+
 			opDef := OperationDefinition{
-				PathParams:   pathParams,
-				HeaderParams: FilterParameterDefinitionByType(allParams, "header"),
-				QueryParams:  FilterParameterDefinitionByType(allParams, "query"),
-				CookieParams: FilterParameterDefinitionByType(allParams, "cookie"),
-				OperationID:  ToCamelCase(op.OperationID),
+				PathParams:    pathParams,
+				CustomImports: customImports,
+				HeaderParams:  FilterParameterDefinitionByType(allParams, "header"),
+				QueryParams:   FilterParameterDefinitionByType(allParams, "query"),
+				CookieParams:  FilterParameterDefinitionByType(allParams, "cookie"),
+				OperationID:   ToCamelCase(op.OperationID),
 				// Replace newlines in summary.
 				Summary:         op.Summary,
 				Method:          opName,
