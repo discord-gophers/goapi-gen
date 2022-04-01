@@ -104,7 +104,7 @@ Remaining arguments can be passed in headers, query arguments or cookies. Those
 will be written to a `params` object. Look at the `FindPets` function above, it
 takes as input `FindPetsParams`, which is defined as follows:
 
- ```go
+```go
 // Parameters object for FindPets
 type FindPetsParams struct {
     Tags  *[]string `json:"tags,omitempty"`
@@ -184,16 +184,16 @@ an object to accept `additionalProperties`, specify a schema for `additionalProp
 Say we declared `NewPet` above like so:
 
 ```yaml
-    NewPet:
-      required:
-        - name
-      properties:
-        name:
-          type: string
-        tag:
-          type: string
-      additionalProperties:
-        type: string
+NewPet:
+  required:
+    - name
+  properties:
+    name:
+      type: string
+    tag:
+      type: string
+  additionalProperties:
+    type: string
 ```
 
 The Go code for `NewPet` would now look like this:
@@ -243,17 +243,17 @@ look through those tests for more usage examples.
   are added are in addition to the regular json tags that are generated. If you specify your
   own `json` tag, you will override the default one.
 
-    ```yaml
-    components:
-      schemas:
-        Object:
-          properties:
-            name:
-              type: string
-              x-go-extra-tags:
-                tag1: value1
-                tag2: value2
-    ```
+  ```yaml
+  components:
+    schemas:
+      Object:
+        properties:
+          name:
+            type: string
+            x-go-extra-tags:
+              tag1: value1
+              tag2: value2
+  ```
 
   In the example above, field `name` will be declared as:
 
@@ -266,12 +266,12 @@ look through those tests for more usage examples.
   want to give a specific routes middleware, but not to all operations. The middleware are always
   called in the order of definition. If the tagged middleware is not defined, panic will be called while calling `Handler`.
 
-    ```yaml
-    /pets:
-      x-go-middlewares: [validateJSON]
+  ```yaml
+  /pets:
+    x-go-middlewares: [validateJSON]
       get:
         x-go-middlewares: [limit]
-    ```
+  ```
 
   In the example above, the following middleware calls will be added to your handler:
 
@@ -289,16 +289,16 @@ look through those tests for more usage examples.
   This property can go in either the property value or the object attribute
   itself:
 
-    ```yaml
-    components:
-	  schemas:
-	    Object:
-		  x-go-optional-value: true # valid
-		  properties:
-		    name:
-			  type: string
-			  x-go-optional-value: false # valid, overrides
-    ```
+  ```yaml
+  components:
+    schemas:
+      Object:
+        x-go-optional-value: true # valid
+        properties:
+          name:
+          type: string
+          x-go-optional-value: false # valid, overrides
+  ```
 
 - `x-go-string`: boolean, makes the generator add a `,string` attribute into the
   JSON struct tag of an object's field. This is useful for sending large numbers
@@ -320,17 +320,17 @@ those via the `-generate` flag. It defaults to `types,server,spec`, but
 you can specify any combination of those.
 
 - `types`: generate all type definitions for all types in the OpenAPI spec. This
- will be everything under `#components`, as well as request parameter, request
- body, and response type objects.
+  will be everything under `#components`, as well as request parameter, request
+  body, and response type objects.
 - `server`: generate the Chi server boilerplate. This code is dependent on
- that produced by the `types` target.
+  that produced by the `types` target.
 - `spec`: embed the OpenAPI spec into the generated code as a gzipped blob. This
 - `skip-fmt`: skip running `goimports` on the generated code. This is useful for debugging
- the generated file in case the spec contains weird strings.
+  the generated file in case the spec contains weird strings.
 - `skip-prune`: skip pruning unused components from the spec prior to generating
- the code.
+  the code.
 - `import-mapping`: specifies a map of references external OpenAPI specs to go
- Go include paths. Please see below.
+  Go include paths. Please see below.
 
 So, for example, if you would like to produce only the server code, you could
 run `goapi-gen --generate types,server`. You could generate `types` and
@@ -357,8 +357,7 @@ file via the `--config` option. Please see the test under
 for an example. The structure of the file is as follows:
 
 ```yaml
-output:
-  externalref.gen.go
+output: externalref.gen.go
 package: externalref
 generate:
   - types
@@ -405,20 +404,20 @@ need it. We've not yet implemented several things:
             - $ref: '#/components/schemas/Cat'
             - $ref: '#/components/schemas/Dog'
 
-    will result in a Go type of `interface{}`. It will be up to you
-    to validate whether it conforms to `Cat` and/or `Dog`, depending on the
-    keyword. It's not clear if we can do anything much better here given the
-    limits of Go typing.
+  will result in a Go type of `interface{}`. It will be up to you
+  to validate whether it conforms to `Cat` and/or `Dog`, depending on the
+  keyword. It's not clear if we can do anything much better here given the
+  limits of Go typing.
 
-    `allOf` is supported, by taking the union of all the fields in all the
-    component schemas. This is the most useful of these operations, and is
-    commonly used to merge objects with an identifier, as in the
-    `petstore-expanded` example.
+  `allOf` is supported, by taking the union of all the fields in all the
+  component schemas. This is the most useful of these operations, and is
+  commonly used to merge objects with an identifier, as in the
+  `petstore-expanded` example.
 
 - `patternProperties` isn't yet supported and will exit with an error. Pattern
- properties were defined in JSONSchema, and the `kin-openapi` Swagger object
- knows how to parse them, but they're not part of OpenAPI 3.0, so we've left
- them out, as support is very complicated.
+  properties were defined in JSONSchema, and the `kin-openapi` Swagger object
+  knows how to parse them, but they're not part of OpenAPI 3.0, so we've left
+  them out, as support is very complicated.
 
 ## Making changes to code generation
 
