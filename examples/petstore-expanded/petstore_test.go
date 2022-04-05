@@ -37,7 +37,7 @@ func TestPetStore(t *testing.T) {
 
 	// Use our validation middleware to check all requests against the
 	// OpenAPI schema.
-	r.Use(middleware.OapiRequestValidator(swagger))
+	r.Use(middleware.OAPIValidator(swagger))
 
 	store := api.NewPetStore()
 	api.Handler(store, api.WithRouter(r))
