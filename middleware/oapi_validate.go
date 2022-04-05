@@ -1,6 +1,6 @@
 // Package middleware implements middleware function for go-chi or net/http,
 // which validates incoming HTTP requests to make sure that they conform to the given OAPI 3.0 specification.
-// When OAPI validation failes on the request, we return an HTTP/400.[refactor/middleware 7ad632e] diff: revert package doc comment deletion
+// When OAPI validation failes on the request, we return an HTTP/400.
 package middleware
 
 import (
