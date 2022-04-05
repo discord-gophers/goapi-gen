@@ -35,7 +35,7 @@ into objects which match the OpenAPI 3.0 definition. The code generator in this
 directory does a lot of that for you. You would run it like so:
 
     go install github.com/discord-gophers/goapi-gen@latest
-    goapi-gen petstore-expanded.yaml > petstore.gen.go
+    goapi-gen --out petstore.gen.go petstore-expanded.yaml
 
 Let's go through that `petstore.gen.go` file to show you everything which was
 generated.
