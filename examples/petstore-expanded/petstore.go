@@ -39,7 +39,7 @@ func main() {
 
 	// Use our validation middleware to check all requests against the
 	// OpenAPI schema.
-	r.Use(middleware.OapiRequestValidator(swagger))
+	r.Use(middleware.OAPIValidator(swagger))
 
 	// We now register our petStore above as the handler for the interface
 	api.Handler(petStore, api.WithRouter(r))

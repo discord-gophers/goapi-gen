@@ -136,7 +136,7 @@ func TestOapiRequestValidator(t *testing.T) {
 	r := chi.NewRouter()
 
 	// register middleware
-	r.Use(OapiRequestValidator(swagger))
+	r.Use(OAPIValidator(swagger))
 
 	// basic cases
 	testRequestValidatorBasicFunctions(t, r)
@@ -155,28 +155,26 @@ func TestOapiRequestValidatorWithOptions(t *testing.T) {
 
 	// Set up an authenticator to check authenticated function. It will allow
 	// access to "someScope", but disallow others.
-	options := &Options{
-		Options: openapi3filter.Options{
-			AuthenticationFunc: func(c context.Context, input *openapi3filter.AuthenticationInput) error {
-				for _, s := range input.Scopes {
-					if s == "someScope" {
-						return nil
-					}
+	options := &openapi3filter.Options{
+		AuthenticationFunc: func(_ context.Context, input *openapi3filter.AuthenticationInput) error {
+			for _, s := range input.Scopes {
+				if s == "someScope" {
+					return nil
 				}
-				return errors.New("unauthorized")
-			},
+			}
+			return errors.New("unauthorized")
 		},
 	}
 
 	// register middleware
-	r.Use(OapiRequestValidatorWithOptions(swagger, options))
+	r.Use(OAPIValidator(swagger, WithOptions(options)))
 
 	// basic cases
 	testRequestValidatorBasicFunctions(t, r)
 
 	called := false
 
-	r.Get("/protected_resource", func(w http.ResponseWriter, r *http.Request) {
+	r.Get("/protected_resource", func(w http.ResponseWriter, _ *http.Request) {
 		called = true
 		w.WriteHeader(http.StatusNoContent)
 	})
@@ -189,7 +187,7 @@ func TestOapiRequestValidatorWithOptions(t *testing.T) {
 		called = false
 	}
 
-	r.Get("/protected_resource2", func(w http.ResponseWriter, r *http.Request) {
+	r.Get("/protected_resource2", func(w http.ResponseWriter, _ *http.Request) {
 		called = true
 		w.WriteHeader(http.StatusNoContent)
 	})
@@ -201,7 +199,7 @@ func TestOapiRequestValidatorWithOptions(t *testing.T) {
 		called = false
 	}
 
-	r.Get("/protected_resource_401", func(w http.ResponseWriter, r *http.Request) {
+	r.Get("/protected_resource_401", func(w http.ResponseWriter, _ *http.Request) {
 		called = true
 		w.WriteHeader(http.StatusNoContent)
 	})
@@ -225,7 +223,7 @@ func TestOapiRequestValidatorWithOptions(t *testing.T) {
 
 	// Confirm explicit text/plain content-type is returned
 	{
-		options.ErrRespContentType = ErrRespContentTypePlain
+
 		body := malformedBody
 		rec := doPost(t, r, "http://example.com/protected_resource_401", body)
 		assert.Contains(t, rec.Result().Header["Content-Type"][0], ErrRespContentTypePlain)
@@ -234,7 +232,12 @@ func TestOapiRequestValidatorWithOptions(t *testing.T) {
 
 	// Confirm explicit application/json content-type is returned
 	{
-		options.ErrRespContentType = ErrRespContentTypeJSON
+		r := chi.NewMux()
+		r.Use(OAPIValidator(swagger, WithOptions(options), WithErrContentType(ErrRespContentTypeJSON)))
+		r.Get("/protected_resource_401", func(w http.ResponseWriter, _ *http.Request) {
+			called = true
+			w.WriteHeader(http.StatusNoContent)
+		})
 		body := malformedBody
 		rec := doPost(t, r, "http://example.com/protected_resource_401", body)
 		assert.Contains(t, rec.Result().Header["Content-Type"][0], ErrRespContentTypeJSON)
@@ -243,7 +246,12 @@ func TestOapiRequestValidatorWithOptions(t *testing.T) {
 
 	// Confirm explicit application/xml content-type is returned
 	{
-		options.ErrRespContentType = ErrRespContentTypeXML
+		r := chi.NewMux()
+		r.Use(OAPIValidator(swagger, WithOptions(options), WithErrContentType(ErrRespContentTypeXML)))
+		r.Get("/protected_resource_401", func(w http.ResponseWriter, _ *http.Request) {
+			called = true
+			w.WriteHeader(http.StatusNoContent)
+		})
 		body := malformedBody
 		rec := doPost(t, r, "http://example.com/protected_resource_401", body)
 		assert.Contains(t, rec.Result().Header["Content-Type"][0], ErrRespContentTypeXML)
@@ -256,7 +264,7 @@ func testRequestValidatorBasicFunctions(t *testing.T, r *chi.Mux) {
 
 	// Install a request handler for /resource. We want to make sure it doesn't
 	// get called.
-	r.Get("/resource", func(w http.ResponseWriter, r *http.Request) {
+	r.Get("/resource", func(_ http.ResponseWriter, _ *http.Request) {
 		called = true
 	})
 
@@ -265,6 +273,7 @@ func testRequestValidatorBasicFunctions(t *testing.T, r *chi.Mux) {
 		rec := doGet(t, r, "http://not.example.com/resource")
 		assert.Equal(t, http.StatusBadRequest, rec.Code)
 		assert.False(t, called, "Handler should not have been called")
+		called = false
 	}
 
 	// Let's send a good request, it should pass
@@ -292,7 +301,7 @@ func testRequestValidatorBasicFunctions(t *testing.T, r *chi.Mux) {
 	}
 
 	// Add a handler for the POST message
-	r.Post("/resource", func(w http.ResponseWriter, r *http.Request) {
+	r.Post("/resource", func(w http.ResponseWriter, _ *http.Request) {
 		called = true
 		w.WriteHeader(http.StatusNoContent)
 	})

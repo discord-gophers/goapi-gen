@@ -35,7 +35,7 @@ into objects which match the OpenAPI 3.0 definition. The code generator in this
 directory does a lot of that for you. You would run it like so:
 
     go install github.com/discord-gophers/goapi-gen@latest
-    goapi-gen petstore-expanded.yaml > petstore.gen.go
+    goapi-gen --out petstore.gen.go petstore-expanded.yaml
 
 Let's go through that `petstore.gen.go` file to show you everything which was
 generated.
@@ -291,8 +291,8 @@ look through those tests for more usage examples.
   ```yaml
   /pets:
     x-go-middlewares: [validateJSON]
-    get:
-      x-go-middlewares: [limit]
+      get:
+        x-go-middlewares: [limit]
   ```
 
   In the example above, the following middleware calls will be added to your handler:
@@ -313,13 +313,13 @@ look through those tests for more usage examples.
 
   ```yaml
   components:
-  schemas:
-    Object:
-  	  x-go-optional-value: true # valid
-  	  properties:
-  	    name:
-  		  type: string
-  		  x-go-optional-value: false # valid, overrides
+    schemas:
+      Object:
+        x-go-optional-value: true # valid
+        properties:
+          name:
+          type: string
+          x-go-optional-value: false # valid, overrides
   ```
 
 - `x-go-string`: boolean, makes the generator add a `,string` attribute into the
