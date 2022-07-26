@@ -210,7 +210,7 @@ func GenerateGoSchema(sref *openapi3.SchemaRef, path []string) (Schema, error) {
 
 	// Check for custom Go type extension
 	if extension, ok := schema.Extensions[extPropGoType]; ok {
-		typeDetails, err := extTypeName(extension)
+		typeDetails, err := extImportPath(extension)
 		if err != nil {
 			return outSchema, fmt.Errorf("invalid value for %q: %w", extPropGoType, err)
 		}
