@@ -161,7 +161,6 @@ func (siw *ServerInterfaceWrapper) {{$opid}}(w http.ResponseWriter, r *http.Requ
 		    if resp.body != nil {
 		        render.Render(w, r, resp)
 		    } else {
-				w.Header().Set("Content-Type", resp.contentType)
 				w.WriteHeader(resp.Code)
 			}
 		}

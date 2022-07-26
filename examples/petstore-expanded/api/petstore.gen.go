@@ -228,7 +228,6 @@ func (siw *ServerInterfaceWrapper) FindPets(w http.ResponseWriter, r *http.Reque
 			if resp.body != nil {
 				render.Render(w, r, resp)
 			} else {
-				w.Header().Set("Content-Type", resp.contentType)
 				w.WriteHeader(resp.Code)
 			}
 		}
@@ -247,7 +246,6 @@ func (siw *ServerInterfaceWrapper) AddPet(w http.ResponseWriter, r *http.Request
 			if resp.body != nil {
 				render.Render(w, r, resp)
 			} else {
-				w.Header().Set("Content-Type", resp.contentType)
 				w.WriteHeader(resp.Code)
 			}
 		}
@@ -274,7 +272,6 @@ func (siw *ServerInterfaceWrapper) DeletePet(w http.ResponseWriter, r *http.Requ
 			if resp.body != nil {
 				render.Render(w, r, resp)
 			} else {
-				w.Header().Set("Content-Type", resp.contentType)
 				w.WriteHeader(resp.Code)
 			}
 		}
@@ -301,7 +298,6 @@ func (siw *ServerInterfaceWrapper) FindPetByID(w http.ResponseWriter, r *http.Re
 			if resp.body != nil {
 				render.Render(w, r, resp)
 			} else {
-				w.Header().Set("Content-Type", resp.contentType)
 				w.WriteHeader(resp.Code)
 			}
 		}
