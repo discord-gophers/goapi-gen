@@ -19,6 +19,7 @@ import (
 	"sort"
 	"strings"
 	"text/template"
+	"unicode"
 
 	"github.com/kenshaw/snaker"
 )
@@ -100,6 +101,17 @@ func responseNameToStatusCode(responseName string) string {
 	}
 }
 
+// TitleWord converts a single worded string to title case.
+// This is a replacement to `strings.Title` which we used previously.
+// We didn't need strings.Title word boundary rules, and just want to Title the words directly,
+// to export them in most cases.
+// Thus, this function is simpler and more efficient.
+func TitleWord(s string) string {
+	r := []rune(s)
+	r[0] = unicode.ToUpper(r[0])
+	return string(r)
+}
+
 // TemplateFunctions generates the list of utlity and helpfer functions used by
 // the templates.
 var TemplateFunctions = template.FuncMap{
@@ -115,5 +127,5 @@ var TemplateFunctions = template.FuncMap{
 
 	"ucFirst": snaker.ForceCamelIdentifier,
 	"lower":   strings.ToLower,
-	"title":   strings.Title,
+	"title":   TitleWord,
 }

@@ -24,7 +24,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/discord-gophers/goapi-gen/pkg/types"
+	"github.com/discord-gophers/goapi-gen/types"
 )
 
 // BindStyledParameter binds a parameter as described in the Path Parameters

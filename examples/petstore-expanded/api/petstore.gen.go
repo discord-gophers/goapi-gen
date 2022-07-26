@@ -15,7 +15,7 @@ import (
 	"path"
 	"strings"
 
-	"github.com/discord-gophers/goapi-gen/pkg/runtime"
+	"github.com/discord-gophers/goapi-gen/runtime"
 	"github.com/getkin/kin-openapi/openapi3"
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/render"
@@ -67,9 +67,10 @@ func (AddPetJSONRequestBody) Bind(*http.Request) error {
 
 // Response is a common response struct for all the API calls.
 // A Response object may be instantiated via functions for specific operation responses.
+// It may also be instantiated directly, for the purpose of responding with a single status code.
 type Response struct {
 	body        interface{}
-	statusCode  int
+	Code        int
 	contentType string
 }
 
@@ -77,13 +78,13 @@ type Response struct {
 // and status code based on the response definition.
 func (resp *Response) Render(w http.ResponseWriter, r *http.Request) error {
 	w.Header().Set("Content-Type", resp.contentType)
-	render.Status(r, resp.statusCode)
+	render.Status(r, resp.Code)
 	return nil
 }
 
 // Status is a builder method to override the default status code for a response.
-func (resp *Response) Status(statusCode int) *Response {
-	resp.statusCode = statusCode
+func (resp *Response) Status(code int) *Response {
+	resp.Code = code
 	return resp
 }
 
@@ -110,7 +111,7 @@ func (resp *Response) MarshalXML(e *xml.Encoder, start xml.StartElement) error {
 func FindPetsJSON200Response(body []Pet) *Response {
 	return &Response{
 		body:        body,
-		statusCode:  200,
+		Code:        200,
 		contentType: "application/json",
 	}
 }
@@ -120,7 +121,7 @@ func FindPetsJSON200Response(body []Pet) *Response {
 func FindPetsJSONDefaultResponse(body Error) *Response {
 	return &Response{
 		body:        body,
-		statusCode:  200,
+		Code:        200,
 		contentType: "application/json",
 	}
 }
@@ -130,7 +131,7 @@ func FindPetsJSONDefaultResponse(body Error) *Response {
 func AddPetJSON201Response(body Pet) *Response {
 	return &Response{
 		body:        body,
-		statusCode:  201,
+		Code:        201,
 		contentType: "application/json",
 	}
 }
@@ -140,7 +141,7 @@ func AddPetJSON201Response(body Pet) *Response {
 func AddPetJSONDefaultResponse(body Error) *Response {
 	return &Response{
 		body:        body,
-		statusCode:  200,
+		Code:        200,
 		contentType: "application/json",
 	}
 }
@@ -150,7 +151,7 @@ func AddPetJSONDefaultResponse(body Error) *Response {
 func DeletePetJSONDefaultResponse(body Error) *Response {
 	return &Response{
 		body:        body,
-		statusCode:  200,
+		Code:        200,
 		contentType: "application/json",
 	}
 }
@@ -160,7 +161,7 @@ func DeletePetJSONDefaultResponse(body Error) *Response {
 func FindPetByIDJSON200Response(body Pet) *Response {
 	return &Response{
 		body:        body,
-		statusCode:  200,
+		Code:        200,
 		contentType: "application/json",
 	}
 }
@@ -170,7 +171,7 @@ func FindPetByIDJSON200Response(body Pet) *Response {
 func FindPetByIDJSONDefaultResponse(body Error) *Response {
 	return &Response{
 		body:        body,
-		statusCode:  200,
+		Code:        200,
 		contentType: "application/json",
 	}
 }
@@ -179,16 +180,16 @@ func FindPetByIDJSONDefaultResponse(body Error) *Response {
 type ServerInterface interface {
 	// Returns all pets
 	// (GET /pets)
-	FindPets(w http.ResponseWriter, r *http.Request, params FindPetsParams)
+	FindPets(w http.ResponseWriter, r *http.Request, params FindPetsParams) *Response
 	// Creates a new pet
 	// (POST /pets)
-	AddPet(w http.ResponseWriter, r *http.Request)
+	AddPet(w http.ResponseWriter, r *http.Request) *Response
 	// Deletes a pet by ID
 	// (DELETE /pets/{id})
-	DeletePet(w http.ResponseWriter, r *http.Request, id int64)
+	DeletePet(w http.ResponseWriter, r *http.Request, id int64) *Response
 	// Returns a pet by ID
 	// (GET /pets/{id})
-	FindPetByID(w http.ResponseWriter, r *http.Request, id int64)
+	FindPetByID(w http.ResponseWriter, r *http.Request, id int64) *Response
 }
 
 // ServerInterfaceWrapper converts contexts to parameters.
@@ -209,7 +210,7 @@ func (siw *ServerInterfaceWrapper) FindPets(w http.ResponseWriter, r *http.Reque
 
 	if err := runtime.BindQueryParameter("form", true, false, "tags", r.URL.Query(), &params.Tags); err != nil {
 		err = fmt.Errorf("invalid format for parameter tags: %w", err)
-		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{err})
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{err, "tags"})
 		return
 	}
 
@@ -217,12 +218,15 @@ func (siw *ServerInterfaceWrapper) FindPets(w http.ResponseWriter, r *http.Reque
 
 	if err := runtime.BindQueryParameter("form", true, false, "limit", r.URL.Query(), &params.Limit); err != nil {
 		err = fmt.Errorf("invalid format for parameter limit: %w", err)
-		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{err})
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{err, "limit"})
 		return
 	}
 
 	var handler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.FindPets(w, r, params)
+		resp := siw.Handler.FindPets(w, r, params)
+		if resp != nil {
+			render.Render(w, r, resp)
+		}
 	})
 
 	handler(w, r.WithContext(ctx))
@@ -233,7 +237,10 @@ func (siw *ServerInterfaceWrapper) AddPet(w http.ResponseWriter, r *http.Request
 	ctx := r.Context()
 
 	var handler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.AddPet(w, r)
+		resp := siw.Handler.AddPet(w, r)
+		if resp != nil {
+			render.Render(w, r, resp)
+		}
 	})
 
 	handler(w, r.WithContext(ctx))
@@ -247,13 +254,15 @@ func (siw *ServerInterfaceWrapper) DeletePet(w http.ResponseWriter, r *http.Requ
 	var id int64
 
 	if err := runtime.BindStyledParameter("simple", false, "id", chi.URLParam(r, "id"), &id); err != nil {
-		err = fmt.Errorf("invalid format for parameter id: %w", err)
-		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{err})
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{err, "id"})
 		return
 	}
 
 	var handler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.DeletePet(w, r, id)
+		resp := siw.Handler.DeletePet(w, r, id)
+		if resp != nil {
+			render.Render(w, r, resp)
+		}
 	})
 
 	handler(w, r.WithContext(ctx))
@@ -267,36 +276,105 @@ func (siw *ServerInterfaceWrapper) FindPetByID(w http.ResponseWriter, r *http.Re
 	var id int64
 
 	if err := runtime.BindStyledParameter("simple", false, "id", chi.URLParam(r, "id"), &id); err != nil {
-		err = fmt.Errorf("invalid format for parameter id: %w", err)
-		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{err})
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{err, "id"})
 		return
 	}
 
 	var handler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.FindPetByID(w, r, id)
+		resp := siw.Handler.FindPetByID(w, r, id)
+		if resp != nil {
+			render.Render(w, r, resp)
+		}
 	})
 
 	handler(w, r.WithContext(ctx))
 }
 
 type UnescapedCookieParamError struct {
-	error
+	err       error
+	paramName string
 }
+
+// Error implements error.
+func (err UnescapedCookieParamError) Error() string {
+	return fmt.Sprintf("error unescaping cookie parameter %s: %v", err.paramName, err.err)
+}
+
+func (err UnescapedCookieParamError) Unwrap() error { return err.err }
+
 type UnmarshalingParamError struct {
-	error
+	err       error
+	paramName string
 }
+
+// Error implements error.
+func (err UnmarshalingParamError) Error() string {
+	return fmt.Sprintf("error unmarshaling parameter %s as JSON: %v", err.paramName, err.err)
+}
+
+func (err UnmarshalingParamError) Unwrap() error { return err.err }
+
 type RequiredParamError struct {
-	error
+	err       error
+	paramName string
 }
+
+// Error implements error.
+func (err RequiredParamError) Error() string {
+	if err.err == nil {
+		return fmt.Sprintf("query parameter %s is required, but not found", err.paramName)
+	} else {
+		return fmt.Sprintf("query parameter %s is required, but errored: %s", err.paramName, err.err)
+	}
+}
+
+func (err RequiredParamError) Unwrap() error { return err.err }
+
 type RequiredHeaderError struct {
-	error
+	paramName string
 }
+
+// Error implements error.
+func (err RequiredHeaderError) Error() string {
+	return fmt.Sprintf("header parameter %s is required, but not found", err.paramName)
+}
+
 type InvalidParamFormatError struct {
-	error
+	err       error
+	paramName string
 }
+
+// Error implements error.
+func (err InvalidParamFormatError) Error() string {
+	return fmt.Sprintf("invalid format for parameter %s: %v", err.paramName, err.err)
+}
+
+func (err InvalidParamFormatError) Unwrap() error { return err.err }
+
 type TooManyValuesForParamError struct {
-	error
+	NumValues int
+	paramName string
 }
+
+// Error implements error.
+func (err TooManyValuesForParamError) Error() string {
+	return fmt.Sprintf("expected one value for %s, got %d", err.paramName, err.NumValues)
+}
+
+// ParameterName is an interface that is implemented by error types that are
+// relevant to a specific parameter.
+type ParameterError interface {
+	error
+	// ParamName is the name of the parameter that the error is referring to.
+	ParamName() string
+}
+
+func (err UnescapedCookieParamError) ParamName() string  { return err.paramName }
+func (err UnmarshalingParamError) ParamName() string     { return err.paramName }
+func (err RequiredParamError) ParamName() string         { return err.paramName }
+func (err RequiredHeaderError) ParamName() string        { return err.paramName }
+func (err InvalidParamFormatError) ParamName() string    { return err.paramName }
+func (err TooManyValuesForParamError) ParamName() string { return err.paramName }
 
 type ServerOptions struct {
 	BaseURL          string

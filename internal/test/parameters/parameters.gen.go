@@ -15,7 +15,7 @@ import (
 	"path"
 	"strings"
 
-	"github.com/discord-gophers/goapi-gen/pkg/runtime"
+	"github.com/discord-gophers/goapi-gen/runtime"
 	"github.com/getkin/kin-openapi/openapi3"
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/render"
@@ -126,9 +126,10 @@ type GetQueryFormParams struct {
 
 // Response is a common response struct for all the API calls.
 // A Response object may be instantiated via functions for specific operation responses.
+// It may also be instantiated directly, for the purpose of responding with a single status code.
 type Response struct {
 	body        interface{}
-	statusCode  int
+	Code        int
 	contentType string
 }
 
@@ -136,13 +137,13 @@ type Response struct {
 // and status code based on the response definition.
 func (resp *Response) Render(w http.ResponseWriter, r *http.Request) error {
 	w.Header().Set("Content-Type", resp.contentType)
-	render.Status(r, resp.statusCode)
+	render.Status(r, resp.Code)
 	return nil
 }
 
 // Status is a builder method to override the default status code for a response.
-func (resp *Response) Status(statusCode int) *Response {
-	resp.statusCode = statusCode
+func (resp *Response) Status(code int) *Response {
+	resp.Code = code
 	return resp
 }
 
@@ -168,64 +169,64 @@ func (resp *Response) MarshalXML(e *xml.Encoder, start xml.StartElement) error {
 type ServerInterface interface {
 
 	// (GET /contentObject/{param})
-	GetContentObject(w http.ResponseWriter, r *http.Request, param ComplexObject)
+	GetContentObject(w http.ResponseWriter, r *http.Request, param ComplexObject) *Response
 
 	// (GET /cookie)
-	GetCookie(w http.ResponseWriter, r *http.Request, params GetCookieParams)
+	GetCookie(w http.ResponseWriter, r *http.Request, params GetCookieParams) *Response
 
 	// (GET /header)
-	GetHeader(w http.ResponseWriter, r *http.Request, params GetHeaderParams)
+	GetHeader(w http.ResponseWriter, r *http.Request, params GetHeaderParams) *Response
 
 	// (GET /labelExplodeArray/{.param*})
-	GetLabelExplodeArray(w http.ResponseWriter, r *http.Request, param []int32)
+	GetLabelExplodeArray(w http.ResponseWriter, r *http.Request, param []int32) *Response
 
 	// (GET /labelExplodeObject/{.param*})
-	GetLabelExplodeObject(w http.ResponseWriter, r *http.Request, param Object)
+	GetLabelExplodeObject(w http.ResponseWriter, r *http.Request, param Object) *Response
 
 	// (GET /labelNoExplodeArray/{.param})
-	GetLabelNoExplodeArray(w http.ResponseWriter, r *http.Request, param []int32)
+	GetLabelNoExplodeArray(w http.ResponseWriter, r *http.Request, param []int32) *Response
 
 	// (GET /labelNoExplodeObject/{.param})
-	GetLabelNoExplodeObject(w http.ResponseWriter, r *http.Request, param Object)
+	GetLabelNoExplodeObject(w http.ResponseWriter, r *http.Request, param Object) *Response
 
 	// (GET /matrixExplodeArray/{.id*})
-	GetMatrixExplodeArray(w http.ResponseWriter, r *http.Request, id []int32)
+	GetMatrixExplodeArray(w http.ResponseWriter, r *http.Request, id []int32) *Response
 
 	// (GET /matrixExplodeObject/{.id*})
-	GetMatrixExplodeObject(w http.ResponseWriter, r *http.Request, id Object)
+	GetMatrixExplodeObject(w http.ResponseWriter, r *http.Request, id Object) *Response
 
 	// (GET /matrixNoExplodeArray/{.id})
-	GetMatrixNoExplodeArray(w http.ResponseWriter, r *http.Request, id []int32)
+	GetMatrixNoExplodeArray(w http.ResponseWriter, r *http.Request, id []int32) *Response
 
 	// (GET /matrixNoExplodeObject/{.id})
-	GetMatrixNoExplodeObject(w http.ResponseWriter, r *http.Request, id Object)
+	GetMatrixNoExplodeObject(w http.ResponseWriter, r *http.Request, id Object) *Response
 
 	// (GET /passThrough/{param})
-	GetPassThrough(w http.ResponseWriter, r *http.Request, param string)
+	GetPassThrough(w http.ResponseWriter, r *http.Request, param string) *Response
 
 	// (GET /queryDeepObject)
-	GetDeepObject(w http.ResponseWriter, r *http.Request, params GetDeepObjectParams)
+	GetDeepObject(w http.ResponseWriter, r *http.Request, params GetDeepObjectParams) *Response
 
 	// (GET /queryForm)
-	GetQueryForm(w http.ResponseWriter, r *http.Request, params GetQueryFormParams)
+	GetQueryForm(w http.ResponseWriter, r *http.Request, params GetQueryFormParams) *Response
 
 	// (GET /simpleExplodeArray/{param*})
-	GetSimpleExplodeArray(w http.ResponseWriter, r *http.Request, param []int32)
+	GetSimpleExplodeArray(w http.ResponseWriter, r *http.Request, param []int32) *Response
 
 	// (GET /simpleExplodeObject/{param*})
-	GetSimpleExplodeObject(w http.ResponseWriter, r *http.Request, param Object)
+	GetSimpleExplodeObject(w http.ResponseWriter, r *http.Request, param Object) *Response
 
 	// (GET /simpleNoExplodeArray/{param})
-	GetSimpleNoExplodeArray(w http.ResponseWriter, r *http.Request, param []int32)
+	GetSimpleNoExplodeArray(w http.ResponseWriter, r *http.Request, param []int32) *Response
 
 	// (GET /simpleNoExplodeObject/{param})
-	GetSimpleNoExplodeObject(w http.ResponseWriter, r *http.Request, param Object)
+	GetSimpleNoExplodeObject(w http.ResponseWriter, r *http.Request, param Object) *Response
 
 	// (GET /simplePrimitive/{param})
-	GetSimplePrimitive(w http.ResponseWriter, r *http.Request, param int32)
+	GetSimplePrimitive(w http.ResponseWriter, r *http.Request, param int32) *Response
 
 	// (GET /startingWithNumber/{1param})
-	GetStartingWithNumber(w http.ResponseWriter, r *http.Request, n1param string)
+	GetStartingWithNumber(w http.ResponseWriter, r *http.Request, n1param string) *Response
 }
 
 // ServerInterfaceWrapper converts contexts to parameters.
@@ -243,13 +244,15 @@ func (siw *ServerInterfaceWrapper) GetContentObject(w http.ResponseWriter, r *ht
 	var param ComplexObject
 
 	if err := json.Unmarshal([]byte(chi.URLParam(r, "param")), &param); err != nil {
-		err = fmt.Errorf("error unmarshaling parameter 'param' as JSON: %w", err)
-		siw.ErrorHandlerFunc(w, r, &UnmarshalingParamError{err})
+		siw.ErrorHandlerFunc(w, r, &UnmarshalingParamError{err, "param"})
 		return
 	}
 
 	var handler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.GetContentObject(w, r, param)
+		resp := siw.Handler.GetContentObject(w, r, param)
+		if resp != nil {
+			render.Render(w, r, resp)
+		}
 	})
 
 	handler(w, r.WithContext(ctx))
@@ -265,8 +268,7 @@ func (siw *ServerInterfaceWrapper) GetCookie(w http.ResponseWriter, r *http.Requ
 	if cookie, err := r.Cookie("p"); err == nil {
 		var value int32
 		if err := runtime.BindStyledParameter("simple", false, "p", cookie.Value, &value); err != nil {
-			err = fmt.Errorf("invalid format for parameter p: %w", err)
-			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{err})
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{err, "p"})
 			return
 		}
 		params.P = &value
@@ -276,8 +278,7 @@ func (siw *ServerInterfaceWrapper) GetCookie(w http.ResponseWriter, r *http.Requ
 	if cookie, err := r.Cookie("ep"); err == nil {
 		var value int32
 		if err := runtime.BindStyledParameter("simple", true, "ep", cookie.Value, &value); err != nil {
-			err = fmt.Errorf("invalid format for parameter ep: %w", err)
-			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{err})
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{err, "ep"})
 			return
 		}
 		params.Ep = &value
@@ -287,8 +288,7 @@ func (siw *ServerInterfaceWrapper) GetCookie(w http.ResponseWriter, r *http.Requ
 	if cookie, err := r.Cookie("ea"); err == nil {
 		var value []int32
 		if err := runtime.BindStyledParameter("simple", true, "ea", cookie.Value, &value); err != nil {
-			err = fmt.Errorf("invalid format for parameter ea: %w", err)
-			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{err})
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{err, "ea"})
 			return
 		}
 		params.Ea = value
@@ -298,8 +298,7 @@ func (siw *ServerInterfaceWrapper) GetCookie(w http.ResponseWriter, r *http.Requ
 	if cookie, err := r.Cookie("a"); err == nil {
 		var value []int32
 		if err := runtime.BindStyledParameter("simple", false, "a", cookie.Value, &value); err != nil {
-			err = fmt.Errorf("invalid format for parameter a: %w", err)
-			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{err})
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{err, "a"})
 			return
 		}
 		params.A = value
@@ -309,8 +308,7 @@ func (siw *ServerInterfaceWrapper) GetCookie(w http.ResponseWriter, r *http.Requ
 	if cookie, err := r.Cookie("eo"); err == nil {
 		var value Object
 		if err := runtime.BindStyledParameter("simple", true, "eo", cookie.Value, &value); err != nil {
-			err = fmt.Errorf("invalid format for parameter eo: %w", err)
-			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{err})
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{err, "eo"})
 			return
 		}
 		params.Eo = &value
@@ -320,8 +318,7 @@ func (siw *ServerInterfaceWrapper) GetCookie(w http.ResponseWriter, r *http.Requ
 	if cookie, err := r.Cookie("o"); err == nil {
 		var value Object
 		if err := runtime.BindStyledParameter("simple", false, "o", cookie.Value, &value); err != nil {
-			err = fmt.Errorf("invalid format for parameter o: %w", err)
-			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{err})
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{err, "o"})
 			return
 		}
 		params.O = &value
@@ -333,15 +330,13 @@ func (siw *ServerInterfaceWrapper) GetCookie(w http.ResponseWriter, r *http.Requ
 		var decoded string
 		decoded, err := url.QueryUnescape(cookie.Value)
 		if err != nil {
-			err = fmt.Errorf("error unescaping cookie parameter 'co'")
-			siw.ErrorHandlerFunc(w, r, &UnescapedCookieParamError{err})
+			siw.ErrorHandlerFunc(w, r, &UnescapedCookieParamError{err, "co"})
 			return
 		}
 
 		err = json.Unmarshal([]byte(decoded), &value)
 		if err != nil {
-			err = fmt.Errorf("error unmarshaling parameter 'co' as JSON: %w", err)
-			siw.ErrorHandlerFunc(w, r, &UnmarshalingParamError{err})
+			siw.ErrorHandlerFunc(w, r, &UnmarshalingParamError{err, "co"})
 			return
 		}
 
@@ -352,8 +347,7 @@ func (siw *ServerInterfaceWrapper) GetCookie(w http.ResponseWriter, r *http.Requ
 	if cookie, err := r.Cookie("1s"); err == nil {
 		var value string
 		if err := runtime.BindStyledParameter("simple", true, "1s", cookie.Value, &value); err != nil {
-			err = fmt.Errorf("invalid format for parameter 1s: %w", err)
-			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{err})
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{err, "1s"})
 			return
 		}
 		params.N1s = &value
@@ -361,7 +355,10 @@ func (siw *ServerInterfaceWrapper) GetCookie(w http.ResponseWriter, r *http.Requ
 	}
 
 	var handler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.GetCookie(w, r, params)
+		resp := siw.Handler.GetCookie(w, r, params)
+		if resp != nil {
+			render.Render(w, r, resp)
+		}
 	})
 
 	handler(w, r.WithContext(ctx))
@@ -381,14 +378,12 @@ func (siw *ServerInterfaceWrapper) GetHeader(w http.ResponseWriter, r *http.Requ
 		var XPrimitive int32
 		n := len(valueList)
 		if n != 1 {
-			err := fmt.Errorf("expected one value for X-Primitive, got %d", n)
-			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{err})
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{n, "X-Primitive"})
 			return
 		}
 
 		if err := runtime.BindStyledParameterWithLocation("simple", false, "X-Primitive", runtime.ParamLocationHeader, valueList[0], &XPrimitive); err != nil {
-			err = fmt.Errorf("invalid format for parameter X-Primitive: %w", err)
-			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{err})
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{err, "X-Primitive"})
 			return
 		}
 
@@ -401,14 +396,12 @@ func (siw *ServerInterfaceWrapper) GetHeader(w http.ResponseWriter, r *http.Requ
 		var XPrimitiveExploded int32
 		n := len(valueList)
 		if n != 1 {
-			err := fmt.Errorf("expected one value for X-Primitive-Exploded, got %d", n)
-			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{err})
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{n, "X-Primitive-Exploded"})
 			return
 		}
 
 		if err := runtime.BindStyledParameterWithLocation("simple", true, "X-Primitive-Exploded", runtime.ParamLocationHeader, valueList[0], &XPrimitiveExploded); err != nil {
-			err = fmt.Errorf("invalid format for parameter X-Primitive-Exploded: %w", err)
-			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{err})
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{err, "X-Primitive-Exploded"})
 			return
 		}
 
@@ -421,14 +414,12 @@ func (siw *ServerInterfaceWrapper) GetHeader(w http.ResponseWriter, r *http.Requ
 		var XArrayExploded []int32
 		n := len(valueList)
 		if n != 1 {
-			err := fmt.Errorf("expected one value for X-Array-Exploded, got %d", n)
-			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{err})
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{n, "X-Array-Exploded"})
 			return
 		}
 
 		if err := runtime.BindStyledParameterWithLocation("simple", true, "X-Array-Exploded", runtime.ParamLocationHeader, valueList[0], &XArrayExploded); err != nil {
-			err = fmt.Errorf("invalid format for parameter X-Array-Exploded: %w", err)
-			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{err})
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{err, "X-Array-Exploded"})
 			return
 		}
 
@@ -441,14 +432,12 @@ func (siw *ServerInterfaceWrapper) GetHeader(w http.ResponseWriter, r *http.Requ
 		var XArray []int32
 		n := len(valueList)
 		if n != 1 {
-			err := fmt.Errorf("expected one value for X-Array, got %d", n)
-			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{err})
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{n, "X-Array"})
 			return
 		}
 
 		if err := runtime.BindStyledParameterWithLocation("simple", false, "X-Array", runtime.ParamLocationHeader, valueList[0], &XArray); err != nil {
-			err = fmt.Errorf("invalid format for parameter X-Array: %w", err)
-			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{err})
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{err, "X-Array"})
 			return
 		}
 
@@ -461,14 +450,12 @@ func (siw *ServerInterfaceWrapper) GetHeader(w http.ResponseWriter, r *http.Requ
 		var XObjectExploded Object
 		n := len(valueList)
 		if n != 1 {
-			err := fmt.Errorf("expected one value for X-Object-Exploded, got %d", n)
-			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{err})
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{n, "X-Object-Exploded"})
 			return
 		}
 
 		if err := runtime.BindStyledParameterWithLocation("simple", true, "X-Object-Exploded", runtime.ParamLocationHeader, valueList[0], &XObjectExploded); err != nil {
-			err = fmt.Errorf("invalid format for parameter X-Object-Exploded: %w", err)
-			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{err})
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{err, "X-Object-Exploded"})
 			return
 		}
 
@@ -481,14 +468,12 @@ func (siw *ServerInterfaceWrapper) GetHeader(w http.ResponseWriter, r *http.Requ
 		var XObject Object
 		n := len(valueList)
 		if n != 1 {
-			err := fmt.Errorf("expected one value for X-Object, got %d", n)
-			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{err})
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{n, "X-Object"})
 			return
 		}
 
 		if err := runtime.BindStyledParameterWithLocation("simple", false, "X-Object", runtime.ParamLocationHeader, valueList[0], &XObject); err != nil {
-			err = fmt.Errorf("invalid format for parameter X-Object: %w", err)
-			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{err})
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{err, "X-Object"})
 			return
 		}
 
@@ -501,14 +486,12 @@ func (siw *ServerInterfaceWrapper) GetHeader(w http.ResponseWriter, r *http.Requ
 		var XComplexObject ComplexObject
 		n := len(valueList)
 		if n != 1 {
-			err := fmt.Errorf("expected one value for X-Complex-Object, got %d", n)
-			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{err})
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{n, "X-Complex-Object"})
 			return
 		}
 
 		if err := json.Unmarshal([]byte(valueList[0]), &XComplexObject); err != nil {
-			err = fmt.Errorf("error unmarshaling parameter 'X-Complex-Object' as JSON: %w", err)
-			siw.ErrorHandlerFunc(w, r, &UnmarshalingParamError{err})
+			siw.ErrorHandlerFunc(w, r, &UnmarshalingParamError{err, "X-Complex-Object"})
 			return
 		}
 
@@ -521,14 +504,12 @@ func (siw *ServerInterfaceWrapper) GetHeader(w http.ResponseWriter, r *http.Requ
 		var N1StartingWithNumber string
 		n := len(valueList)
 		if n != 1 {
-			err := fmt.Errorf("expected one value for 1-Starting-With-Number, got %d", n)
-			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{err})
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{n, "1-Starting-With-Number"})
 			return
 		}
 
 		if err := runtime.BindStyledParameterWithLocation("simple", false, "1-Starting-With-Number", runtime.ParamLocationHeader, valueList[0], &N1StartingWithNumber); err != nil {
-			err = fmt.Errorf("invalid format for parameter 1-Starting-With-Number: %w", err)
-			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{err})
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{err, "1-Starting-With-Number"})
 			return
 		}
 
@@ -537,7 +518,10 @@ func (siw *ServerInterfaceWrapper) GetHeader(w http.ResponseWriter, r *http.Requ
 	}
 
 	var handler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.GetHeader(w, r, params)
+		resp := siw.Handler.GetHeader(w, r, params)
+		if resp != nil {
+			render.Render(w, r, resp)
+		}
 	})
 
 	handler(w, r.WithContext(ctx))
@@ -551,13 +535,15 @@ func (siw *ServerInterfaceWrapper) GetLabelExplodeArray(w http.ResponseWriter, r
 	var param []int32
 
 	if err := runtime.BindStyledParameter("label", true, "param", chi.URLParam(r, "param"), &param); err != nil {
-		err = fmt.Errorf("invalid format for parameter param: %w", err)
-		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{err})
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{err, "param"})
 		return
 	}
 
 	var handler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.GetLabelExplodeArray(w, r, param)
+		resp := siw.Handler.GetLabelExplodeArray(w, r, param)
+		if resp != nil {
+			render.Render(w, r, resp)
+		}
 	})
 
 	handler(w, r.WithContext(ctx))
@@ -571,13 +557,15 @@ func (siw *ServerInterfaceWrapper) GetLabelExplodeObject(w http.ResponseWriter, 
 	var param Object
 
 	if err := runtime.BindStyledParameter("label", true, "param", chi.URLParam(r, "param"), &param); err != nil {
-		err = fmt.Errorf("invalid format for parameter param: %w", err)
-		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{err})
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{err, "param"})
 		return
 	}
 
 	var handler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.GetLabelExplodeObject(w, r, param)
+		resp := siw.Handler.GetLabelExplodeObject(w, r, param)
+		if resp != nil {
+			render.Render(w, r, resp)
+		}
 	})
 
 	handler(w, r.WithContext(ctx))
@@ -591,13 +579,15 @@ func (siw *ServerInterfaceWrapper) GetLabelNoExplodeArray(w http.ResponseWriter,
 	var param []int32
 
 	if err := runtime.BindStyledParameter("label", false, "param", chi.URLParam(r, "param"), &param); err != nil {
-		err = fmt.Errorf("invalid format for parameter param: %w", err)
-		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{err})
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{err, "param"})
 		return
 	}
 
 	var handler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.GetLabelNoExplodeArray(w, r, param)
+		resp := siw.Handler.GetLabelNoExplodeArray(w, r, param)
+		if resp != nil {
+			render.Render(w, r, resp)
+		}
 	})
 
 	handler(w, r.WithContext(ctx))
@@ -611,13 +601,15 @@ func (siw *ServerInterfaceWrapper) GetLabelNoExplodeObject(w http.ResponseWriter
 	var param Object
 
 	if err := runtime.BindStyledParameter("label", false, "param", chi.URLParam(r, "param"), &param); err != nil {
-		err = fmt.Errorf("invalid format for parameter param: %w", err)
-		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{err})
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{err, "param"})
 		return
 	}
 
 	var handler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.GetLabelNoExplodeObject(w, r, param)
+		resp := siw.Handler.GetLabelNoExplodeObject(w, r, param)
+		if resp != nil {
+			render.Render(w, r, resp)
+		}
 	})
 
 	handler(w, r.WithContext(ctx))
@@ -631,13 +623,15 @@ func (siw *ServerInterfaceWrapper) GetMatrixExplodeArray(w http.ResponseWriter, 
 	var id []int32
 
 	if err := runtime.BindStyledParameter("matrix", true, "id", chi.URLParam(r, "id"), &id); err != nil {
-		err = fmt.Errorf("invalid format for parameter id: %w", err)
-		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{err})
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{err, "id"})
 		return
 	}
 
 	var handler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.GetMatrixExplodeArray(w, r, id)
+		resp := siw.Handler.GetMatrixExplodeArray(w, r, id)
+		if resp != nil {
+			render.Render(w, r, resp)
+		}
 	})
 
 	handler(w, r.WithContext(ctx))
@@ -651,13 +645,15 @@ func (siw *ServerInterfaceWrapper) GetMatrixExplodeObject(w http.ResponseWriter,
 	var id Object
 
 	if err := runtime.BindStyledParameter("matrix", true, "id", chi.URLParam(r, "id"), &id); err != nil {
-		err = fmt.Errorf("invalid format for parameter id: %w", err)
-		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{err})
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{err, "id"})
 		return
 	}
 
 	var handler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.GetMatrixExplodeObject(w, r, id)
+		resp := siw.Handler.GetMatrixExplodeObject(w, r, id)
+		if resp != nil {
+			render.Render(w, r, resp)
+		}
 	})
 
 	handler(w, r.WithContext(ctx))
@@ -671,13 +667,15 @@ func (siw *ServerInterfaceWrapper) GetMatrixNoExplodeArray(w http.ResponseWriter
 	var id []int32
 
 	if err := runtime.BindStyledParameter("matrix", false, "id", chi.URLParam(r, "id"), &id); err != nil {
-		err = fmt.Errorf("invalid format for parameter id: %w", err)
-		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{err})
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{err, "id"})
 		return
 	}
 
 	var handler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.GetMatrixNoExplodeArray(w, r, id)
+		resp := siw.Handler.GetMatrixNoExplodeArray(w, r, id)
+		if resp != nil {
+			render.Render(w, r, resp)
+		}
 	})
 
 	handler(w, r.WithContext(ctx))
@@ -691,13 +689,15 @@ func (siw *ServerInterfaceWrapper) GetMatrixNoExplodeObject(w http.ResponseWrite
 	var id Object
 
 	if err := runtime.BindStyledParameter("matrix", false, "id", chi.URLParam(r, "id"), &id); err != nil {
-		err = fmt.Errorf("invalid format for parameter id: %w", err)
-		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{err})
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{err, "id"})
 		return
 	}
 
 	var handler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.GetMatrixNoExplodeObject(w, r, id)
+		resp := siw.Handler.GetMatrixNoExplodeObject(w, r, id)
+		if resp != nil {
+			render.Render(w, r, resp)
+		}
 	})
 
 	handler(w, r.WithContext(ctx))
@@ -713,7 +713,10 @@ func (siw *ServerInterfaceWrapper) GetPassThrough(w http.ResponseWriter, r *http
 	param = chi.URLParam(r, "param")
 
 	var handler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.GetPassThrough(w, r, param)
+		resp := siw.Handler.GetPassThrough(w, r, param)
+		if resp != nil {
+			render.Render(w, r, resp)
+		}
 	})
 
 	handler(w, r.WithContext(ctx))
@@ -730,12 +733,15 @@ func (siw *ServerInterfaceWrapper) GetDeepObject(w http.ResponseWriter, r *http.
 
 	if err := runtime.BindQueryParameter("deepObject", true, true, "deepObj", r.URL.Query(), &params.DeepObj); err != nil {
 		err = fmt.Errorf("invalid format for parameter deepObj: %w", err)
-		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{err})
+		siw.ErrorHandlerFunc(w, r, &RequiredParamError{err, "deepObj"})
 		return
 	}
 
 	var handler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.GetDeepObject(w, r, params)
+		resp := siw.Handler.GetDeepObject(w, r, params)
+		if resp != nil {
+			render.Render(w, r, resp)
+		}
 	})
 
 	handler(w, r.WithContext(ctx))
@@ -752,7 +758,7 @@ func (siw *ServerInterfaceWrapper) GetQueryForm(w http.ResponseWriter, r *http.R
 
 	if err := runtime.BindQueryParameter("form", true, false, "ea", r.URL.Query(), &params.Ea); err != nil {
 		err = fmt.Errorf("invalid format for parameter ea: %w", err)
-		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{err})
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{err, "ea"})
 		return
 	}
 
@@ -760,7 +766,7 @@ func (siw *ServerInterfaceWrapper) GetQueryForm(w http.ResponseWriter, r *http.R
 
 	if err := runtime.BindQueryParameter("form", false, false, "a", r.URL.Query(), &params.A); err != nil {
 		err = fmt.Errorf("invalid format for parameter a: %w", err)
-		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{err})
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{err, "a"})
 		return
 	}
 
@@ -768,7 +774,7 @@ func (siw *ServerInterfaceWrapper) GetQueryForm(w http.ResponseWriter, r *http.R
 
 	if err := runtime.BindQueryParameter("form", true, false, "eo", r.URL.Query(), &params.Eo); err != nil {
 		err = fmt.Errorf("invalid format for parameter eo: %w", err)
-		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{err})
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{err, "eo"})
 		return
 	}
 
@@ -776,7 +782,7 @@ func (siw *ServerInterfaceWrapper) GetQueryForm(w http.ResponseWriter, r *http.R
 
 	if err := runtime.BindQueryParameter("form", false, false, "o", r.URL.Query(), &params.O); err != nil {
 		err = fmt.Errorf("invalid format for parameter o: %w", err)
-		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{err})
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{err, "o"})
 		return
 	}
 
@@ -784,7 +790,7 @@ func (siw *ServerInterfaceWrapper) GetQueryForm(w http.ResponseWriter, r *http.R
 
 	if err := runtime.BindQueryParameter("form", true, false, "ep", r.URL.Query(), &params.Ep); err != nil {
 		err = fmt.Errorf("invalid format for parameter ep: %w", err)
-		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{err})
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{err, "ep"})
 		return
 	}
 
@@ -792,7 +798,7 @@ func (siw *ServerInterfaceWrapper) GetQueryForm(w http.ResponseWriter, r *http.R
 
 	if err := runtime.BindQueryParameter("form", false, false, "p", r.URL.Query(), &params.P); err != nil {
 		err = fmt.Errorf("invalid format for parameter p: %w", err)
-		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{err})
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{err, "p"})
 		return
 	}
 
@@ -800,7 +806,7 @@ func (siw *ServerInterfaceWrapper) GetQueryForm(w http.ResponseWriter, r *http.R
 
 	if err := runtime.BindQueryParameter("form", true, false, "ps", r.URL.Query(), &params.Ps); err != nil {
 		err = fmt.Errorf("invalid format for parameter ps: %w", err)
-		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{err})
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{err, "ps"})
 		return
 	}
 
@@ -810,8 +816,7 @@ func (siw *ServerInterfaceWrapper) GetQueryForm(w http.ResponseWriter, r *http.R
 
 		var value ComplexObject
 		if err := json.Unmarshal([]byte(paramValue), &value); err != nil {
-			err = fmt.Errorf("error unmarshaling parameter 'co' as JSON: %w", err)
-			siw.ErrorHandlerFunc(w, r, &UnmarshalingParamError{err})
+			siw.ErrorHandlerFunc(w, r, &UnmarshalingParamError{err, "co"})
 			return
 		}
 		params.Co = &value
@@ -822,12 +827,15 @@ func (siw *ServerInterfaceWrapper) GetQueryForm(w http.ResponseWriter, r *http.R
 
 	if err := runtime.BindQueryParameter("form", true, false, "1s", r.URL.Query(), &params.N1s); err != nil {
 		err = fmt.Errorf("invalid format for parameter 1s: %w", err)
-		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{err})
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{err, "1s"})
 		return
 	}
 
 	var handler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.GetQueryForm(w, r, params)
+		resp := siw.Handler.GetQueryForm(w, r, params)
+		if resp != nil {
+			render.Render(w, r, resp)
+		}
 	})
 
 	handler(w, r.WithContext(ctx))
@@ -841,13 +849,15 @@ func (siw *ServerInterfaceWrapper) GetSimpleExplodeArray(w http.ResponseWriter, 
 	var param []int32
 
 	if err := runtime.BindStyledParameter("simple", true, "param", chi.URLParam(r, "param"), &param); err != nil {
-		err = fmt.Errorf("invalid format for parameter param: %w", err)
-		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{err})
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{err, "param"})
 		return
 	}
 
 	var handler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.GetSimpleExplodeArray(w, r, param)
+		resp := siw.Handler.GetSimpleExplodeArray(w, r, param)
+		if resp != nil {
+			render.Render(w, r, resp)
+		}
 	})
 
 	handler(w, r.WithContext(ctx))
@@ -861,13 +871,15 @@ func (siw *ServerInterfaceWrapper) GetSimpleExplodeObject(w http.ResponseWriter,
 	var param Object
 
 	if err := runtime.BindStyledParameter("simple", true, "param", chi.URLParam(r, "param"), &param); err != nil {
-		err = fmt.Errorf("invalid format for parameter param: %w", err)
-		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{err})
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{err, "param"})
 		return
 	}
 
 	var handler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.GetSimpleExplodeObject(w, r, param)
+		resp := siw.Handler.GetSimpleExplodeObject(w, r, param)
+		if resp != nil {
+			render.Render(w, r, resp)
+		}
 	})
 
 	handler(w, r.WithContext(ctx))
@@ -881,13 +893,15 @@ func (siw *ServerInterfaceWrapper) GetSimpleNoExplodeArray(w http.ResponseWriter
 	var param []int32
 
 	if err := runtime.BindStyledParameter("simple", false, "param", chi.URLParam(r, "param"), &param); err != nil {
-		err = fmt.Errorf("invalid format for parameter param: %w", err)
-		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{err})
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{err, "param"})
 		return
 	}
 
 	var handler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.GetSimpleNoExplodeArray(w, r, param)
+		resp := siw.Handler.GetSimpleNoExplodeArray(w, r, param)
+		if resp != nil {
+			render.Render(w, r, resp)
+		}
 	})
 
 	handler(w, r.WithContext(ctx))
@@ -901,13 +915,15 @@ func (siw *ServerInterfaceWrapper) GetSimpleNoExplodeObject(w http.ResponseWrite
 	var param Object
 
 	if err := runtime.BindStyledParameter("simple", false, "param", chi.URLParam(r, "param"), &param); err != nil {
-		err = fmt.Errorf("invalid format for parameter param: %w", err)
-		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{err})
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{err, "param"})
 		return
 	}
 
 	var handler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.GetSimpleNoExplodeObject(w, r, param)
+		resp := siw.Handler.GetSimpleNoExplodeObject(w, r, param)
+		if resp != nil {
+			render.Render(w, r, resp)
+		}
 	})
 
 	handler(w, r.WithContext(ctx))
@@ -921,13 +937,15 @@ func (siw *ServerInterfaceWrapper) GetSimplePrimitive(w http.ResponseWriter, r *
 	var param int32
 
 	if err := runtime.BindStyledParameter("simple", false, "param", chi.URLParam(r, "param"), &param); err != nil {
-		err = fmt.Errorf("invalid format for parameter param: %w", err)
-		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{err})
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{err, "param"})
 		return
 	}
 
 	var handler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.GetSimplePrimitive(w, r, param)
+		resp := siw.Handler.GetSimplePrimitive(w, r, param)
+		if resp != nil {
+			render.Render(w, r, resp)
+		}
 	})
 
 	handler(w, r.WithContext(ctx))
@@ -943,30 +961,100 @@ func (siw *ServerInterfaceWrapper) GetStartingWithNumber(w http.ResponseWriter, 
 	n1param = chi.URLParam(r, "1param")
 
 	var handler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.GetStartingWithNumber(w, r, n1param)
+		resp := siw.Handler.GetStartingWithNumber(w, r, n1param)
+		if resp != nil {
+			render.Render(w, r, resp)
+		}
 	})
 
 	handler(w, r.WithContext(ctx))
 }
 
 type UnescapedCookieParamError struct {
-	error
+	err       error
+	paramName string
 }
+
+// Error implements error.
+func (err UnescapedCookieParamError) Error() string {
+	return fmt.Sprintf("error unescaping cookie parameter %s: %v", err.paramName, err.err)
+}
+
+func (err UnescapedCookieParamError) Unwrap() error { return err.err }
+
 type UnmarshalingParamError struct {
-	error
+	err       error
+	paramName string
 }
+
+// Error implements error.
+func (err UnmarshalingParamError) Error() string {
+	return fmt.Sprintf("error unmarshaling parameter %s as JSON: %v", err.paramName, err.err)
+}
+
+func (err UnmarshalingParamError) Unwrap() error { return err.err }
+
 type RequiredParamError struct {
-	error
+	err       error
+	paramName string
 }
+
+// Error implements error.
+func (err RequiredParamError) Error() string {
+	if err.err == nil {
+		return fmt.Sprintf("query parameter %s is required, but not found", err.paramName)
+	} else {
+		return fmt.Sprintf("query parameter %s is required, but errored: %s", err.paramName, err.err)
+	}
+}
+
+func (err RequiredParamError) Unwrap() error { return err.err }
+
 type RequiredHeaderError struct {
-	error
+	paramName string
 }
+
+// Error implements error.
+func (err RequiredHeaderError) Error() string {
+	return fmt.Sprintf("header parameter %s is required, but not found", err.paramName)
+}
+
 type InvalidParamFormatError struct {
-	error
+	err       error
+	paramName string
 }
+
+// Error implements error.
+func (err InvalidParamFormatError) Error() string {
+	return fmt.Sprintf("invalid format for parameter %s: %v", err.paramName, err.err)
+}
+
+func (err InvalidParamFormatError) Unwrap() error { return err.err }
+
 type TooManyValuesForParamError struct {
-	error
+	NumValues int
+	paramName string
 }
+
+// Error implements error.
+func (err TooManyValuesForParamError) Error() string {
+	return fmt.Sprintf("expected one value for %s, got %d", err.paramName, err.NumValues)
+}
+
+// ParameterName is an interface that is implemented by error types that are
+// relevant to a specific parameter.
+type ParameterError interface {
+	error
+	// ParamName is the name of the parameter that the error is referring to.
+	ParamName() string
+}
+
+func (err UnescapedCookieParamError) ParamName() string  { return err.paramName }
+func (err UnmarshalingParamError) ParamName() string     { return err.paramName }
+func (err RequiredParamError) ParamName() string         { return err.paramName }
+func (err RequiredHeaderError) ParamName() string        { return err.paramName }
+func (err InvalidParamFormatError) ParamName() string    { return err.paramName }
+func (err TooManyValuesForParamError) ParamName() string { return err.paramName }
 
 type ServerOptions struct {
 	BaseURL          string

@@ -14,7 +14,7 @@ import (
 	"github.com/go-chi/chi/v5"
 
 	"github.com/discord-gophers/goapi-gen/examples/petstore-expanded/api"
-	"github.com/discord-gophers/goapi-gen/pkg/middleware"
+	"github.com/discord-gophers/goapi-gen/middleware"
 )
 
 func main() {
@@ -39,7 +39,7 @@ func main() {
 
 	// Use our validation middleware to check all requests against the
 	// OpenAPI schema.
-	r.Use(middleware.OapiRequestValidator(swagger))
+	r.Use(middleware.OAPIValidator(swagger))
 
 	// We now register our petStore above as the handler for the interface
 	api.Handler(petStore, api.WithRouter(r))

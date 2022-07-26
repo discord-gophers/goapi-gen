@@ -16,9 +16,7 @@ import (
 	"path"
 	"strings"
 
-	customAlias "github.com/discord-gophers/goapi-gen/internal/test/schemas/types/alias"
-	"github.com/discord-gophers/goapi-gen/internal/test/schemas/types/normal"
-	"github.com/discord-gophers/goapi-gen/pkg/runtime"
+	"github.com/discord-gophers/goapi-gen/runtime"
 	"github.com/getkin/kin-openapi/openapi3"
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/render"
@@ -48,12 +46,6 @@ type AnyType1 interface{}
 // This should be an interface{}
 type AnyType2 interface{}
 
-// CustomGoType defines model for CustomGoType.
-type CustomGoType normal.CustomGoType
-
-// CustomGoTypeWithAlias defines model for CustomGoTypeWithAlias.
-type CustomGoTypeWithAlias customAlias.CustomGoType
-
 // CustomStringType defines model for CustomStringType.
 type CustomStringType string
 
@@ -81,20 +73,20 @@ type EnumInObjInArrayVal struct {
 	value string
 }
 
-func (t EnumInObjInArrayVal) ToValue() string {
+func (t *EnumInObjInArrayVal) ToValue() string {
 	return t.value
 }
-func (t EnumInObjInArrayVal) MarshalJSON() ([]byte, error) {
+func (t *EnumInObjInArrayVal) MarshalJSON() ([]byte, error) {
 	return json.Marshal(t.value)
 }
-func (t EnumInObjInArrayVal) UnmarshalJSON(data []byte) error {
+func (t *EnumInObjInArrayVal) UnmarshalJSON(data []byte) error {
 	var value string
 	if err := json.Unmarshal(data, &value); err != nil {
 		return err
 	}
-	return nil
+	return t.FromValue(value)
 }
-func (t EnumInObjInArrayVal) FromValue(value string) error {
+func (t *EnumInObjInArrayVal) FromValue(value string) error {
 	switch value {
 
 	case EnumInObjInArrayValFirst.value:
@@ -120,16 +112,6 @@ type Issue9Params struct {
 	Foo string `json:"foo"`
 }
 
-// GetPr66Params defines parameters for GetPr66.
-type GetPr66Params struct {
-	Foo normal.CustomGoType `json:"foo"`
-}
-
-// PostPr66Params defines parameters for PostPr66.
-type PostPr66Params struct {
-	Bar normal.CustomGoType `json:"bar"`
-}
-
 // Issue185JSONRequestBody defines body for Issue185 for application/json ContentType.
 type Issue185JSONRequestBody Issue185JSONBody
 
@@ -143,9 +125,10 @@ type Issue9JSONRequestBody Issue9JSONBody
 
 // Response is a common response struct for all the API calls.
 // A Response object may be instantiated via functions for specific operation responses.
+// It may also be instantiated directly, for the purpose of responding with a single status code.
 type Response struct {
 	body        interface{}
-	statusCode  int
+	Code        int
 	contentType string
 }
 
@@ -153,13 +136,13 @@ type Response struct {
 // and status code based on the response definition.
 func (resp *Response) Render(w http.ResponseWriter, r *http.Request) error {
 	w.Header().Set("Content-Type", resp.contentType)
-	render.Status(r, resp.statusCode)
+	render.Status(r, resp.Code)
 	return nil
 }
 
 // Status is a builder method to override the default status code for a response.
-func (resp *Response) Status(statusCode int) *Response {
-	resp.statusCode = statusCode
+func (resp *Response) Status(code int) *Response {
+	resp.Code = code
 	return resp
 }
 
@@ -194,7 +177,7 @@ func EnsureEverythingIsReferencedJSON200Response(body struct {
 }) *Response {
 	return &Response{
 		body:        body,
-		statusCode:  200,
+		Code:        200,
 		contentType: "application/json",
 	}
 }
@@ -204,7 +187,7 @@ func EnsureEverythingIsReferencedJSON200Response(body struct {
 func Issue127JSON200Response(body GenericObject) *Response {
 	return &Response{
 		body:        body,
-		statusCode:  200,
+		Code:        200,
 		contentType: "application/json",
 	}
 }
@@ -214,7 +197,7 @@ func Issue127JSON200Response(body GenericObject) *Response {
 func Issue127XML200Response(body GenericObject) *Response {
 	return &Response{
 		body:        body,
-		statusCode:  200,
+		Code:        200,
 		contentType: "application/xml",
 	}
 }
@@ -224,7 +207,7 @@ func Issue127XML200Response(body GenericObject) *Response {
 func Issue127YAML200Response(body GenericObject) *Response {
 	return &Response{
 		body:        body,
-		statusCode:  200,
+		Code:        200,
 		contentType: "text/yaml",
 	}
 }
@@ -234,7 +217,7 @@ func Issue127YAML200Response(body GenericObject) *Response {
 func Issue127JSONDefaultResponse(body GenericObject) *Response {
 	return &Response{
 		body:        body,
-		statusCode:  200,
+		Code:        200,
 		contentType: "application/json",
 	}
 }
@@ -244,27 +227,7 @@ func Issue127JSONDefaultResponse(body GenericObject) *Response {
 func GetIssues375JSON200Response(body EnumInObjInArray) *Response {
 	return &Response{
 		body:        body,
-		statusCode:  200,
-		contentType: "application/json",
-	}
-}
-
-// GetPr66JSON200Response is a constructor method for a GetPr66 response.
-// A *Response is returned with the configured status code and content type from the spec.
-func GetPr66JSON200Response(body CustomGoType) *Response {
-	return &Response{
-		body:        body,
-		statusCode:  200,
-		contentType: "application/json",
-	}
-}
-
-// PostPr66JSON200Response is a constructor method for a PostPr66 response.
-// A *Response is returned with the configured status code and content type from the spec.
-func PostPr66JSON200Response(body CustomGoTypeWithAlias) *Response {
-	return &Response{
-		body:        body,
-		statusCode:  200,
+		Code:        200,
 		contentType: "application/json",
 	}
 }
@@ -273,34 +236,28 @@ func PostPr66JSON200Response(body CustomGoTypeWithAlias) *Response {
 type ServerInterface interface {
 
 	// (GET /ensure-everything-is-referenced)
-	EnsureEverythingIsReferenced(w http.ResponseWriter, r *http.Request)
+	EnsureEverythingIsReferenced(w http.ResponseWriter, r *http.Request) *Response
 
 	// (GET /issues/127)
-	Issue127(w http.ResponseWriter, r *http.Request)
+	Issue127(w http.ResponseWriter, r *http.Request) *Response
 
 	// (GET /issues/185)
-	Issue185(w http.ResponseWriter, r *http.Request)
+	Issue185(w http.ResponseWriter, r *http.Request) *Response
 
 	// (GET /issues/209/${str})
-	Issue209(w http.ResponseWriter, r *http.Request, str StringInPath)
+	Issue209(w http.ResponseWriter, r *http.Request, str StringInPath) *Response
 
 	// (GET /issues/30/{fallthrough})
-	Issue30(w http.ResponseWriter, r *http.Request, pFallthrough string)
+	Issue30(w http.ResponseWriter, r *http.Request, pFallthrough string) *Response
 
 	// (GET /issues/375)
-	GetIssues375(w http.ResponseWriter, r *http.Request)
+	GetIssues375(w http.ResponseWriter, r *http.Request) *Response
 
 	// (GET /issues/41/{1param})
-	Issue41(w http.ResponseWriter, r *http.Request, n1param N5startsWithNumber)
+	Issue41(w http.ResponseWriter, r *http.Request, n1param N5startsWithNumber) *Response
 
 	// (GET /issues/9)
-	Issue9(w http.ResponseWriter, r *http.Request, params Issue9Params)
-
-	// (GET /pr/66)
-	GetPr66(w http.ResponseWriter, r *http.Request, params GetPr66Params)
-
-	// (POST /pr/66)
-	PostPr66(w http.ResponseWriter, r *http.Request, params PostPr66Params)
+	Issue9(w http.ResponseWriter, r *http.Request, params Issue9Params) *Response
 }
 
 // ServerInterfaceWrapper converts contexts to parameters.
@@ -317,7 +274,10 @@ func (siw *ServerInterfaceWrapper) EnsureEverythingIsReferenced(w http.ResponseW
 	ctx = context.WithValue(ctx, AccessTokenScopes, []string{""})
 
 	var handler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.EnsureEverythingIsReferenced(w, r)
+		resp := siw.Handler.EnsureEverythingIsReferenced(w, r)
+		if resp != nil {
+			render.Render(w, r, resp)
+		}
 	})
 
 	handler(w, r.WithContext(ctx))
@@ -330,7 +290,10 @@ func (siw *ServerInterfaceWrapper) Issue127(w http.ResponseWriter, r *http.Reque
 	ctx = context.WithValue(ctx, AccessTokenScopes, []string{""})
 
 	var handler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.Issue127(w, r)
+		resp := siw.Handler.Issue127(w, r)
+		if resp != nil {
+			render.Render(w, r, resp)
+		}
 	})
 
 	handler(w, r.WithContext(ctx))
@@ -343,7 +306,10 @@ func (siw *ServerInterfaceWrapper) Issue185(w http.ResponseWriter, r *http.Reque
 	ctx = context.WithValue(ctx, AccessTokenScopes, []string{""})
 
 	var handler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.Issue185(w, r)
+		resp := siw.Handler.Issue185(w, r)
+		if resp != nil {
+			render.Render(w, r, resp)
+		}
 	})
 
 	handler(w, r.WithContext(ctx))
@@ -357,15 +323,17 @@ func (siw *ServerInterfaceWrapper) Issue209(w http.ResponseWriter, r *http.Reque
 	var str StringInPath
 
 	if err := runtime.BindStyledParameter("simple", false, "str", chi.URLParam(r, "str"), &str); err != nil {
-		err = fmt.Errorf("invalid format for parameter str: %w", err)
-		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{err})
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{err, "str"})
 		return
 	}
 
 	ctx = context.WithValue(ctx, AccessTokenScopes, []string{""})
 
 	var handler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.Issue209(w, r, str)
+		resp := siw.Handler.Issue209(w, r, str)
+		if resp != nil {
+			render.Render(w, r, resp)
+		}
 	})
 
 	handler(w, r.WithContext(ctx))
@@ -379,15 +347,17 @@ func (siw *ServerInterfaceWrapper) Issue30(w http.ResponseWriter, r *http.Reques
 	var pFallthrough string
 
 	if err := runtime.BindStyledParameter("simple", false, "fallthrough", chi.URLParam(r, "fallthrough"), &pFallthrough); err != nil {
-		err = fmt.Errorf("invalid format for parameter fallthrough: %w", err)
-		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{err})
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{err, "fallthrough"})
 		return
 	}
 
 	ctx = context.WithValue(ctx, AccessTokenScopes, []string{""})
 
 	var handler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.Issue30(w, r, pFallthrough)
+		resp := siw.Handler.Issue30(w, r, pFallthrough)
+		if resp != nil {
+			render.Render(w, r, resp)
+		}
 	})
 
 	handler(w, r.WithContext(ctx))
@@ -400,7 +370,10 @@ func (siw *ServerInterfaceWrapper) GetIssues375(w http.ResponseWriter, r *http.R
 	ctx = context.WithValue(ctx, AccessTokenScopes, []string{""})
 
 	var handler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.GetIssues375(w, r)
+		resp := siw.Handler.GetIssues375(w, r)
+		if resp != nil {
+			render.Render(w, r, resp)
+		}
 	})
 
 	handler(w, r.WithContext(ctx))
@@ -414,15 +387,17 @@ func (siw *ServerInterfaceWrapper) Issue41(w http.ResponseWriter, r *http.Reques
 	var n1param N5startsWithNumber
 
 	if err := runtime.BindStyledParameter("simple", false, "1param", chi.URLParam(r, "1param"), &n1param); err != nil {
-		err = fmt.Errorf("invalid format for parameter 1param: %w", err)
-		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{err})
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{err, "1param"})
 		return
 	}
 
 	ctx = context.WithValue(ctx, AccessTokenScopes, []string{""})
 
 	var handler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.Issue41(w, r, n1param)
+		resp := siw.Handler.Issue41(w, r, n1param)
+		if resp != nil {
+			render.Render(w, r, resp)
+		}
 	})
 
 	handler(w, r.WithContext(ctx))
@@ -441,83 +416,105 @@ func (siw *ServerInterfaceWrapper) Issue9(w http.ResponseWriter, r *http.Request
 
 	if err := runtime.BindQueryParameter("form", true, true, "foo", r.URL.Query(), &params.Foo); err != nil {
 		err = fmt.Errorf("invalid format for parameter foo: %w", err)
-		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{err})
+		siw.ErrorHandlerFunc(w, r, &RequiredParamError{err, "foo"})
 		return
 	}
 
 	var handler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.Issue9(w, r, params)
-	})
-
-	handler(w, r.WithContext(ctx))
-}
-
-// GetPr66 operation middleware
-func (siw *ServerInterfaceWrapper) GetPr66(w http.ResponseWriter, r *http.Request) {
-	ctx := r.Context()
-
-	ctx = context.WithValue(ctx, AccessTokenScopes, []string{""})
-
-	// Parameter object where we will unmarshal all parameters from the context
-	var params GetPr66Params
-
-	// ------------- Required query parameter "foo" -------------
-
-	if err := runtime.BindQueryParameter("form", true, true, "foo", r.URL.Query(), &params.Foo); err != nil {
-		err = fmt.Errorf("invalid format for parameter foo: %w", err)
-		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{err})
-		return
-	}
-
-	var handler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.GetPr66(w, r, params)
-	})
-
-	handler(w, r.WithContext(ctx))
-}
-
-// PostPr66 operation middleware
-func (siw *ServerInterfaceWrapper) PostPr66(w http.ResponseWriter, r *http.Request) {
-	ctx := r.Context()
-
-	ctx = context.WithValue(ctx, AccessTokenScopes, []string{""})
-
-	// Parameter object where we will unmarshal all parameters from the context
-	var params PostPr66Params
-
-	// ------------- Required query parameter "bar" -------------
-
-	if err := runtime.BindQueryParameter("form", true, true, "bar", r.URL.Query(), &params.Bar); err != nil {
-		err = fmt.Errorf("invalid format for parameter bar: %w", err)
-		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{err})
-		return
-	}
-
-	var handler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.PostPr66(w, r, params)
+		resp := siw.Handler.Issue9(w, r, params)
+		if resp != nil {
+			render.Render(w, r, resp)
+		}
 	})
 
 	handler(w, r.WithContext(ctx))
 }
 
 type UnescapedCookieParamError struct {
-	error
+	err       error
+	paramName string
 }
+
+// Error implements error.
+func (err UnescapedCookieParamError) Error() string {
+	return fmt.Sprintf("error unescaping cookie parameter %s: %v", err.paramName, err.err)
+}
+
+func (err UnescapedCookieParamError) Unwrap() error { return err.err }
+
 type UnmarshalingParamError struct {
-	error
+	err       error
+	paramName string
 }
+
+// Error implements error.
+func (err UnmarshalingParamError) Error() string {
+	return fmt.Sprintf("error unmarshaling parameter %s as JSON: %v", err.paramName, err.err)
+}
+
+func (err UnmarshalingParamError) Unwrap() error { return err.err }
+
 type RequiredParamError struct {
-	error
+	err       error
+	paramName string
 }
+
+// Error implements error.
+func (err RequiredParamError) Error() string {
+	if err.err == nil {
+		return fmt.Sprintf("query parameter %s is required, but not found", err.paramName)
+	} else {
+		return fmt.Sprintf("query parameter %s is required, but errored: %s", err.paramName, err.err)
+	}
+}
+
+func (err RequiredParamError) Unwrap() error { return err.err }
+
 type RequiredHeaderError struct {
-	error
+	paramName string
 }
+
+// Error implements error.
+func (err RequiredHeaderError) Error() string {
+	return fmt.Sprintf("header parameter %s is required, but not found", err.paramName)
+}
+
 type InvalidParamFormatError struct {
-	error
+	err       error
+	paramName string
 }
+
+// Error implements error.
+func (err InvalidParamFormatError) Error() string {
+	return fmt.Sprintf("invalid format for parameter %s: %v", err.paramName, err.err)
+}
+
+func (err InvalidParamFormatError) Unwrap() error { return err.err }
+
 type TooManyValuesForParamError struct {
-	error
+	NumValues int
+	paramName string
 }
+
+// Error implements error.
+func (err TooManyValuesForParamError) Error() string {
+	return fmt.Sprintf("expected one value for %s, got %d", err.paramName, err.NumValues)
+}
+
+// ParameterName is an interface that is implemented by error types that are
+// relevant to a specific parameter.
+type ParameterError interface {
+	error
+	// ParamName is the name of the parameter that the error is referring to.
+	ParamName() string
+}
+
+func (err UnescapedCookieParamError) ParamName() string  { return err.paramName }
+func (err UnmarshalingParamError) ParamName() string     { return err.paramName }
+func (err RequiredParamError) ParamName() string         { return err.paramName }
+func (err RequiredHeaderError) ParamName() string        { return err.paramName }
+func (err InvalidParamFormatError) ParamName() string    { return err.paramName }
+func (err TooManyValuesForParamError) ParamName() string { return err.paramName }
 
 type ServerOptions struct {
 	BaseURL          string
@@ -559,8 +556,6 @@ func Handler(si ServerInterface, opts ...ServerOption) http.Handler {
 		r.Get("/issues/375", wrapper.GetIssues375)
 		r.Get("/issues/41/{1param}", wrapper.Issue41)
 		r.Get("/issues/9", wrapper.Issue9)
-		r.Get("/pr/66", wrapper.GetPr66)
-		r.Post("/pr/66", wrapper.PostPr66)
 
 	})
 	return r
@@ -599,30 +594,27 @@ func WithErrorHandler(handler func(w http.ResponseWriter, r *http.Request, err e
 // Base64 encoded, gzipped, json marshaled Swagger object
 var swaggerSpec = []string{
 
-	"H4sIAAAAAAAC/+xYT2/buBL/KgRb4F1ky0nbtPEtr+gr8oBtgyZAD3EOtDi22EgkS46SCIa++2JIybJj",
-	"2dtsUuxlc7Ekcv79ZvibYVY8M6U1GjR6Pl1xK5woAcGFt0t0Si/P9YXAnN4l+Mwpi8poPuVnzId1ZgXm",
-	"bC3JE65omb7yhGtRAp9yj7Tg4GelHEg+RVdBwn2WQylINda23ab0kjdN0y0GR95donDovyvMv1TlHNyu",
-	"N1e58iyKMLLJfBBh9wpzJpiOYklnyMx/QIa8SfiZrq9qC0d8uurfjgfCbVeYA+vAE2JM6JqRwvFMz3T0",
-	"IDdVIdkcmNBMaQS3EBmsmpkmWx8rj6b8bK6CE4+jTvjDaGlG2C6q0hqHfMqXCvNqPs5MmUrlM+PkaGls",
-	"Ds6nSyOsGi1Bp8GWFkWK4DFtsUtJl0+1caUo+uC33Gge+UUgnxUqAn/QQRF38SxIR5nkBd0WrcbDXsci",
-	"7RBdUKi4dqqX3g4BHtCJEYqlj0KGT/lcuKD2k67Kc/11/uNcnzkn6pALhDIeEGcsOFQQ3u5EQT+gq5JP",
-	"r/lCOY884R4yoyW/SXbKeqD+2g8imGoS/hk0OJV9jRv6HPQSX6qiEPMCLrZ82fbMhLKN7j1yIlkvnmnZ",
-	"6aJ9ev0cT+eOXH98V/sXn6Z0S+t1/zys72YHvyagXTmF9SUVT4xeZBl4P0JzC5re5yAcuP91tfH/71ej",
-	"WCgs7mRh53imeUs7ZCIK9RWUI9rITEovzAADgUeWCQ+eLYxjd8IpU3mmvK/Cp0pLZu7AMVQljNlFAcID",
-	"E1IywbCTJdGZJl6ZV0u2UA8go1uokECMVi7B3QXX7sD5aP1oPBlPYnJBC6v4lL8ZT8ZHPAlMHGBJQfvK",
-	"wQjuwNWYK70cKT9ysAAHOot5XQLuIVfQ0hqlkcGD8uiZNwxzgazvICwTmqgvcyAQJFOaYa78THsLGRNa",
-	"Mm2QNlhXaZAhLipaQWbOJZ/yT8HBT2v/zv233juqCW+N9jHJx5MJ/WRGI+jgtLC2UFnQlv7wJqS+bzHb",
-	"B0T0tM9fO1jwKX+V9qGsqWjdHpqkkzn+RZljkskGSOqQ7A6pDZBG/Et4GmsrPTp+vzd1f4hbYAQqq7Sv",
-	"LHEzSBZAe8DQvDyTRv8HmXUApUXW7wqr44E0nZNdsvrMlBwCYpsHKdxNXQ9l8RxVFHxaCncrzb1+tqJa",
-	"PMcbUiNhIaoCfyN4LxTx48r78G4/adQW2JLkQwTsPgfNutaTdvTO+mPJhAPW9Yv9ZffhXdsdwON/jaxf",
-	"DLSBvhqj3ahxcm8TgOPJafp65dE1e3H4mEN265la9DNyDFVCVogegqIeDvh4csp3fUi2ZvXr4cj6LenW",
-	"LN/cbITwZpKuFqIoMHemWubNbgTfwFPDkewW6nvj5OaYax2ELkVkTy2PAAwDeEscLSQDcb2Z/EpYA3eJ",
-	"DWefdKfYCvr9/sKlAbBNTlu5wneFTKx4rzKgdGIOjEa/sK40TfyRoWf6PldZ3n73SgIzC1oOQ95QZX8G",
-	"DJh48us3kurObLtzot8epaujkIP9FX3RpWjjpkUXwXDXWt+0BlL+No4jf5XgaP9gbg8FuXtbbJqbg6f4",
-	"dP/hLRRojCfXh4bIlM6Mc5BhUdNzUUmQYeJrOSnCMDeyppFnpvt493La6R5Yflbg6o3CN+ZpBf+3ebJt",
-	"SptIfG2ZO0TG97CidenJyeExUvlu3iXMbFUUa+BenZzsORwX7uTkd2D0T125H9Xjyx7yx7ZCMq3xL5eR",
-	"C+OfkBK6WP+bkoF/sDRr9u3usAHD7dvr9Q15Fhpwi3HlivY6Ok1TeBClLYBwobb+ZwAAAP//VWIshNET",
-	"AAA=",
+	"H4sIAAAAAAAC/7RX0W/buA/+Vwj9BvxenDjtNmzNW2/YDT3gtmItsIemD4rNxFptypPoNkaQ//1AyamT",
+	"xelt160vjS1R5PeR/ESvVWar2hISezVdq1o7XSGjC09X7AwtL+hScyHPOfrMmZqNJTVV5+DDOtSaC3i0",
+	"VIkysixvVaJIV6imyrMsOPzWGIe5mrJrMFE+K7DScjS3dbfN0FJtNpvtYgjk9RVrx/6L4eJjU83RHUZz",
+	"XRgP0QTEJ/hgAg+GC9BA0SzZOrLzr5ix2iTqnNrrtsYTNV33T6cDcLsVcFg79MIYaGpBDhzPaEYxgsI2",
+	"ZQ5zBE1giNEtdIbrzYzE17vGs60irdchkLVaWFdpVlOVhcU+xI6LRK1GSzvCFTs9Yr300ciqqZprp4Sp",
+	"99RUF/Rp/vWCzp3TrewwjFVMqbM1OjYYnu51Kf+QmkpNb9TCOM8qUR4zS7m6TQ4SMcBY90IHV5tEfUBC",
+	"Z7JPcUOfzN7iY1OWel7i5V4s+5HZQHQM77sgksfFc8q3Z8k+evwd6+nAri+49fHFnzt079Sb/vfwebcH",
+	"/G0C240z3F5JuUb0OsvQ+xHbOyR5nqN26P7c1sZfX65HsVAg7oSwczwj1TWKuIhGfQUVzHXsJUMLO9Az",
+	"6Bky7dHDwjq4187YxoPxvgmvGsrB3qMDNhWO4bJE7RF0noMG3tqK6YykE+bNEhZmhXkMiw0LidHLFbr7",
+	"ENo9Oh+9n4wn40lMLpKujZqql+PJ+EQlQTsCLSmSbxyO8B5dy4Wh5cj4kcMFOqQs5nWJfEQOkPLaGmLA",
+	"lfHswVvgQjP0mgeZJmnWzKFmzMEQcGH8jHyNGWjKgSzLhto1hHnAJUWrxc1FrqbqfQjw/WN8F/5zH53U",
+	"hK8t+Zjk08lE/mWWGCkEreu6NFk4Lf3qbUh9L4r7DaJ7oVIvHC7UVP0v7aGknV6mj4K2SbY2pz9ocyo2",
+	"2YBIPWV7IGoDohH/EpXG2kpPTt8cTd3f+g5BSIWGfFPX1klmAmkrDnLrIbf0f4baIVY1Q78rrI4H0nQh",
+	"fsXrM1PyFBH7Oihwd89aVeVzjhLwaaXdXW4f6NkHtfo50cgxOS50U/JvJO8XIf6+8t6+Pi4abY2wFPuA",
+	"AB4KJNhePelW3qFvS9AOYXtfHC+7t6+72wE9/2Hz9peRNnCvRrQ7NS7h7RJwOjlLX6w9u81RHt4VmN15",
+	"MIt+qotQc8xK3VNQtsOATydn6jCGZG+6vBlG1m9J96bPze0OhJeTdL3QZcmFs82y2Bwi+IxeLpwc7rB9",
+	"sC7fHcxqh+GWErGXK08IDCNjJxwdJQO4Xk5+BNbA9LsT7E9NwXug3xwvXBkAu+R0lav9tpBFFR9MhpJO",
+	"LhBk9AvrhmRGjQo9o4fCZEX33pscwS5kOQx5Q5X9ATlw4iWu3yiqB7PtQUe/OknXJyEHxyv6cpuinW8D",
+	"+XQJXweP3wYDKX8Vx5F/S3D0/2RunwJ5+H2z2dw+2cVnx5u3NEgcO9eHCxEMZdY5zLhs5XfZ5JiHia/T",
+	"pEjD3OatjDwz6vEe1bSzI7R8a9C1O4Vv7c8V/H/Wye5S2mXiU6fcAZkaUsWdWTxA2J/Cb24lniAkHcTG",
+	"ld1YPU1TXOmqLnGc2Urk6Z8AAAD//7XAlZxLDwAA",
 }
 
 // GetSwagger returns the content of the embedded swagger specification file

@@ -1,6 +1,7 @@
 package server
 
 import (
+	"errors"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -18,9 +19,10 @@ var noopMiddlewares = map[string]func(http.Handler) http.Handler{
 func TestParameters(t *testing.T) {
 	m := ServerInterfaceMock{}
 
-	m.CreateResource2Func = func(w http.ResponseWriter, r *http.Request, inlineArgument int, params CreateResource2Params) {
+	m.CreateResource2Func = func(w http.ResponseWriter, r *http.Request, inlineArgument int, params CreateResource2Params) *Response {
 		assert.Equal(t, 99, *params.InlineQueryArgument)
 		assert.Equal(t, 1, inlineArgument)
+		return nil
 	}
 
 	h := Handler(&m, WithMiddlewares(noopMiddlewares))
@@ -39,9 +41,8 @@ func TestErrorHandlerFunc(t *testing.T) {
 		WithMiddlewares(noopMiddlewares),
 		WithErrorHandler(func(w http.ResponseWriter, r *http.Request, err error) {
 			w.Header().Set("Content-Type", "application/json")
-			// FIXME This should likely return a RequiredParamError, however due to binding it never does...
-			// var requiredParamError *RequiredParamError
-			// assert.True(t, errors.As(err, &requiredParamError))
+			var requiredParamError *RequiredParamError
+			assert.True(t, errors.As(err, &requiredParamError))
 		}))
 
 	s := httptest.NewServer(h)
@@ -65,7 +66,7 @@ func TestOmitMiddlewares(t *testing.T) {
 
 func TestMiddlewareCalled(t *testing.T) {
 	m := ServerInterfaceMock{}
-	m.GetWithTaggedMiddlewareFunc = func(w http.ResponseWriter, r *http.Request) {}
+	m.GetWithTaggedMiddlewareFunc = func(w http.ResponseWriter, r *http.Request) *Response { return nil }
 
 	called := false
 	mw := map[string]func(http.Handler) http.Handler{
@@ -88,7 +89,7 @@ func TestMiddlewareCalled(t *testing.T) {
 
 func TestMiddlewareCalledWithOrder(t *testing.T) {
 	m := ServerInterfaceMock{}
-	m.PostWithTaggedMiddlewareFunc = func(w http.ResponseWriter, r *http.Request) {}
+	m.PostWithTaggedMiddlewareFunc = func(w http.ResponseWriter, r *http.Request) *Response { return nil }
 
 	var order []string
 	mw := map[string]func(http.Handler) http.Handler{

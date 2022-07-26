@@ -21,7 +21,7 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/discord-gophers/goapi-gen/pkg/types"
+	"github.com/discord-gophers/goapi-gen/types"
 )
 
 // BindStringToObject takes a string, and attempts to assign it to the

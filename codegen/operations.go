@@ -350,22 +350,6 @@ func (r RequestBodyDefinition) TypeDef(opID string) *TypeDefinition {
 	}
 }
 
-// CustomType returns if body is a custom inline type, or pre-defined.
-// TODO: clean up the templates code, it can be simpler.
-func (r RequestBodyDefinition) CustomType() bool {
-	return r.Schema.RefType == ""
-}
-
-// Suffix returns "With{r.nameTag}Body"
-// Operation DoFoo would be suffixed with DoFooWithXMLBody.
-func (r RequestBodyDefinition) Suffix() string {
-	// The default response is never suffixed.
-	if r.Default {
-		return ""
-	}
-	return "With" + r.NameTag + "Body"
-}
-
 // FilterParameterDefinitionByType returns params which match the the type with
 // in.
 func FilterParameterDefinitionByType(params []ParameterDefinition, in string) []ParameterDefinition {

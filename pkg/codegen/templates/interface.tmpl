@@ -1,7 +1,0 @@
-// ServerInterface represents all server handlers.
-type ServerInterface interface {
-	{{range .}}{{.SummaryAsComment }}
-	// ({{.Method}} {{.Path}})
-	{{.OperationID}}(w http.ResponseWriter, r *http.Request{{genParamArgs .PathParams}}{{if .RequiresParamObject}}, params {{.OperationID}}Params{{end}})
-	{{end}}
-}

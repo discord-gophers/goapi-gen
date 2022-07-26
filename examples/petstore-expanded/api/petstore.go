@@ -30,7 +30,7 @@ func NewPetStore() *PetStore {
 const petNotFoundMsg = "Could not find pet with ID %d"
 
 // Here, we implement all of the handlers in the ServerInterface
-func (p *PetStore) FindPets(w http.ResponseWriter, r *http.Request, params FindPetsParams) {
+func (p *PetStore) FindPets(w http.ResponseWriter, r *http.Request, params FindPetsParams) *Response {
 	p.Lock.Lock()
 	defer p.Lock.Unlock()
 
@@ -58,18 +58,14 @@ func (p *PetStore) FindPets(w http.ResponseWriter, r *http.Request, params FindP
 		}
 	}
 
-	render.Render(w, r, FindPetsJSON200Response(result))
+	return FindPetsJSON200Response(result)
 }
 
-func (p *PetStore) AddPet(w http.ResponseWriter, r *http.Request) {
+func (p *PetStore) AddPet(w http.ResponseWriter, r *http.Request) *Response {
 	// We expect a NewPet object in the request body.
 	var newPet AddPetJSONRequestBody
 	if err := render.Bind(r, &newPet); err != nil {
-		render.Render(
-			w, r,
-			AddPetJSONDefaultResponse(Error{"Invalid format for NewPet"}).Status(http.StatusBadRequest),
-		)
-		return
+		return AddPetJSONDefaultResponse(Error{"Invalid format for NewPet"}).Status(http.StatusBadRequest)
 	}
 
 	// We now have a pet, let's add it to our "database".
@@ -89,38 +85,30 @@ func (p *PetStore) AddPet(w http.ResponseWriter, r *http.Request) {
 	p.Pets[pet.ID] = pet
 
 	// Now, we have to return the NewPet
-	render.Render(w, r, AddPetJSON201Response(pet))
+	return AddPetJSON201Response(pet)
 }
 
-func (p *PetStore) FindPetByID(w http.ResponseWriter, r *http.Request, id int64) {
+func (p *PetStore) FindPetByID(w http.ResponseWriter, r *http.Request, id int64) *Response {
 	p.Lock.Lock()
 	defer p.Lock.Unlock()
 
 	pet, found := p.Pets[id]
 	if !found {
-		render.Render(
-			w, r,
-			FindPetByIDJSONDefaultResponse(Error{fmt.Sprintf(petNotFoundMsg, id)}).Status(http.StatusNotFound),
-		)
-		return
+		return FindPetByIDJSONDefaultResponse(Error{fmt.Sprintf(petNotFoundMsg, id)}).Status(http.StatusNotFound)
 	}
 
-	render.Render(w, r, FindPetByIDJSON200Response(pet))
+	return FindPetByIDJSON200Response(pet)
 }
 
-func (p *PetStore) DeletePet(w http.ResponseWriter, r *http.Request, id int64) {
+func (p *PetStore) DeletePet(w http.ResponseWriter, r *http.Request, id int64) *Response {
 	p.Lock.Lock()
 	defer p.Lock.Unlock()
 
 	_, found := p.Pets[id]
 	if !found {
-		render.Render(
-			w, r,
-			DeletePetJSONDefaultResponse(Error{fmt.Sprintf(petNotFoundMsg, id)}).Status(http.StatusNotFound),
-		)
-		return
+		return DeletePetJSONDefaultResponse(Error{fmt.Sprintf(petNotFoundMsg, id)}).Status(http.StatusNotFound)
 	}
 	delete(p.Pets, int64(id))
 
-	w.WriteHeader(http.StatusNoContent)
+	return &Response{Code: http.StatusNoContent}
 }
