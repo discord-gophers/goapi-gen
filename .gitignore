@@ -3,3 +3,4 @@
 .vscode/
 coverage.out
 goapi-gen
+dist/

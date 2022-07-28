@@ -27,7 +27,7 @@ import (
 	"github.com/urfave/cli/v2"
 )
 
-var Version = "v0.0.1-alpha"
+var Version = "develop"
 
 const (
 	PackageKey        = "package"
