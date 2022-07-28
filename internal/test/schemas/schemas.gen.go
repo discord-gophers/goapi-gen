@@ -320,7 +320,11 @@ func (siw *ServerInterfaceWrapper) EnsureEverythingIsReferenced(w http.ResponseW
 	var handler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		resp := siw.Handler.EnsureEverythingIsReferenced(w, r)
 		if resp != nil {
-			render.Render(w, r, resp)
+			if resp.body != nil {
+				render.Render(w, r, resp)
+			} else {
+				w.WriteHeader(resp.Code)
+			}
 		}
 	})
 
@@ -336,7 +340,11 @@ func (siw *ServerInterfaceWrapper) Issue127(w http.ResponseWriter, r *http.Reque
 	var handler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		resp := siw.Handler.Issue127(w, r)
 		if resp != nil {
-			render.Render(w, r, resp)
+			if resp.body != nil {
+				render.Render(w, r, resp)
+			} else {
+				w.WriteHeader(resp.Code)
+			}
 		}
 	})
 
@@ -352,7 +360,11 @@ func (siw *ServerInterfaceWrapper) Issue185(w http.ResponseWriter, r *http.Reque
 	var handler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		resp := siw.Handler.Issue185(w, r)
 		if resp != nil {
-			render.Render(w, r, resp)
+			if resp.body != nil {
+				render.Render(w, r, resp)
+			} else {
+				w.WriteHeader(resp.Code)
+			}
 		}
 	})
 
@@ -376,7 +388,11 @@ func (siw *ServerInterfaceWrapper) Issue209(w http.ResponseWriter, r *http.Reque
 	var handler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		resp := siw.Handler.Issue209(w, r, str)
 		if resp != nil {
-			render.Render(w, r, resp)
+			if resp.body != nil {
+				render.Render(w, r, resp)
+			} else {
+				w.WriteHeader(resp.Code)
+			}
 		}
 	})
 
@@ -400,7 +416,11 @@ func (siw *ServerInterfaceWrapper) Issue30(w http.ResponseWriter, r *http.Reques
 	var handler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		resp := siw.Handler.Issue30(w, r, pFallthrough)
 		if resp != nil {
-			render.Render(w, r, resp)
+			if resp.body != nil {
+				render.Render(w, r, resp)
+			} else {
+				w.WriteHeader(resp.Code)
+			}
 		}
 	})
 
@@ -416,7 +436,11 @@ func (siw *ServerInterfaceWrapper) GetIssues375(w http.ResponseWriter, r *http.R
 	var handler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		resp := siw.Handler.GetIssues375(w, r)
 		if resp != nil {
-			render.Render(w, r, resp)
+			if resp.body != nil {
+				render.Render(w, r, resp)
+			} else {
+				w.WriteHeader(resp.Code)
+			}
 		}
 	})
 
@@ -440,7 +464,11 @@ func (siw *ServerInterfaceWrapper) Issue41(w http.ResponseWriter, r *http.Reques
 	var handler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		resp := siw.Handler.Issue41(w, r, n1param)
 		if resp != nil {
-			render.Render(w, r, resp)
+			if resp.body != nil {
+				render.Render(w, r, resp)
+			} else {
+				w.WriteHeader(resp.Code)
+			}
 		}
 	})
 
@@ -467,7 +495,11 @@ func (siw *ServerInterfaceWrapper) Issue9(w http.ResponseWriter, r *http.Request
 	var handler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		resp := siw.Handler.Issue9(w, r, params)
 		if resp != nil {
-			render.Render(w, r, resp)
+			if resp.body != nil {
+				render.Render(w, r, resp)
+			} else {
+				w.WriteHeader(resp.Code)
+			}
 		}
 	})
 
@@ -494,7 +526,11 @@ func (siw *ServerInterfaceWrapper) GetPr66(w http.ResponseWriter, r *http.Reques
 	var handler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		resp := siw.Handler.GetPr66(w, r, params)
 		if resp != nil {
-			render.Render(w, r, resp)
+			if resp.body != nil {
+				render.Render(w, r, resp)
+			} else {
+				w.WriteHeader(resp.Code)
+			}
 		}
 	})
 
@@ -521,7 +557,11 @@ func (siw *ServerInterfaceWrapper) PostPr66(w http.ResponseWriter, r *http.Reque
 	var handler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		resp := siw.Handler.PostPr66(w, r, params)
 		if resp != nil {
-			render.Render(w, r, resp)
+			if resp.body != nil {
+				render.Render(w, r, resp)
+			} else {
+				w.WriteHeader(resp.Code)
+			}
 		}
 	})
 

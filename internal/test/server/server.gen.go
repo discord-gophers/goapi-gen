@@ -375,7 +375,11 @@ func (siw *ServerInterfaceWrapper) GetEveryTypeOptional(w http.ResponseWriter, r
 	var handler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		resp := siw.Handler.GetEveryTypeOptional(w, r)
 		if resp != nil {
-			render.Render(w, r, resp)
+			if resp.body != nil {
+				render.Render(w, r, resp)
+			} else {
+				w.WriteHeader(resp.Code)
+			}
 		}
 	})
 
@@ -389,7 +393,11 @@ func (siw *ServerInterfaceWrapper) GetSimple(w http.ResponseWriter, r *http.Requ
 	var handler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		resp := siw.Handler.GetSimple(w, r)
 		if resp != nil {
-			render.Render(w, r, resp)
+			if resp.body != nil {
+				render.Render(w, r, resp)
+			} else {
+				w.WriteHeader(resp.Code)
+			}
 		}
 	})
 
@@ -442,7 +450,11 @@ func (siw *ServerInterfaceWrapper) GetWithArgs(w http.ResponseWriter, r *http.Re
 	var handler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		resp := siw.Handler.GetWithArgs(w, r, params)
 		if resp != nil {
-			render.Render(w, r, resp)
+			if resp.body != nil {
+				render.Render(w, r, resp)
+			} else {
+				w.WriteHeader(resp.Code)
+			}
 		}
 	})
 
@@ -472,7 +484,11 @@ func (siw *ServerInterfaceWrapper) GetWithReferences(w http.ResponseWriter, r *h
 	var handler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		resp := siw.Handler.GetWithReferences(w, r, globalArgument, argument)
 		if resp != nil {
-			render.Render(w, r, resp)
+			if resp.body != nil {
+				render.Render(w, r, resp)
+			} else {
+				w.WriteHeader(resp.Code)
+			}
 		}
 	})
 
@@ -494,7 +510,11 @@ func (siw *ServerInterfaceWrapper) GetWithContentType(w http.ResponseWriter, r *
 	var handler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		resp := siw.Handler.GetWithContentType(w, r, contentType)
 		if resp != nil {
-			render.Render(w, r, resp)
+			if resp.body != nil {
+				render.Render(w, r, resp)
+			} else {
+				w.WriteHeader(resp.Code)
+			}
 		}
 	})
 
@@ -508,7 +528,11 @@ func (siw *ServerInterfaceWrapper) GetReservedKeyword(w http.ResponseWriter, r *
 	var handler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		resp := siw.Handler.GetReservedKeyword(w, r)
 		if resp != nil {
-			render.Render(w, r, resp)
+			if resp.body != nil {
+				render.Render(w, r, resp)
+			} else {
+				w.WriteHeader(resp.Code)
+			}
 		}
 	})
 
@@ -530,7 +554,11 @@ func (siw *ServerInterfaceWrapper) CreateResource(w http.ResponseWriter, r *http
 	var handler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		resp := siw.Handler.CreateResource(w, r, argument)
 		if resp != nil {
-			render.Render(w, r, resp)
+			if resp.body != nil {
+				render.Render(w, r, resp)
+			} else {
+				w.WriteHeader(resp.Code)
+			}
 		}
 	})
 
@@ -563,7 +591,11 @@ func (siw *ServerInterfaceWrapper) CreateResource2(w http.ResponseWriter, r *htt
 	var handler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		resp := siw.Handler.CreateResource2(w, r, inlineArgument, params)
 		if resp != nil {
-			render.Render(w, r, resp)
+			if resp.body != nil {
+				render.Render(w, r, resp)
+			} else {
+				w.WriteHeader(resp.Code)
+			}
 		}
 	})
 
@@ -585,7 +617,11 @@ func (siw *ServerInterfaceWrapper) UpdateResource3(w http.ResponseWriter, r *htt
 	var handler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		resp := siw.Handler.UpdateResource3(w, r, pFallthrough)
 		if resp != nil {
-			render.Render(w, r, resp)
+			if resp.body != nil {
+				render.Render(w, r, resp)
+			} else {
+				w.WriteHeader(resp.Code)
+			}
 		}
 	})
 
@@ -599,7 +635,11 @@ func (siw *ServerInterfaceWrapper) GetResponseWithReference(w http.ResponseWrite
 	var handler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		resp := siw.Handler.GetResponseWithReference(w, r)
 		if resp != nil {
-			render.Render(w, r, resp)
+			if resp.body != nil {
+				render.Render(w, r, resp)
+			} else {
+				w.WriteHeader(resp.Code)
+			}
 		}
 	})
 
@@ -613,7 +653,11 @@ func (siw *ServerInterfaceWrapper) GetWithTaggedMiddleware(w http.ResponseWriter
 	var handler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		resp := siw.Handler.GetWithTaggedMiddleware(w, r)
 		if resp != nil {
-			render.Render(w, r, resp)
+			if resp.body != nil {
+				render.Render(w, r, resp)
+			} else {
+				w.WriteHeader(resp.Code)
+			}
 		}
 	})
 
@@ -630,7 +674,11 @@ func (siw *ServerInterfaceWrapper) PostWithTaggedMiddleware(w http.ResponseWrite
 	var handler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		resp := siw.Handler.PostWithTaggedMiddleware(w, r)
 		if resp != nil {
-			render.Render(w, r, resp)
+			if resp.body != nil {
+				render.Render(w, r, resp)
+			} else {
+				w.WriteHeader(resp.Code)
+			}
 		}
 	})
 
