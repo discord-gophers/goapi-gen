@@ -65,11 +65,6 @@ func (AddPetJSONRequestBody) Bind(*http.Request) error {
 	return nil
 }
 
-// Responser is an interface for responding to a request.
-type Responser interface {
-	Response() *Response
-}
-
 // Response is a common response struct for all the API calls.
 // A Response object may be instantiated via functions for specific operation responses.
 // It may also be instantiated directly, for the purpose of responding with a single status code.
@@ -79,29 +74,12 @@ type Response struct {
 	ContentType string
 }
 
-// Response implements the Responser interface.
-func (r *Response) Response() *Response {
-	return r
-}
-
 // Render implements the render.Renderer interface. It sets the Content-Type header
 // and status code based on the response definition.
 func (resp *Response) Render(w http.ResponseWriter, r *http.Request) error {
 	w.Header().Set("Content-Type", resp.ContentType)
 	render.Status(r, resp.Code)
 	return nil
-}
-
-// Status is a builder method to override the default status code for a response.
-func (resp *Response) Status(code int) *Response {
-	resp.Code = code
-	return resp
-}
-
-// ContentType is a builder method to override the default content type for a response.
-func (resp *Response) ContentTyp(contentType string) *Response {
-	resp.ContentType = contentType
-	return resp
 }
 
 // MarshalJSON implements the json.Marshaler interface.
@@ -190,16 +168,16 @@ func FindPetByIDJSONDefaultResponse(body Error) *Response {
 type ServerInterface interface {
 	// Returns all pets
 	// (GET /pets)
-	FindPets(w http.ResponseWriter, r *http.Request, params FindPetsParams) Responser
+	FindPets(w http.ResponseWriter, r *http.Request, params FindPetsParams) render.Renderer
 	// Creates a new pet
 	// (POST /pets)
-	AddPet(w http.ResponseWriter, r *http.Request) Responser
+	AddPet(w http.ResponseWriter, r *http.Request) render.Renderer
 	// Deletes a pet by ID
 	// (DELETE /pets/{id})
-	DeletePet(w http.ResponseWriter, r *http.Request, id int64) Responser
+	DeletePet(w http.ResponseWriter, r *http.Request, id int64) render.Renderer
 	// Returns a pet by ID
 	// (GET /pets/{id})
-	FindPetByID(w http.ResponseWriter, r *http.Request, id int64) Responser
+	FindPetByID(w http.ResponseWriter, r *http.Request, id int64) render.Renderer
 }
 
 // ServerInterfaceWrapper converts contexts to parameters.
@@ -235,12 +213,7 @@ func (siw *ServerInterfaceWrapper) FindPets(w http.ResponseWriter, r *http.Reque
 	var handler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		resp := siw.Handler.FindPets(w, r, params)
 		if resp != nil {
-			rsp := resp.Response()
-			if rsp.Body != nil {
-				render.Render(w, r, rsp)
-			} else {
-				w.WriteHeader(rsp.Code)
-			}
+			render.Render(w, r, resp)
 		}
 	})
 
@@ -254,12 +227,7 @@ func (siw *ServerInterfaceWrapper) AddPet(w http.ResponseWriter, r *http.Request
 	var handler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		resp := siw.Handler.AddPet(w, r)
 		if resp != nil {
-			rsp := resp.Response()
-			if rsp.Body != nil {
-				render.Render(w, r, rsp)
-			} else {
-				w.WriteHeader(rsp.Code)
-			}
+			render.Render(w, r, resp)
 		}
 	})
 
@@ -281,12 +249,7 @@ func (siw *ServerInterfaceWrapper) DeletePet(w http.ResponseWriter, r *http.Requ
 	var handler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		resp := siw.Handler.DeletePet(w, r, id)
 		if resp != nil {
-			rsp := resp.Response()
-			if rsp.Body != nil {
-				render.Render(w, r, rsp)
-			} else {
-				w.WriteHeader(rsp.Code)
-			}
+			render.Render(w, r, resp)
 		}
 	})
 
@@ -308,12 +271,7 @@ func (siw *ServerInterfaceWrapper) FindPetByID(w http.ResponseWriter, r *http.Re
 	var handler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		resp := siw.Handler.FindPetByID(w, r, id)
 		if resp != nil {
-			rsp := resp.Response()
-			if rsp.Body != nil {
-				render.Render(w, r, rsp)
-			} else {
-				w.WriteHeader(rsp.Code)
-			}
+			render.Render(w, r, resp)
 		}
 	})
 

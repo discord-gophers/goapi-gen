@@ -4,6 +4,7 @@
 package server
 
 import (
+	"github.com/go-chi/render"
 	"net/http"
 	"sync"
 )
@@ -18,40 +19,40 @@ var _ ServerInterface = &ServerInterfaceMock{}
 //
 //		// make and configure a mocked ServerInterface
 //		mockedServerInterface := &ServerInterfaceMock{
-//			CreateResourceFunc: func(w http.ResponseWriter, r *http.Request, argument Argument) Responser {
+//			CreateResourceFunc: func(w http.ResponseWriter, r *http.Request, argument Argument) render.Renderer {
 //				panic("mock out the CreateResource method")
 //			},
-//			CreateResource2Func: func(w http.ResponseWriter, r *http.Request, inlineArgument int, params CreateResource2Params) Responser {
+//			CreateResource2Func: func(w http.ResponseWriter, r *http.Request, inlineArgument int, params CreateResource2Params) render.Renderer {
 //				panic("mock out the CreateResource2 method")
 //			},
-//			GetEveryTypeOptionalFunc: func(w http.ResponseWriter, r *http.Request) Responser {
+//			GetEveryTypeOptionalFunc: func(w http.ResponseWriter, r *http.Request) render.Renderer {
 //				panic("mock out the GetEveryTypeOptional method")
 //			},
-//			GetReservedKeywordFunc: func(w http.ResponseWriter, r *http.Request) Responser {
+//			GetReservedKeywordFunc: func(w http.ResponseWriter, r *http.Request) render.Renderer {
 //				panic("mock out the GetReservedKeyword method")
 //			},
-//			GetResponseWithReferenceFunc: func(w http.ResponseWriter, r *http.Request) Responser {
+//			GetResponseWithReferenceFunc: func(w http.ResponseWriter, r *http.Request) render.Renderer {
 //				panic("mock out the GetResponseWithReference method")
 //			},
-//			GetSimpleFunc: func(w http.ResponseWriter, r *http.Request) Responser {
+//			GetSimpleFunc: func(w http.ResponseWriter, r *http.Request) render.Renderer {
 //				panic("mock out the GetSimple method")
 //			},
-//			GetWithArgsFunc: func(w http.ResponseWriter, r *http.Request, params GetWithArgsParams) Responser {
+//			GetWithArgsFunc: func(w http.ResponseWriter, r *http.Request, params GetWithArgsParams) render.Renderer {
 //				panic("mock out the GetWithArgs method")
 //			},
-//			GetWithContentTypeFunc: func(w http.ResponseWriter, r *http.Request, contentType GetWithContentTypeParamsContentType) Responser {
+//			GetWithContentTypeFunc: func(w http.ResponseWriter, r *http.Request, contentType GetWithContentTypeParamsContentType) render.Renderer {
 //				panic("mock out the GetWithContentType method")
 //			},
-//			GetWithReferencesFunc: func(w http.ResponseWriter, r *http.Request, globalArgument int64, argument Argument) Responser {
+//			GetWithReferencesFunc: func(w http.ResponseWriter, r *http.Request, globalArgument int64, argument Argument) render.Renderer {
 //				panic("mock out the GetWithReferences method")
 //			},
-//			GetWithTaggedMiddlewareFunc: func(w http.ResponseWriter, r *http.Request) Responser {
+//			GetWithTaggedMiddlewareFunc: func(w http.ResponseWriter, r *http.Request) render.Renderer {
 //				panic("mock out the GetWithTaggedMiddleware method")
 //			},
-//			PostWithTaggedMiddlewareFunc: func(w http.ResponseWriter, r *http.Request) Responser {
+//			PostWithTaggedMiddlewareFunc: func(w http.ResponseWriter, r *http.Request) render.Renderer {
 //				panic("mock out the PostWithTaggedMiddleware method")
 //			},
-//			UpdateResource3Func: func(w http.ResponseWriter, r *http.Request, pFallthrough int) Responser {
+//			UpdateResource3Func: func(w http.ResponseWriter, r *http.Request, pFallthrough int) render.Renderer {
 //				panic("mock out the UpdateResource3 method")
 //			},
 //		}
@@ -62,40 +63,40 @@ var _ ServerInterface = &ServerInterfaceMock{}
 //	}
 type ServerInterfaceMock struct {
 	// CreateResourceFunc mocks the CreateResource method.
-	CreateResourceFunc func(w http.ResponseWriter, r *http.Request, argument Argument) Responser
+	CreateResourceFunc func(w http.ResponseWriter, r *http.Request, argument Argument) render.Renderer
 
 	// CreateResource2Func mocks the CreateResource2 method.
-	CreateResource2Func func(w http.ResponseWriter, r *http.Request, inlineArgument int, params CreateResource2Params) Responser
+	CreateResource2Func func(w http.ResponseWriter, r *http.Request, inlineArgument int, params CreateResource2Params) render.Renderer
 
 	// GetEveryTypeOptionalFunc mocks the GetEveryTypeOptional method.
-	GetEveryTypeOptionalFunc func(w http.ResponseWriter, r *http.Request) Responser
+	GetEveryTypeOptionalFunc func(w http.ResponseWriter, r *http.Request) render.Renderer
 
 	// GetReservedKeywordFunc mocks the GetReservedKeyword method.
-	GetReservedKeywordFunc func(w http.ResponseWriter, r *http.Request) Responser
+	GetReservedKeywordFunc func(w http.ResponseWriter, r *http.Request) render.Renderer
 
 	// GetResponseWithReferenceFunc mocks the GetResponseWithReference method.
-	GetResponseWithReferenceFunc func(w http.ResponseWriter, r *http.Request) Responser
+	GetResponseWithReferenceFunc func(w http.ResponseWriter, r *http.Request) render.Renderer
 
 	// GetSimpleFunc mocks the GetSimple method.
-	GetSimpleFunc func(w http.ResponseWriter, r *http.Request) Responser
+	GetSimpleFunc func(w http.ResponseWriter, r *http.Request) render.Renderer
 
 	// GetWithArgsFunc mocks the GetWithArgs method.
-	GetWithArgsFunc func(w http.ResponseWriter, r *http.Request, params GetWithArgsParams) Responser
+	GetWithArgsFunc func(w http.ResponseWriter, r *http.Request, params GetWithArgsParams) render.Renderer
 
 	// GetWithContentTypeFunc mocks the GetWithContentType method.
-	GetWithContentTypeFunc func(w http.ResponseWriter, r *http.Request, contentType GetWithContentTypeParamsContentType) Responser
+	GetWithContentTypeFunc func(w http.ResponseWriter, r *http.Request, contentType GetWithContentTypeParamsContentType) render.Renderer
 
 	// GetWithReferencesFunc mocks the GetWithReferences method.
-	GetWithReferencesFunc func(w http.ResponseWriter, r *http.Request, globalArgument int64, argument Argument) Responser
+	GetWithReferencesFunc func(w http.ResponseWriter, r *http.Request, globalArgument int64, argument Argument) render.Renderer
 
 	// GetWithTaggedMiddlewareFunc mocks the GetWithTaggedMiddleware method.
-	GetWithTaggedMiddlewareFunc func(w http.ResponseWriter, r *http.Request) Responser
+	GetWithTaggedMiddlewareFunc func(w http.ResponseWriter, r *http.Request) render.Renderer
 
 	// PostWithTaggedMiddlewareFunc mocks the PostWithTaggedMiddleware method.
-	PostWithTaggedMiddlewareFunc func(w http.ResponseWriter, r *http.Request) Responser
+	PostWithTaggedMiddlewareFunc func(w http.ResponseWriter, r *http.Request) render.Renderer
 
 	// UpdateResource3Func mocks the UpdateResource3 method.
-	UpdateResource3Func func(w http.ResponseWriter, r *http.Request, pFallthrough int) Responser
+	UpdateResource3Func func(w http.ResponseWriter, r *http.Request, pFallthrough int) render.Renderer
 
 	// calls tracks calls to the methods.
 	calls struct {
@@ -215,7 +216,7 @@ type ServerInterfaceMock struct {
 }
 
 // CreateResource calls CreateResourceFunc.
-func (mock *ServerInterfaceMock) CreateResource(w http.ResponseWriter, r *http.Request, argument Argument) Responser {
+func (mock *ServerInterfaceMock) CreateResource(w http.ResponseWriter, r *http.Request, argument Argument) render.Renderer {
 	if mock.CreateResourceFunc == nil {
 		panic("ServerInterfaceMock.CreateResourceFunc: method is nil but ServerInterface.CreateResource was just called")
 	}
@@ -255,7 +256,7 @@ func (mock *ServerInterfaceMock) CreateResourceCalls() []struct {
 }
 
 // CreateResource2 calls CreateResource2Func.
-func (mock *ServerInterfaceMock) CreateResource2(w http.ResponseWriter, r *http.Request, inlineArgument int, params CreateResource2Params) Responser {
+func (mock *ServerInterfaceMock) CreateResource2(w http.ResponseWriter, r *http.Request, inlineArgument int, params CreateResource2Params) render.Renderer {
 	if mock.CreateResource2Func == nil {
 		panic("ServerInterfaceMock.CreateResource2Func: method is nil but ServerInterface.CreateResource2 was just called")
 	}
@@ -299,7 +300,7 @@ func (mock *ServerInterfaceMock) CreateResource2Calls() []struct {
 }
 
 // GetEveryTypeOptional calls GetEveryTypeOptionalFunc.
-func (mock *ServerInterfaceMock) GetEveryTypeOptional(w http.ResponseWriter, r *http.Request) Responser {
+func (mock *ServerInterfaceMock) GetEveryTypeOptional(w http.ResponseWriter, r *http.Request) render.Renderer {
 	if mock.GetEveryTypeOptionalFunc == nil {
 		panic("ServerInterfaceMock.GetEveryTypeOptionalFunc: method is nil but ServerInterface.GetEveryTypeOptional was just called")
 	}
@@ -335,7 +336,7 @@ func (mock *ServerInterfaceMock) GetEveryTypeOptionalCalls() []struct {
 }
 
 // GetReservedKeyword calls GetReservedKeywordFunc.
-func (mock *ServerInterfaceMock) GetReservedKeyword(w http.ResponseWriter, r *http.Request) Responser {
+func (mock *ServerInterfaceMock) GetReservedKeyword(w http.ResponseWriter, r *http.Request) render.Renderer {
 	if mock.GetReservedKeywordFunc == nil {
 		panic("ServerInterfaceMock.GetReservedKeywordFunc: method is nil but ServerInterface.GetReservedKeyword was just called")
 	}
@@ -371,7 +372,7 @@ func (mock *ServerInterfaceMock) GetReservedKeywordCalls() []struct {
 }
 
 // GetResponseWithReference calls GetResponseWithReferenceFunc.
-func (mock *ServerInterfaceMock) GetResponseWithReference(w http.ResponseWriter, r *http.Request) Responser {
+func (mock *ServerInterfaceMock) GetResponseWithReference(w http.ResponseWriter, r *http.Request) render.Renderer {
 	if mock.GetResponseWithReferenceFunc == nil {
 		panic("ServerInterfaceMock.GetResponseWithReferenceFunc: method is nil but ServerInterface.GetResponseWithReference was just called")
 	}
@@ -407,7 +408,7 @@ func (mock *ServerInterfaceMock) GetResponseWithReferenceCalls() []struct {
 }
 
 // GetSimple calls GetSimpleFunc.
-func (mock *ServerInterfaceMock) GetSimple(w http.ResponseWriter, r *http.Request) Responser {
+func (mock *ServerInterfaceMock) GetSimple(w http.ResponseWriter, r *http.Request) render.Renderer {
 	if mock.GetSimpleFunc == nil {
 		panic("ServerInterfaceMock.GetSimpleFunc: method is nil but ServerInterface.GetSimple was just called")
 	}
@@ -443,7 +444,7 @@ func (mock *ServerInterfaceMock) GetSimpleCalls() []struct {
 }
 
 // GetWithArgs calls GetWithArgsFunc.
-func (mock *ServerInterfaceMock) GetWithArgs(w http.ResponseWriter, r *http.Request, params GetWithArgsParams) Responser {
+func (mock *ServerInterfaceMock) GetWithArgs(w http.ResponseWriter, r *http.Request, params GetWithArgsParams) render.Renderer {
 	if mock.GetWithArgsFunc == nil {
 		panic("ServerInterfaceMock.GetWithArgsFunc: method is nil but ServerInterface.GetWithArgs was just called")
 	}
@@ -483,7 +484,7 @@ func (mock *ServerInterfaceMock) GetWithArgsCalls() []struct {
 }
 
 // GetWithContentType calls GetWithContentTypeFunc.
-func (mock *ServerInterfaceMock) GetWithContentType(w http.ResponseWriter, r *http.Request, contentType GetWithContentTypeParamsContentType) Responser {
+func (mock *ServerInterfaceMock) GetWithContentType(w http.ResponseWriter, r *http.Request, contentType GetWithContentTypeParamsContentType) render.Renderer {
 	if mock.GetWithContentTypeFunc == nil {
 		panic("ServerInterfaceMock.GetWithContentTypeFunc: method is nil but ServerInterface.GetWithContentType was just called")
 	}
@@ -523,7 +524,7 @@ func (mock *ServerInterfaceMock) GetWithContentTypeCalls() []struct {
 }
 
 // GetWithReferences calls GetWithReferencesFunc.
-func (mock *ServerInterfaceMock) GetWithReferences(w http.ResponseWriter, r *http.Request, globalArgument int64, argument Argument) Responser {
+func (mock *ServerInterfaceMock) GetWithReferences(w http.ResponseWriter, r *http.Request, globalArgument int64, argument Argument) render.Renderer {
 	if mock.GetWithReferencesFunc == nil {
 		panic("ServerInterfaceMock.GetWithReferencesFunc: method is nil but ServerInterface.GetWithReferences was just called")
 	}
@@ -567,7 +568,7 @@ func (mock *ServerInterfaceMock) GetWithReferencesCalls() []struct {
 }
 
 // GetWithTaggedMiddleware calls GetWithTaggedMiddlewareFunc.
-func (mock *ServerInterfaceMock) GetWithTaggedMiddleware(w http.ResponseWriter, r *http.Request) Responser {
+func (mock *ServerInterfaceMock) GetWithTaggedMiddleware(w http.ResponseWriter, r *http.Request) render.Renderer {
 	if mock.GetWithTaggedMiddlewareFunc == nil {
 		panic("ServerInterfaceMock.GetWithTaggedMiddlewareFunc: method is nil but ServerInterface.GetWithTaggedMiddleware was just called")
 	}
@@ -603,7 +604,7 @@ func (mock *ServerInterfaceMock) GetWithTaggedMiddlewareCalls() []struct {
 }
 
 // PostWithTaggedMiddleware calls PostWithTaggedMiddlewareFunc.
-func (mock *ServerInterfaceMock) PostWithTaggedMiddleware(w http.ResponseWriter, r *http.Request) Responser {
+func (mock *ServerInterfaceMock) PostWithTaggedMiddleware(w http.ResponseWriter, r *http.Request) render.Renderer {
 	if mock.PostWithTaggedMiddlewareFunc == nil {
 		panic("ServerInterfaceMock.PostWithTaggedMiddlewareFunc: method is nil but ServerInterface.PostWithTaggedMiddleware was just called")
 	}
@@ -639,7 +640,7 @@ func (mock *ServerInterfaceMock) PostWithTaggedMiddlewareCalls() []struct {
 }
 
 // UpdateResource3 calls UpdateResource3Func.
-func (mock *ServerInterfaceMock) UpdateResource3(w http.ResponseWriter, r *http.Request, pFallthrough int) Responser {
+func (mock *ServerInterfaceMock) UpdateResource3(w http.ResponseWriter, r *http.Request, pFallthrough int) render.Renderer {
 	if mock.UpdateResource3Func == nil {
 		panic("ServerInterfaceMock.UpdateResource3Func: method is nil but ServerInterface.UpdateResource3 was just called")
 	}

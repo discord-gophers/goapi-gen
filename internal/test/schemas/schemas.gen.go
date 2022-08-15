@@ -141,11 +141,6 @@ func (Issue185JSONRequestBody) Bind(*http.Request) error {
 // Issue9JSONRequestBody defines body for Issue9 for application/json ContentType.
 type Issue9JSONRequestBody Issue9JSONBody
 
-// Responser is an interface for responding to a request.
-type Responser interface {
-	Response() *Response
-}
-
 // Response is a common response struct for all the API calls.
 // A Response object may be instantiated via functions for specific operation responses.
 // It may also be instantiated directly, for the purpose of responding with a single status code.
@@ -155,29 +150,12 @@ type Response struct {
 	ContentType string
 }
 
-// Response implements the Responser interface.
-func (r *Response) Response() *Response {
-	return r
-}
-
 // Render implements the render.Renderer interface. It sets the Content-Type header
 // and status code based on the response definition.
 func (resp *Response) Render(w http.ResponseWriter, r *http.Request) error {
 	w.Header().Set("Content-Type", resp.ContentType)
 	render.Status(r, resp.Code)
 	return nil
-}
-
-// Status is a builder method to override the default status code for a response.
-func (resp *Response) Status(code int) *Response {
-	resp.Code = code
-	return resp
-}
-
-// ContentType is a builder method to override the default content type for a response.
-func (resp *Response) ContentTyp(contentType string) *Response {
-	resp.ContentType = contentType
-	return resp
 }
 
 // MarshalJSON implements the json.Marshaler interface.
@@ -284,34 +262,34 @@ func PostPr66JSON200Response(body CustomGoTypeWithAlias) *Response {
 type ServerInterface interface {
 
 	// (GET /ensure-everything-is-referenced)
-	EnsureEverythingIsReferenced(w http.ResponseWriter, r *http.Request) Responser
+	EnsureEverythingIsReferenced(w http.ResponseWriter, r *http.Request) render.Renderer
 
 	// (GET /issues/127)
-	Issue127(w http.ResponseWriter, r *http.Request) Responser
+	Issue127(w http.ResponseWriter, r *http.Request) render.Renderer
 
 	// (GET /issues/185)
-	Issue185(w http.ResponseWriter, r *http.Request) Responser
+	Issue185(w http.ResponseWriter, r *http.Request) render.Renderer
 
 	// (GET /issues/209/${str})
-	Issue209(w http.ResponseWriter, r *http.Request, str StringInPath) Responser
+	Issue209(w http.ResponseWriter, r *http.Request, str StringInPath) render.Renderer
 
 	// (GET /issues/30/{fallthrough})
-	Issue30(w http.ResponseWriter, r *http.Request, pFallthrough string) Responser
+	Issue30(w http.ResponseWriter, r *http.Request, pFallthrough string) render.Renderer
 
 	// (GET /issues/375)
-	GetIssues375(w http.ResponseWriter, r *http.Request) Responser
+	GetIssues375(w http.ResponseWriter, r *http.Request) render.Renderer
 
 	// (GET /issues/41/{1param})
-	Issue41(w http.ResponseWriter, r *http.Request, n1param N5startsWithNumber) Responser
+	Issue41(w http.ResponseWriter, r *http.Request, n1param N5startsWithNumber) render.Renderer
 
 	// (GET /issues/9)
-	Issue9(w http.ResponseWriter, r *http.Request, params Issue9Params) Responser
+	Issue9(w http.ResponseWriter, r *http.Request, params Issue9Params) render.Renderer
 
 	// (GET /pr/66)
-	GetPr66(w http.ResponseWriter, r *http.Request, params GetPr66Params) Responser
+	GetPr66(w http.ResponseWriter, r *http.Request, params GetPr66Params) render.Renderer
 
 	// (POST /pr/66)
-	PostPr66(w http.ResponseWriter, r *http.Request, params PostPr66Params) Responser
+	PostPr66(w http.ResponseWriter, r *http.Request, params PostPr66Params) render.Renderer
 }
 
 // ServerInterfaceWrapper converts contexts to parameters.
@@ -330,12 +308,7 @@ func (siw *ServerInterfaceWrapper) EnsureEverythingIsReferenced(w http.ResponseW
 	var handler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		resp := siw.Handler.EnsureEverythingIsReferenced(w, r)
 		if resp != nil {
-			rsp := resp.Response()
-			if rsp.Body != nil {
-				render.Render(w, r, rsp)
-			} else {
-				w.WriteHeader(rsp.Code)
-			}
+			render.Render(w, r, resp)
 		}
 	})
 
@@ -351,12 +324,7 @@ func (siw *ServerInterfaceWrapper) Issue127(w http.ResponseWriter, r *http.Reque
 	var handler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		resp := siw.Handler.Issue127(w, r)
 		if resp != nil {
-			rsp := resp.Response()
-			if rsp.Body != nil {
-				render.Render(w, r, rsp)
-			} else {
-				w.WriteHeader(rsp.Code)
-			}
+			render.Render(w, r, resp)
 		}
 	})
 
@@ -372,12 +340,7 @@ func (siw *ServerInterfaceWrapper) Issue185(w http.ResponseWriter, r *http.Reque
 	var handler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		resp := siw.Handler.Issue185(w, r)
 		if resp != nil {
-			rsp := resp.Response()
-			if rsp.Body != nil {
-				render.Render(w, r, rsp)
-			} else {
-				w.WriteHeader(rsp.Code)
-			}
+			render.Render(w, r, resp)
 		}
 	})
 
@@ -401,12 +364,7 @@ func (siw *ServerInterfaceWrapper) Issue209(w http.ResponseWriter, r *http.Reque
 	var handler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		resp := siw.Handler.Issue209(w, r, str)
 		if resp != nil {
-			rsp := resp.Response()
-			if rsp.Body != nil {
-				render.Render(w, r, rsp)
-			} else {
-				w.WriteHeader(rsp.Code)
-			}
+			render.Render(w, r, resp)
 		}
 	})
 
@@ -430,12 +388,7 @@ func (siw *ServerInterfaceWrapper) Issue30(w http.ResponseWriter, r *http.Reques
 	var handler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		resp := siw.Handler.Issue30(w, r, pFallthrough)
 		if resp != nil {
-			rsp := resp.Response()
-			if rsp.Body != nil {
-				render.Render(w, r, rsp)
-			} else {
-				w.WriteHeader(rsp.Code)
-			}
+			render.Render(w, r, resp)
 		}
 	})
 
@@ -451,12 +404,7 @@ func (siw *ServerInterfaceWrapper) GetIssues375(w http.ResponseWriter, r *http.R
 	var handler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		resp := siw.Handler.GetIssues375(w, r)
 		if resp != nil {
-			rsp := resp.Response()
-			if rsp.Body != nil {
-				render.Render(w, r, rsp)
-			} else {
-				w.WriteHeader(rsp.Code)
-			}
+			render.Render(w, r, resp)
 		}
 	})
 
@@ -480,12 +428,7 @@ func (siw *ServerInterfaceWrapper) Issue41(w http.ResponseWriter, r *http.Reques
 	var handler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		resp := siw.Handler.Issue41(w, r, n1param)
 		if resp != nil {
-			rsp := resp.Response()
-			if rsp.Body != nil {
-				render.Render(w, r, rsp)
-			} else {
-				w.WriteHeader(rsp.Code)
-			}
+			render.Render(w, r, resp)
 		}
 	})
 
@@ -512,12 +455,7 @@ func (siw *ServerInterfaceWrapper) Issue9(w http.ResponseWriter, r *http.Request
 	var handler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		resp := siw.Handler.Issue9(w, r, params)
 		if resp != nil {
-			rsp := resp.Response()
-			if rsp.Body != nil {
-				render.Render(w, r, rsp)
-			} else {
-				w.WriteHeader(rsp.Code)
-			}
+			render.Render(w, r, resp)
 		}
 	})
 
@@ -544,12 +482,7 @@ func (siw *ServerInterfaceWrapper) GetPr66(w http.ResponseWriter, r *http.Reques
 	var handler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		resp := siw.Handler.GetPr66(w, r, params)
 		if resp != nil {
-			rsp := resp.Response()
-			if rsp.Body != nil {
-				render.Render(w, r, rsp)
-			} else {
-				w.WriteHeader(rsp.Code)
-			}
+			render.Render(w, r, resp)
 		}
 	})
 
@@ -576,12 +509,7 @@ func (siw *ServerInterfaceWrapper) PostPr66(w http.ResponseWriter, r *http.Reque
 	var handler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		resp := siw.Handler.PostPr66(w, r, params)
 		if resp != nil {
-			rsp := resp.Response()
-			if rsp.Body != nil {
-				render.Render(w, r, rsp)
-			} else {
-				w.WriteHeader(rsp.Code)
-			}
+			render.Render(w, r, resp)
 		}
 	})
 

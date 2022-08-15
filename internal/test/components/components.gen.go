@@ -152,11 +152,6 @@ func (BodyWithAddPropsJSONRequestBody) Bind(*http.Request) error {
 	return nil
 }
 
-// Responser is an interface for responding to a request.
-type Responser interface {
-	Response() *Response
-}
-
 // Response is a common response struct for all the API calls.
 // A Response object may be instantiated via functions for specific operation responses.
 // It may also be instantiated directly, for the purpose of responding with a single status code.
@@ -166,29 +161,12 @@ type Response struct {
 	ContentType string
 }
 
-// Response implements the Responser interface.
-func (r *Response) Response() *Response {
-	return r
-}
-
 // Render implements the render.Renderer interface. It sets the Content-Type header
 // and status code based on the response definition.
 func (resp *Response) Render(w http.ResponseWriter, r *http.Request) error {
 	w.Header().Set("Content-Type", resp.ContentType)
 	render.Status(r, resp.Code)
 	return nil
-}
-
-// Status is a builder method to override the default status code for a response.
-func (resp *Response) Status(code int) *Response {
-	resp.Code = code
-	return resp
-}
-
-// ContentType is a builder method to override the default content type for a response.
-func (resp *Response) ContentTyp(contentType string) *Response {
-	resp.ContentType = contentType
-	return resp
 }
 
 // MarshalJSON implements the json.Marshaler interface.
@@ -850,13 +828,13 @@ func (a AdditionalPropertiesObject5) MarshalJSON() ([]byte, error) {
 type ServerInterface interface {
 
 	// (GET /ensure-everything-is-referenced)
-	EnsureEverythingIsReferenced(w http.ResponseWriter, r *http.Request) Responser
+	EnsureEverythingIsReferenced(w http.ResponseWriter, r *http.Request) render.Renderer
 
 	// (GET /params_with_add_props)
-	ParamsWithAddProps(w http.ResponseWriter, r *http.Request, params ParamsWithAddPropsParams) Responser
+	ParamsWithAddProps(w http.ResponseWriter, r *http.Request, params ParamsWithAddPropsParams) render.Renderer
 
 	// (POST /params_with_add_props)
-	BodyWithAddProps(w http.ResponseWriter, r *http.Request) Responser
+	BodyWithAddProps(w http.ResponseWriter, r *http.Request) render.Renderer
 }
 
 // ServerInterfaceWrapper converts contexts to parameters.
@@ -873,12 +851,7 @@ func (siw *ServerInterfaceWrapper) EnsureEverythingIsReferenced(w http.ResponseW
 	var handler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		resp := siw.Handler.EnsureEverythingIsReferenced(w, r)
 		if resp != nil {
-			rsp := resp.Response()
-			if rsp.Body != nil {
-				render.Render(w, r, rsp)
-			} else {
-				w.WriteHeader(rsp.Code)
-			}
+			render.Render(w, r, resp)
 		}
 	})
 
@@ -911,12 +884,7 @@ func (siw *ServerInterfaceWrapper) ParamsWithAddProps(w http.ResponseWriter, r *
 	var handler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		resp := siw.Handler.ParamsWithAddProps(w, r, params)
 		if resp != nil {
-			rsp := resp.Response()
-			if rsp.Body != nil {
-				render.Render(w, r, rsp)
-			} else {
-				w.WriteHeader(rsp.Code)
-			}
+			render.Render(w, r, resp)
 		}
 	})
 
@@ -930,12 +898,7 @@ func (siw *ServerInterfaceWrapper) BodyWithAddProps(w http.ResponseWriter, r *ht
 	var handler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		resp := siw.Handler.BodyWithAddProps(w, r)
 		if resp != nil {
-			rsp := resp.Response()
-			if rsp.Body != nil {
-				render.Render(w, r, rsp)
-			} else {
-				w.WriteHeader(rsp.Code)
-			}
+			render.Render(w, r, resp)
 		}
 	})
 

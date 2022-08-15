@@ -6,6 +6,7 @@ import (
 	"net/http/httptest"
 	"testing"
 
+	"github.com/go-chi/render"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -19,7 +20,7 @@ var noopMiddlewares = map[string]func(http.Handler) http.Handler{
 func TestParameters(t *testing.T) {
 	m := ServerInterfaceMock{}
 
-	m.CreateResource2Func = func(w http.ResponseWriter, r *http.Request, inlineArgument int, params CreateResource2Params) Responser {
+	m.CreateResource2Func = func(w http.ResponseWriter, r *http.Request, inlineArgument int, params CreateResource2Params) render.Renderer {
 		assert.Equal(t, 99, *params.InlineQueryArgument)
 		assert.Equal(t, 1, inlineArgument)
 		return nil
@@ -66,7 +67,7 @@ func TestOmitMiddlewares(t *testing.T) {
 
 func TestMiddlewareCalled(t *testing.T) {
 	m := ServerInterfaceMock{}
-	m.GetWithTaggedMiddlewareFunc = func(w http.ResponseWriter, r *http.Request) Responser { return nil }
+	m.GetWithTaggedMiddlewareFunc = func(w http.ResponseWriter, r *http.Request) render.Renderer { return nil }
 
 	called := false
 	mw := map[string]func(http.Handler) http.Handler{
@@ -89,7 +90,7 @@ func TestMiddlewareCalled(t *testing.T) {
 
 func TestMiddlewareCalledWithOrder(t *testing.T) {
 	m := ServerInterfaceMock{}
-	m.PostWithTaggedMiddlewareFunc = func(w http.ResponseWriter, r *http.Request) Responser { return nil }
+	m.PostWithTaggedMiddlewareFunc = func(w http.ResponseWriter, r *http.Request) render.Renderer { return nil }
 
 	var order []string
 	mw := map[string]func(http.Handler) http.Handler{

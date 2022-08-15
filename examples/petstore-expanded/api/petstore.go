@@ -3,6 +3,7 @@
 package api
 
 import (
+	"encoding/json"
 	"fmt"
 	"net/http"
 	"sync"
@@ -30,7 +31,7 @@ func NewPetStore() *PetStore {
 const petNotFoundMsg = "Could not find pet with ID %d"
 
 // Here, we implement all of the handlers in the ServerInterface
-func (p *PetStore) FindPets(w http.ResponseWriter, r *http.Request, params FindPetsParams) Responser {
+func (p *PetStore) FindPets(w http.ResponseWriter, r *http.Request, params FindPetsParams) render.Renderer {
 	p.Lock.Lock()
 	defer p.Lock.Unlock()
 
@@ -63,27 +64,32 @@ func (p *PetStore) FindPets(w http.ResponseWriter, r *http.Request, params FindP
 
 // BadRequestJSON represents a JSON error response for bad requests
 type BadRequestJSON struct {
-	Error string
+	Error string `json:"message"`
 }
 
-func (b BadRequestJSON) Response() *Response {
-	return &Response{Code: 400, Body: map[string]string{"error": b.Error}, ContentType: "application/json"}
+// Implement render directly, setting status code and content type.
+func (b BadRequestJSON) Render(w http.ResponseWriter, r *http.Request) error {
+	w.Header().Set("Content-Type", "application/json")
+	render.Status(r, 400)
+	return nil
+}
+
+// MarshalJSON conforms to marshal in a specific way
+func (b BadRequestJSON) MarshalJSON() ([]byte, error) {
+	return json.Marshal(map[string]string{"message": b.Error})
 }
 
 // NotFoundJSON represents a JSON error response for Not Found Pets
+// It directly embeds a *Response, so it implements the render.Renderer interface.
 type NotFoundJSON struct {
-	Message string
+	*Response
 }
 
 func NotFoundError(format string, args ...interface{}) NotFoundJSON {
-	return NotFoundJSON{fmt.Sprintf(format, args...)}
+	return NotFoundJSON{&Response{Code: 404, Body: map[string]string{"message": fmt.Sprintf(format, args...)}, ContentType: "application/json"}}
 }
 
-func (n NotFoundJSON) Response() *Response {
-	return &Response{Code: 404, Body: map[string]string{"message": n.Message}, ContentType: "application/json"}
-}
-
-func (p *PetStore) AddPet(w http.ResponseWriter, r *http.Request) Responser {
+func (p *PetStore) AddPet(w http.ResponseWriter, r *http.Request) render.Renderer {
 	// We expect a NewPet object in the request body.
 	var newPet AddPetJSONRequestBody
 	if err := render.Bind(r, &newPet); err != nil {
@@ -110,7 +116,7 @@ func (p *PetStore) AddPet(w http.ResponseWriter, r *http.Request) Responser {
 	return AddPetJSON201Response(pet)
 }
 
-func (p *PetStore) FindPetByID(w http.ResponseWriter, r *http.Request, id int64) Responser {
+func (p *PetStore) FindPetByID(w http.ResponseWriter, r *http.Request, id int64) render.Renderer {
 	p.Lock.Lock()
 	defer p.Lock.Unlock()
 
@@ -122,7 +128,7 @@ func (p *PetStore) FindPetByID(w http.ResponseWriter, r *http.Request, id int64)
 	return FindPetByIDJSON200Response(pet)
 }
 
-func (p *PetStore) DeletePet(w http.ResponseWriter, r *http.Request, id int64) Responser {
+func (p *PetStore) DeletePet(w http.ResponseWriter, r *http.Request, id int64) render.Renderer {
 	p.Lock.Lock()
 	defer p.Lock.Unlock()
 
