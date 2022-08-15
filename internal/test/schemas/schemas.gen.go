@@ -152,7 +152,7 @@ type Response struct {
 
 // Render implements the render.Renderer interface. It sets the Content-Type header
 // and status code based on the response definition.
-func (resp *Response) Render(w http.ResponseWriter, r *http.Request) error {
+func (resp Response) Render(w http.ResponseWriter, r *http.Request) error {
 	w.Header().Set("Content-Type", resp.ContentType)
 	render.Status(r, resp.Code)
 	return nil
@@ -160,18 +160,18 @@ func (resp *Response) Render(w http.ResponseWriter, r *http.Request) error {
 
 // MarshalJSON implements the json.Marshaler interface.
 // This is used to only marshal the body of the response.
-func (resp *Response) MarshalJSON() ([]byte, error) {
+func (resp Response) MarshalJSON() ([]byte, error) {
 	return json.Marshal(resp.Body)
 }
 
 // MarshalXML implements the xml.Marshaler interface.
 // This is used to only marshal the body of the response.
-func (resp *Response) MarshalXML(e *xml.Encoder, start xml.StartElement) error {
+func (resp Response) MarshalXML(e *xml.Encoder, start xml.StartElement) error {
 	return e.Encode(resp.Body)
 }
 
 // EnsureEverythingIsReferencedJSON200Response is a constructor method for a EnsureEverythingIsReferenced response.
-// A *Response is returned with the configured status code and content type from the spec.
+// A Response is returned with the configured status code and content type from the spec.
 func EnsureEverythingIsReferencedJSON200Response(body struct {
 	AnyType1 *AnyType1 `json:"anyType1,omitempty"`
 
@@ -180,8 +180,8 @@ func EnsureEverythingIsReferencedJSON200Response(body struct {
 	// This should be an interface{}
 	AnyType2         *AnyType2         `json:"anyType2,omitempty"`
 	CustomStringType *CustomStringType `foo:"bar" json:"customStringType,omitempty"`
-}) *Response {
-	return &Response{
+}) Response {
+	return Response{
 		Body:        body,
 		Code:        200,
 		ContentType: "application/json",
@@ -189,9 +189,9 @@ func EnsureEverythingIsReferencedJSON200Response(body struct {
 }
 
 // Issue127JSON200Response is a constructor method for a Issue127 response.
-// A *Response is returned with the configured status code and content type from the spec.
-func Issue127JSON200Response(body GenericObject) *Response {
-	return &Response{
+// A Response is returned with the configured status code and content type from the spec.
+func Issue127JSON200Response(body GenericObject) Response {
+	return Response{
 		Body:        body,
 		Code:        200,
 		ContentType: "application/json",
@@ -199,9 +199,9 @@ func Issue127JSON200Response(body GenericObject) *Response {
 }
 
 // Issue127XML200Response is a constructor method for a Issue127 response.
-// A *Response is returned with the configured status code and content type from the spec.
-func Issue127XML200Response(body GenericObject) *Response {
-	return &Response{
+// A Response is returned with the configured status code and content type from the spec.
+func Issue127XML200Response(body GenericObject) Response {
+	return Response{
 		Body:        body,
 		Code:        200,
 		ContentType: "application/xml",
@@ -209,9 +209,9 @@ func Issue127XML200Response(body GenericObject) *Response {
 }
 
 // Issue127YAML200Response is a constructor method for a Issue127 response.
-// A *Response is returned with the configured status code and content type from the spec.
-func Issue127YAML200Response(body GenericObject) *Response {
-	return &Response{
+// A Response is returned with the configured status code and content type from the spec.
+func Issue127YAML200Response(body GenericObject) Response {
+	return Response{
 		Body:        body,
 		Code:        200,
 		ContentType: "text/yaml",
@@ -219,9 +219,9 @@ func Issue127YAML200Response(body GenericObject) *Response {
 }
 
 // Issue127JSONDefaultResponse is a constructor method for a Issue127 response.
-// A *Response is returned with the configured status code and content type from the spec.
-func Issue127JSONDefaultResponse(body GenericObject) *Response {
-	return &Response{
+// A Response is returned with the configured status code and content type from the spec.
+func Issue127JSONDefaultResponse(body GenericObject) Response {
+	return Response{
 		Body:        body,
 		Code:        200,
 		ContentType: "application/json",
@@ -229,9 +229,9 @@ func Issue127JSONDefaultResponse(body GenericObject) *Response {
 }
 
 // GetIssues375JSON200Response is a constructor method for a GetIssues375 response.
-// A *Response is returned with the configured status code and content type from the spec.
-func GetIssues375JSON200Response(body EnumInObjInArray) *Response {
-	return &Response{
+// A Response is returned with the configured status code and content type from the spec.
+func GetIssues375JSON200Response(body EnumInObjInArray) Response {
+	return Response{
 		Body:        body,
 		Code:        200,
 		ContentType: "application/json",
@@ -239,9 +239,9 @@ func GetIssues375JSON200Response(body EnumInObjInArray) *Response {
 }
 
 // GetPr66JSON200Response is a constructor method for a GetPr66 response.
-// A *Response is returned with the configured status code and content type from the spec.
-func GetPr66JSON200Response(body CustomGoType) *Response {
-	return &Response{
+// A Response is returned with the configured status code and content type from the spec.
+func GetPr66JSON200Response(body CustomGoType) Response {
+	return Response{
 		Body:        body,
 		Code:        200,
 		ContentType: "application/json",
@@ -249,9 +249,9 @@ func GetPr66JSON200Response(body CustomGoType) *Response {
 }
 
 // PostPr66JSON200Response is a constructor method for a PostPr66 response.
-// A *Response is returned with the configured status code and content type from the spec.
-func PostPr66JSON200Response(body CustomGoTypeWithAlias) *Response {
-	return &Response{
+// A Response is returned with the configured status code and content type from the spec.
+func PostPr66JSON200Response(body CustomGoTypeWithAlias) Response {
+	return Response{
 		Body:        body,
 		Code:        200,
 		ContentType: "application/json",
@@ -308,6 +308,11 @@ func (siw *ServerInterfaceWrapper) EnsureEverythingIsReferenced(w http.ResponseW
 	var handler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		resp := siw.Handler.EnsureEverythingIsReferenced(w, r)
 		if resp != nil {
+			if resp, ok := resp.(Response); ok && resp.Body == nil {
+				w.WriteHeader(resp.Code)
+				return
+			}
+
 			render.Render(w, r, resp)
 		}
 	})
@@ -324,6 +329,11 @@ func (siw *ServerInterfaceWrapper) Issue127(w http.ResponseWriter, r *http.Reque
 	var handler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		resp := siw.Handler.Issue127(w, r)
 		if resp != nil {
+			if resp, ok := resp.(Response); ok && resp.Body == nil {
+				w.WriteHeader(resp.Code)
+				return
+			}
+
 			render.Render(w, r, resp)
 		}
 	})
@@ -340,6 +350,11 @@ func (siw *ServerInterfaceWrapper) Issue185(w http.ResponseWriter, r *http.Reque
 	var handler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		resp := siw.Handler.Issue185(w, r)
 		if resp != nil {
+			if resp, ok := resp.(Response); ok && resp.Body == nil {
+				w.WriteHeader(resp.Code)
+				return
+			}
+
 			render.Render(w, r, resp)
 		}
 	})
@@ -364,6 +379,11 @@ func (siw *ServerInterfaceWrapper) Issue209(w http.ResponseWriter, r *http.Reque
 	var handler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		resp := siw.Handler.Issue209(w, r, str)
 		if resp != nil {
+			if resp, ok := resp.(Response); ok && resp.Body == nil {
+				w.WriteHeader(resp.Code)
+				return
+			}
+
 			render.Render(w, r, resp)
 		}
 	})
@@ -388,6 +408,11 @@ func (siw *ServerInterfaceWrapper) Issue30(w http.ResponseWriter, r *http.Reques
 	var handler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		resp := siw.Handler.Issue30(w, r, pFallthrough)
 		if resp != nil {
+			if resp, ok := resp.(Response); ok && resp.Body == nil {
+				w.WriteHeader(resp.Code)
+				return
+			}
+
 			render.Render(w, r, resp)
 		}
 	})
@@ -404,6 +429,11 @@ func (siw *ServerInterfaceWrapper) GetIssues375(w http.ResponseWriter, r *http.R
 	var handler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		resp := siw.Handler.GetIssues375(w, r)
 		if resp != nil {
+			if resp, ok := resp.(Response); ok && resp.Body == nil {
+				w.WriteHeader(resp.Code)
+				return
+			}
+
 			render.Render(w, r, resp)
 		}
 	})
@@ -428,6 +458,11 @@ func (siw *ServerInterfaceWrapper) Issue41(w http.ResponseWriter, r *http.Reques
 	var handler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		resp := siw.Handler.Issue41(w, r, n1param)
 		if resp != nil {
+			if resp, ok := resp.(Response); ok && resp.Body == nil {
+				w.WriteHeader(resp.Code)
+				return
+			}
+
 			render.Render(w, r, resp)
 		}
 	})
@@ -455,6 +490,11 @@ func (siw *ServerInterfaceWrapper) Issue9(w http.ResponseWriter, r *http.Request
 	var handler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		resp := siw.Handler.Issue9(w, r, params)
 		if resp != nil {
+			if resp, ok := resp.(Response); ok && resp.Body == nil {
+				w.WriteHeader(resp.Code)
+				return
+			}
+
 			render.Render(w, r, resp)
 		}
 	})
@@ -482,6 +522,11 @@ func (siw *ServerInterfaceWrapper) GetPr66(w http.ResponseWriter, r *http.Reques
 	var handler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		resp := siw.Handler.GetPr66(w, r, params)
 		if resp != nil {
+			if resp, ok := resp.(Response); ok && resp.Body == nil {
+				w.WriteHeader(resp.Code)
+				return
+			}
+
 			render.Render(w, r, resp)
 		}
 	})
@@ -509,6 +554,11 @@ func (siw *ServerInterfaceWrapper) PostPr66(w http.ResponseWriter, r *http.Reque
 	var handler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		resp := siw.Handler.PostPr66(w, r, params)
 		if resp != nil {
+			if resp, ok := resp.(Response); ok && resp.Body == nil {
+				w.WriteHeader(resp.Code)
+				return
+			}
+
 			render.Render(w, r, resp)
 		}
 	})

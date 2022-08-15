@@ -76,7 +76,7 @@ type Response struct {
 
 // Render implements the render.Renderer interface. It sets the Content-Type header
 // and status code based on the response definition.
-func (resp *Response) Render(w http.ResponseWriter, r *http.Request) error {
+func (resp Response) Render(w http.ResponseWriter, r *http.Request) error {
 	w.Header().Set("Content-Type", resp.ContentType)
 	render.Status(r, resp.Code)
 	return nil
@@ -84,20 +84,20 @@ func (resp *Response) Render(w http.ResponseWriter, r *http.Request) error {
 
 // MarshalJSON implements the json.Marshaler interface.
 // This is used to only marshal the body of the response.
-func (resp *Response) MarshalJSON() ([]byte, error) {
+func (resp Response) MarshalJSON() ([]byte, error) {
 	return json.Marshal(resp.Body)
 }
 
 // MarshalXML implements the xml.Marshaler interface.
 // This is used to only marshal the body of the response.
-func (resp *Response) MarshalXML(e *xml.Encoder, start xml.StartElement) error {
+func (resp Response) MarshalXML(e *xml.Encoder, start xml.StartElement) error {
 	return e.Encode(resp.Body)
 }
 
 // FindPetsJSON200Response is a constructor method for a FindPets response.
-// A *Response is returned with the configured status code and content type from the spec.
-func FindPetsJSON200Response(body []Pet) *Response {
-	return &Response{
+// A Response is returned with the configured status code and content type from the spec.
+func FindPetsJSON200Response(body []Pet) Response {
+	return Response{
 		Body:        body,
 		Code:        200,
 		ContentType: "application/json",
@@ -105,9 +105,9 @@ func FindPetsJSON200Response(body []Pet) *Response {
 }
 
 // FindPetsJSONDefaultResponse is a constructor method for a FindPets response.
-// A *Response is returned with the configured status code and content type from the spec.
-func FindPetsJSONDefaultResponse(body Error) *Response {
-	return &Response{
+// A Response is returned with the configured status code and content type from the spec.
+func FindPetsJSONDefaultResponse(body Error) Response {
+	return Response{
 		Body:        body,
 		Code:        200,
 		ContentType: "application/json",
@@ -115,9 +115,9 @@ func FindPetsJSONDefaultResponse(body Error) *Response {
 }
 
 // AddPetJSON201Response is a constructor method for a AddPet response.
-// A *Response is returned with the configured status code and content type from the spec.
-func AddPetJSON201Response(body Pet) *Response {
-	return &Response{
+// A Response is returned with the configured status code and content type from the spec.
+func AddPetJSON201Response(body Pet) Response {
+	return Response{
 		Body:        body,
 		Code:        201,
 		ContentType: "application/json",
@@ -125,9 +125,9 @@ func AddPetJSON201Response(body Pet) *Response {
 }
 
 // AddPetJSONDefaultResponse is a constructor method for a AddPet response.
-// A *Response is returned with the configured status code and content type from the spec.
-func AddPetJSONDefaultResponse(body Error) *Response {
-	return &Response{
+// A Response is returned with the configured status code and content type from the spec.
+func AddPetJSONDefaultResponse(body Error) Response {
+	return Response{
 		Body:        body,
 		Code:        200,
 		ContentType: "application/json",
@@ -135,9 +135,9 @@ func AddPetJSONDefaultResponse(body Error) *Response {
 }
 
 // DeletePetJSONDefaultResponse is a constructor method for a DeletePet response.
-// A *Response is returned with the configured status code and content type from the spec.
-func DeletePetJSONDefaultResponse(body Error) *Response {
-	return &Response{
+// A Response is returned with the configured status code and content type from the spec.
+func DeletePetJSONDefaultResponse(body Error) Response {
+	return Response{
 		Body:        body,
 		Code:        200,
 		ContentType: "application/json",
@@ -145,9 +145,9 @@ func DeletePetJSONDefaultResponse(body Error) *Response {
 }
 
 // FindPetByIDJSON200Response is a constructor method for a FindPetByID response.
-// A *Response is returned with the configured status code and content type from the spec.
-func FindPetByIDJSON200Response(body Pet) *Response {
-	return &Response{
+// A Response is returned with the configured status code and content type from the spec.
+func FindPetByIDJSON200Response(body Pet) Response {
+	return Response{
 		Body:        body,
 		Code:        200,
 		ContentType: "application/json",
@@ -155,9 +155,9 @@ func FindPetByIDJSON200Response(body Pet) *Response {
 }
 
 // FindPetByIDJSONDefaultResponse is a constructor method for a FindPetByID response.
-// A *Response is returned with the configured status code and content type from the spec.
-func FindPetByIDJSONDefaultResponse(body Error) *Response {
-	return &Response{
+// A Response is returned with the configured status code and content type from the spec.
+func FindPetByIDJSONDefaultResponse(body Error) Response {
+	return Response{
 		Body:        body,
 		Code:        200,
 		ContentType: "application/json",
@@ -213,6 +213,11 @@ func (siw *ServerInterfaceWrapper) FindPets(w http.ResponseWriter, r *http.Reque
 	var handler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		resp := siw.Handler.FindPets(w, r, params)
 		if resp != nil {
+			if resp, ok := resp.(Response); ok && resp.Body == nil {
+				w.WriteHeader(resp.Code)
+				return
+			}
+
 			render.Render(w, r, resp)
 		}
 	})
@@ -227,6 +232,11 @@ func (siw *ServerInterfaceWrapper) AddPet(w http.ResponseWriter, r *http.Request
 	var handler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		resp := siw.Handler.AddPet(w, r)
 		if resp != nil {
+			if resp, ok := resp.(Response); ok && resp.Body == nil {
+				w.WriteHeader(resp.Code)
+				return
+			}
+
 			render.Render(w, r, resp)
 		}
 	})
@@ -249,6 +259,11 @@ func (siw *ServerInterfaceWrapper) DeletePet(w http.ResponseWriter, r *http.Requ
 	var handler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		resp := siw.Handler.DeletePet(w, r, id)
 		if resp != nil {
+			if resp, ok := resp.(Response); ok && resp.Body == nil {
+				w.WriteHeader(resp.Code)
+				return
+			}
+
 			render.Render(w, r, resp)
 		}
 	})
@@ -271,6 +286,11 @@ func (siw *ServerInterfaceWrapper) FindPetByID(w http.ResponseWriter, r *http.Re
 	var handler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		resp := siw.Handler.FindPetByID(w, r, id)
 		if resp != nil {
+			if resp, ok := resp.(Response); ok && resp.Body == nil {
+				w.WriteHeader(resp.Code)
+				return
+			}
+
 			render.Render(w, r, resp)
 		}
 	})

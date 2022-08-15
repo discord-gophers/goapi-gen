@@ -156,7 +156,7 @@ type Response struct {
 
 // Render implements the render.Renderer interface. It sets the Content-Type header
 // and status code based on the response definition.
-func (resp *Response) Render(w http.ResponseWriter, r *http.Request) error {
+func (resp Response) Render(w http.ResponseWriter, r *http.Request) error {
 	w.Header().Set("Content-Type", resp.ContentType)
 	render.Status(r, resp.Code)
 	return nil
@@ -164,20 +164,20 @@ func (resp *Response) Render(w http.ResponseWriter, r *http.Request) error {
 
 // MarshalJSON implements the json.Marshaler interface.
 // This is used to only marshal the body of the response.
-func (resp *Response) MarshalJSON() ([]byte, error) {
+func (resp Response) MarshalJSON() ([]byte, error) {
 	return json.Marshal(resp.Body)
 }
 
 // MarshalXML implements the xml.Marshaler interface.
 // This is used to only marshal the body of the response.
-func (resp *Response) MarshalXML(e *xml.Encoder, start xml.StartElement) error {
+func (resp Response) MarshalXML(e *xml.Encoder, start xml.StartElement) error {
 	return e.Encode(resp.Body)
 }
 
 // GetEveryTypeOptionalJSON200Response is a constructor method for a GetEveryTypeOptional response.
-// A *Response is returned with the configured status code and content type from the spec.
-func GetEveryTypeOptionalJSON200Response(body EveryTypeOptional) *Response {
-	return &Response{
+// A Response is returned with the configured status code and content type from the spec.
+func GetEveryTypeOptionalJSON200Response(body EveryTypeOptional) Response {
+	return Response{
 		Body:        body,
 		Code:        200,
 		ContentType: "application/json",
@@ -185,9 +185,9 @@ func GetEveryTypeOptionalJSON200Response(body EveryTypeOptional) *Response {
 }
 
 // GetSimpleJSON200Response is a constructor method for a GetSimple response.
-// A *Response is returned with the configured status code and content type from the spec.
-func GetSimpleJSON200Response(body SomeObject) *Response {
-	return &Response{
+// A Response is returned with the configured status code and content type from the spec.
+func GetSimpleJSON200Response(body SomeObject) Response {
+	return Response{
 		Body:        body,
 		Code:        200,
 		ContentType: "application/json",
@@ -195,11 +195,11 @@ func GetSimpleJSON200Response(body SomeObject) *Response {
 }
 
 // GetWithArgsJSON200Response is a constructor method for a GetWithArgs response.
-// A *Response is returned with the configured status code and content type from the spec.
+// A Response is returned with the configured status code and content type from the spec.
 func GetWithArgsJSON200Response(body struct {
 	Name string `json:"name"`
-}) *Response {
-	return &Response{
+}) Response {
+	return Response{
 		Body:        body,
 		Code:        200,
 		ContentType: "application/json",
@@ -207,11 +207,11 @@ func GetWithArgsJSON200Response(body struct {
 }
 
 // GetWithReferencesJSON200Response is a constructor method for a GetWithReferences response.
-// A *Response is returned with the configured status code and content type from the spec.
+// A Response is returned with the configured status code and content type from the spec.
 func GetWithReferencesJSON200Response(body struct {
 	Name string `json:"name"`
-}) *Response {
-	return &Response{
+}) Response {
+	return Response{
 		Body:        body,
 		Code:        200,
 		ContentType: "application/json",
@@ -219,9 +219,9 @@ func GetWithReferencesJSON200Response(body struct {
 }
 
 // GetWithContentTypeJSON200Response is a constructor method for a GetWithContentType response.
-// A *Response is returned with the configured status code and content type from the spec.
-func GetWithContentTypeJSON200Response(body SomeObject) *Response {
-	return &Response{
+// A Response is returned with the configured status code and content type from the spec.
+func GetWithContentTypeJSON200Response(body SomeObject) Response {
+	return Response{
 		Body:        body,
 		Code:        200,
 		ContentType: "application/json",
@@ -229,9 +229,9 @@ func GetWithContentTypeJSON200Response(body SomeObject) *Response {
 }
 
 // GetReservedKeywordJSON200Response is a constructor method for a GetReservedKeyword response.
-// A *Response is returned with the configured status code and content type from the spec.
-func GetReservedKeywordJSON200Response(body ReservedKeyword) *Response {
-	return &Response{
+// A Response is returned with the configured status code and content type from the spec.
+func GetReservedKeywordJSON200Response(body ReservedKeyword) Response {
+	return Response{
 		Body:        body,
 		Code:        200,
 		ContentType: "application/json",
@@ -239,11 +239,11 @@ func GetReservedKeywordJSON200Response(body ReservedKeyword) *Response {
 }
 
 // CreateResourceJSON200Response is a constructor method for a CreateResource response.
-// A *Response is returned with the configured status code and content type from the spec.
+// A Response is returned with the configured status code and content type from the spec.
 func CreateResourceJSON200Response(body struct {
 	Name string `json:"name"`
-}) *Response {
-	return &Response{
+}) Response {
+	return Response{
 		Body:        body,
 		Code:        200,
 		ContentType: "application/json",
@@ -251,11 +251,11 @@ func CreateResourceJSON200Response(body struct {
 }
 
 // CreateResource2JSON200Response is a constructor method for a CreateResource2 response.
-// A *Response is returned with the configured status code and content type from the spec.
+// A Response is returned with the configured status code and content type from the spec.
 func CreateResource2JSON200Response(body struct {
 	Name string `json:"name"`
-}) *Response {
-	return &Response{
+}) Response {
+	return Response{
 		Body:        body,
 		Code:        200,
 		ContentType: "application/json",
@@ -263,11 +263,11 @@ func CreateResource2JSON200Response(body struct {
 }
 
 // UpdateResource3JSON200Response is a constructor method for a UpdateResource3 response.
-// A *Response is returned with the configured status code and content type from the spec.
+// A Response is returned with the configured status code and content type from the spec.
 func UpdateResource3JSON200Response(body struct {
 	Name string `json:"name"`
-}) *Response {
-	return &Response{
+}) Response {
+	return Response{
 		Body:        body,
 		Code:        200,
 		ContentType: "application/json",
@@ -275,9 +275,9 @@ func UpdateResource3JSON200Response(body struct {
 }
 
 // GetResponseWithReferenceJSON200Response is a constructor method for a GetResponseWithReference response.
-// A *Response is returned with the configured status code and content type from the spec.
-func GetResponseWithReferenceJSON200Response(body SomeObject) *Response {
-	return &Response{
+// A Response is returned with the configured status code and content type from the spec.
+func GetResponseWithReferenceJSON200Response(body SomeObject) Response {
+	return Response{
 		Body:        body,
 		Code:        200,
 		ContentType: "application/json",
@@ -285,11 +285,11 @@ func GetResponseWithReferenceJSON200Response(body SomeObject) *Response {
 }
 
 // GetWithTaggedMiddlewareJSON200Response is a constructor method for a GetWithTaggedMiddleware response.
-// A *Response is returned with the configured status code and content type from the spec.
+// A Response is returned with the configured status code and content type from the spec.
 func GetWithTaggedMiddlewareJSON200Response(body struct {
 	Name string `json:"name"`
-}) *Response {
-	return &Response{
+}) Response {
+	return Response{
 		Body:        body,
 		Code:        200,
 		ContentType: "application/json",
@@ -297,11 +297,11 @@ func GetWithTaggedMiddlewareJSON200Response(body struct {
 }
 
 // PostWithTaggedMiddlewareJSON200Response is a constructor method for a PostWithTaggedMiddleware response.
-// A *Response is returned with the configured status code and content type from the spec.
+// A Response is returned with the configured status code and content type from the spec.
 func PostWithTaggedMiddlewareJSON200Response(body struct {
 	Name string `json:"name"`
-}) *Response {
-	return &Response{
+}) Response {
+	return Response{
 		Body:        body,
 		Code:        200,
 		ContentType: "application/json",
@@ -363,6 +363,11 @@ func (siw *ServerInterfaceWrapper) GetEveryTypeOptional(w http.ResponseWriter, r
 	var handler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		resp := siw.Handler.GetEveryTypeOptional(w, r)
 		if resp != nil {
+			if resp, ok := resp.(Response); ok && resp.Body == nil {
+				w.WriteHeader(resp.Code)
+				return
+			}
+
 			render.Render(w, r, resp)
 		}
 	})
@@ -377,6 +382,11 @@ func (siw *ServerInterfaceWrapper) GetSimple(w http.ResponseWriter, r *http.Requ
 	var handler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		resp := siw.Handler.GetSimple(w, r)
 		if resp != nil {
+			if resp, ok := resp.(Response); ok && resp.Body == nil {
+				w.WriteHeader(resp.Code)
+				return
+			}
+
 			render.Render(w, r, resp)
 		}
 	})
@@ -430,6 +440,11 @@ func (siw *ServerInterfaceWrapper) GetWithArgs(w http.ResponseWriter, r *http.Re
 	var handler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		resp := siw.Handler.GetWithArgs(w, r, params)
 		if resp != nil {
+			if resp, ok := resp.(Response); ok && resp.Body == nil {
+				w.WriteHeader(resp.Code)
+				return
+			}
+
 			render.Render(w, r, resp)
 		}
 	})
@@ -460,6 +475,11 @@ func (siw *ServerInterfaceWrapper) GetWithReferences(w http.ResponseWriter, r *h
 	var handler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		resp := siw.Handler.GetWithReferences(w, r, globalArgument, argument)
 		if resp != nil {
+			if resp, ok := resp.(Response); ok && resp.Body == nil {
+				w.WriteHeader(resp.Code)
+				return
+			}
+
 			render.Render(w, r, resp)
 		}
 	})
@@ -482,6 +502,11 @@ func (siw *ServerInterfaceWrapper) GetWithContentType(w http.ResponseWriter, r *
 	var handler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		resp := siw.Handler.GetWithContentType(w, r, contentType)
 		if resp != nil {
+			if resp, ok := resp.(Response); ok && resp.Body == nil {
+				w.WriteHeader(resp.Code)
+				return
+			}
+
 			render.Render(w, r, resp)
 		}
 	})
@@ -496,6 +521,11 @@ func (siw *ServerInterfaceWrapper) GetReservedKeyword(w http.ResponseWriter, r *
 	var handler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		resp := siw.Handler.GetReservedKeyword(w, r)
 		if resp != nil {
+			if resp, ok := resp.(Response); ok && resp.Body == nil {
+				w.WriteHeader(resp.Code)
+				return
+			}
+
 			render.Render(w, r, resp)
 		}
 	})
@@ -518,6 +548,11 @@ func (siw *ServerInterfaceWrapper) CreateResource(w http.ResponseWriter, r *http
 	var handler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		resp := siw.Handler.CreateResource(w, r, argument)
 		if resp != nil {
+			if resp, ok := resp.(Response); ok && resp.Body == nil {
+				w.WriteHeader(resp.Code)
+				return
+			}
+
 			render.Render(w, r, resp)
 		}
 	})
@@ -551,6 +586,11 @@ func (siw *ServerInterfaceWrapper) CreateResource2(w http.ResponseWriter, r *htt
 	var handler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		resp := siw.Handler.CreateResource2(w, r, inlineArgument, params)
 		if resp != nil {
+			if resp, ok := resp.(Response); ok && resp.Body == nil {
+				w.WriteHeader(resp.Code)
+				return
+			}
+
 			render.Render(w, r, resp)
 		}
 	})
@@ -573,6 +613,11 @@ func (siw *ServerInterfaceWrapper) UpdateResource3(w http.ResponseWriter, r *htt
 	var handler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		resp := siw.Handler.UpdateResource3(w, r, pFallthrough)
 		if resp != nil {
+			if resp, ok := resp.(Response); ok && resp.Body == nil {
+				w.WriteHeader(resp.Code)
+				return
+			}
+
 			render.Render(w, r, resp)
 		}
 	})
@@ -587,6 +632,11 @@ func (siw *ServerInterfaceWrapper) GetResponseWithReference(w http.ResponseWrite
 	var handler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		resp := siw.Handler.GetResponseWithReference(w, r)
 		if resp != nil {
+			if resp, ok := resp.(Response); ok && resp.Body == nil {
+				w.WriteHeader(resp.Code)
+				return
+			}
+
 			render.Render(w, r, resp)
 		}
 	})
@@ -601,6 +651,11 @@ func (siw *ServerInterfaceWrapper) GetWithTaggedMiddleware(w http.ResponseWriter
 	var handler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		resp := siw.Handler.GetWithTaggedMiddleware(w, r)
 		if resp != nil {
+			if resp, ok := resp.(Response); ok && resp.Body == nil {
+				w.WriteHeader(resp.Code)
+				return
+			}
+
 			render.Render(w, r, resp)
 		}
 	})
@@ -618,6 +673,11 @@ func (siw *ServerInterfaceWrapper) PostWithTaggedMiddleware(w http.ResponseWrite
 	var handler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		resp := siw.Handler.PostWithTaggedMiddleware(w, r)
 		if resp != nil {
+			if resp, ok := resp.(Response); ok && resp.Body == nil {
+				w.WriteHeader(resp.Code)
+				return
+			}
+
 			render.Render(w, r, resp)
 		}
 	})

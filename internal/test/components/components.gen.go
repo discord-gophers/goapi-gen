@@ -163,7 +163,7 @@ type Response struct {
 
 // Render implements the render.Renderer interface. It sets the Content-Type header
 // and status code based on the response definition.
-func (resp *Response) Render(w http.ResponseWriter, r *http.Request) error {
+func (resp Response) Render(w http.ResponseWriter, r *http.Request) error {
 	w.Header().Set("Content-Type", resp.ContentType)
 	render.Status(r, resp.Code)
 	return nil
@@ -171,18 +171,18 @@ func (resp *Response) Render(w http.ResponseWriter, r *http.Request) error {
 
 // MarshalJSON implements the json.Marshaler interface.
 // This is used to only marshal the body of the response.
-func (resp *Response) MarshalJSON() ([]byte, error) {
+func (resp Response) MarshalJSON() ([]byte, error) {
 	return json.Marshal(resp.Body)
 }
 
 // MarshalXML implements the xml.Marshaler interface.
 // This is used to only marshal the body of the response.
-func (resp *Response) MarshalXML(e *xml.Encoder, start xml.StartElement) error {
+func (resp Response) MarshalXML(e *xml.Encoder, start xml.StartElement) error {
 	return e.Encode(resp.Body)
 }
 
 // EnsureEverythingIsReferencedJSON200Response is a constructor method for a EnsureEverythingIsReferenced response.
-// A *Response is returned with the configured status code and content type from the spec.
+// A Response is returned with the configured status code and content type from the spec.
 func EnsureEverythingIsReferencedJSON200Response(body struct {
 	// Has additional properties with schema for dictionaries
 	Five *AdditionalPropertiesObject5 `json:"five,omitempty"`
@@ -208,8 +208,8 @@ func EnsureEverythingIsReferencedJSON200Response(body struct {
 
 	// Does not allow additional properties
 	Two *AdditionalPropertiesObject2 `json:"two,omitempty"`
-}) *Response {
-	return &Response{
+}) Response {
+	return Response{
 		Body:        body,
 		Code:        200,
 		ContentType: "application/json",
@@ -217,11 +217,11 @@ func EnsureEverythingIsReferencedJSON200Response(body struct {
 }
 
 // EnsureEverythingIsReferencedJSONDefaultResponse is a constructor method for a EnsureEverythingIsReferenced response.
-// A *Response is returned with the configured status code and content type from the spec.
+// A Response is returned with the configured status code and content type from the spec.
 func EnsureEverythingIsReferencedJSONDefaultResponse(body struct {
 	Field SchemaObject `json:"Field"`
-}) *Response {
-	return &Response{
+}) Response {
+	return Response{
 		Body:        body,
 		Code:        200,
 		ContentType: "application/json",
@@ -851,6 +851,11 @@ func (siw *ServerInterfaceWrapper) EnsureEverythingIsReferenced(w http.ResponseW
 	var handler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		resp := siw.Handler.EnsureEverythingIsReferenced(w, r)
 		if resp != nil {
+			if resp, ok := resp.(Response); ok && resp.Body == nil {
+				w.WriteHeader(resp.Code)
+				return
+			}
+
 			render.Render(w, r, resp)
 		}
 	})
@@ -884,6 +889,11 @@ func (siw *ServerInterfaceWrapper) ParamsWithAddProps(w http.ResponseWriter, r *
 	var handler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		resp := siw.Handler.ParamsWithAddProps(w, r, params)
 		if resp != nil {
+			if resp, ok := resp.(Response); ok && resp.Body == nil {
+				w.WriteHeader(resp.Code)
+				return
+			}
+
 			render.Render(w, r, resp)
 		}
 	})
@@ -898,6 +908,11 @@ func (siw *ServerInterfaceWrapper) BodyWithAddProps(w http.ResponseWriter, r *ht
 	var handler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		resp := siw.Handler.BodyWithAddProps(w, r)
 		if resp != nil {
+			if resp, ok := resp.(Response); ok && resp.Body == nil {
+				w.WriteHeader(resp.Code)
+				return
+			}
+
 			render.Render(w, r, resp)
 		}
 	})

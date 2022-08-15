@@ -63,9 +63,7 @@ func (p *PetStore) FindPets(w http.ResponseWriter, r *http.Request, params FindP
 }
 
 // BadRequestJSON represents a JSON error response for bad requests
-type BadRequestJSON struct {
-	Error string `json:"message"`
-}
+type BadRequestJSON map[string]string
 
 // Implement render directly, setting status code and content type.
 func (b BadRequestJSON) Render(w http.ResponseWriter, r *http.Request) error {
@@ -74,26 +72,28 @@ func (b BadRequestJSON) Render(w http.ResponseWriter, r *http.Request) error {
 	return nil
 }
 
-// MarshalJSON conforms to marshal in a specific way
 func (b BadRequestJSON) MarshalJSON() ([]byte, error) {
-	return json.Marshal(map[string]string{"message": b.Error})
+	return json.Marshal(b)
 }
 
 // NotFoundJSON represents a JSON error response for Not Found Pets
-// It directly embeds a *Response, so it implements the render.Renderer interface.
-type NotFoundJSON struct {
-	*Response
-}
-
-func NotFoundError(format string, args ...interface{}) NotFoundJSON {
-	return NotFoundJSON{&Response{Code: 404, Body: map[string]string{"message": fmt.Sprintf(format, args...)}, ContentType: "application/json"}}
+//
+// It reuses Response to implement render.Renderer
+func NotFoundResponse(format string, args ...interface{}) render.Renderer {
+	return Response{
+		Code: 404,
+		Body: map[string]string{
+			"message": fmt.Sprintf(format, args...),
+		},
+		ContentType: "application/json",
+	}
 }
 
 func (p *PetStore) AddPet(w http.ResponseWriter, r *http.Request) render.Renderer {
 	// We expect a NewPet object in the request body.
 	var newPet AddPetJSONRequestBody
 	if err := render.Bind(r, &newPet); err != nil {
-		return BadRequestJSON{"Invalid format for NewPet"}
+		return BadRequestJSON{"message": "Invalid format for NewPet", "code": "new_pet_invalid_format"}
 	}
 
 	// We now have a pet, let's add it to our "database".
@@ -122,7 +122,7 @@ func (p *PetStore) FindPetByID(w http.ResponseWriter, r *http.Request, id int64)
 
 	pet, found := p.Pets[id]
 	if !found {
-		return NotFoundError(petNotFoundMsg, id)
+		return NotFoundResponse(petNotFoundMsg, id)
 	}
 
 	return FindPetByIDJSON200Response(pet)
@@ -134,7 +134,7 @@ func (p *PetStore) DeletePet(w http.ResponseWriter, r *http.Request, id int64) r
 
 	_, found := p.Pets[id]
 	if !found {
-		return NotFoundError(petNotFoundMsg, id)
+		return NotFoundResponse(petNotFoundMsg, id)
 	}
 	delete(p.Pets, int64(id))
 
