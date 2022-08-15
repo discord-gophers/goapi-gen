@@ -30,7 +30,7 @@ func NewPetStore() *PetStore {
 const petNotFoundMsg = "Could not find pet with ID %d"
 
 // Here, we implement all of the handlers in the ServerInterface
-func (p *PetStore) FindPets(w http.ResponseWriter, r *http.Request, params FindPetsParams) *Response {
+func (p *PetStore) FindPets(w http.ResponseWriter, r *http.Request, params FindPetsParams) Responser {
 	p.Lock.Lock()
 	defer p.Lock.Unlock()
 
@@ -61,11 +61,33 @@ func (p *PetStore) FindPets(w http.ResponseWriter, r *http.Request, params FindP
 	return FindPetsJSON200Response(result)
 }
 
-func (p *PetStore) AddPet(w http.ResponseWriter, r *http.Request) *Response {
+// BadRequestJSON represents a JSON error response for bad requests
+type BadRequestJSON struct {
+	Error string
+}
+
+func (b BadRequestJSON) Response() *Response {
+	return &Response{Code: 400, Body: map[string]string{"error": b.Error}, ContentType: "application/json"}
+}
+
+// NotFoundJSON represents a JSON error response for Not Found Pets
+type NotFoundJSON struct {
+	Message string
+}
+
+func NotFoundError(format string, args ...interface{}) NotFoundJSON {
+	return NotFoundJSON{fmt.Sprintf(format, args...)}
+}
+
+func (n NotFoundJSON) Response() *Response {
+	return &Response{Code: 404, Body: map[string]string{"message": n.Message}, ContentType: "application/json"}
+}
+
+func (p *PetStore) AddPet(w http.ResponseWriter, r *http.Request) Responser {
 	// We expect a NewPet object in the request body.
 	var newPet AddPetJSONRequestBody
 	if err := render.Bind(r, &newPet); err != nil {
-		return AddPetJSONDefaultResponse(Error{"Invalid format for NewPet"}).Status(http.StatusBadRequest)
+		return BadRequestJSON{"Invalid format for NewPet"}
 	}
 
 	// We now have a pet, let's add it to our "database".
@@ -88,25 +110,25 @@ func (p *PetStore) AddPet(w http.ResponseWriter, r *http.Request) *Response {
 	return AddPetJSON201Response(pet)
 }
 
-func (p *PetStore) FindPetByID(w http.ResponseWriter, r *http.Request, id int64) *Response {
+func (p *PetStore) FindPetByID(w http.ResponseWriter, r *http.Request, id int64) Responser {
 	p.Lock.Lock()
 	defer p.Lock.Unlock()
 
 	pet, found := p.Pets[id]
 	if !found {
-		return FindPetByIDJSONDefaultResponse(Error{fmt.Sprintf(petNotFoundMsg, id)}).Status(http.StatusNotFound)
+		return NotFoundError(petNotFoundMsg, id)
 	}
 
 	return FindPetByIDJSON200Response(pet)
 }
 
-func (p *PetStore) DeletePet(w http.ResponseWriter, r *http.Request, id int64) *Response {
+func (p *PetStore) DeletePet(w http.ResponseWriter, r *http.Request, id int64) Responser {
 	p.Lock.Lock()
 	defer p.Lock.Unlock()
 
 	_, found := p.Pets[id]
 	if !found {
-		return DeletePetJSONDefaultResponse(Error{fmt.Sprintf(petNotFoundMsg, id)}).Status(http.StatusNotFound)
+		return NotFoundError(petNotFoundMsg, id)
 	}
 	delete(p.Pets, int64(id))
 

@@ -124,19 +124,29 @@ type GetQueryFormParams struct {
 	N1s *string `json:"1s,omitempty"`
 }
 
+// Responser is an interface for responding to a request.
+type Responser interface {
+	Response() *Response
+}
+
 // Response is a common response struct for all the API calls.
 // A Response object may be instantiated via functions for specific operation responses.
 // It may also be instantiated directly, for the purpose of responding with a single status code.
 type Response struct {
-	body        interface{}
+	Body        interface{}
 	Code        int
-	contentType string
+	ContentType string
+}
+
+// Response implements the Responser interface.
+func (r *Response) Response() *Response {
+	return r
 }
 
 // Render implements the render.Renderer interface. It sets the Content-Type header
 // and status code based on the response definition.
 func (resp *Response) Render(w http.ResponseWriter, r *http.Request) error {
-	w.Header().Set("Content-Type", resp.contentType)
+	w.Header().Set("Content-Type", resp.ContentType)
 	render.Status(r, resp.Code)
 	return nil
 }
@@ -148,85 +158,85 @@ func (resp *Response) Status(code int) *Response {
 }
 
 // ContentType is a builder method to override the default content type for a response.
-func (resp *Response) ContentType(contentType string) *Response {
-	resp.contentType = contentType
+func (resp *Response) ContentTyp(contentType string) *Response {
+	resp.ContentType = contentType
 	return resp
 }
 
 // MarshalJSON implements the json.Marshaler interface.
 // This is used to only marshal the body of the response.
 func (resp *Response) MarshalJSON() ([]byte, error) {
-	return json.Marshal(resp.body)
+	return json.Marshal(resp.Body)
 }
 
 // MarshalXML implements the xml.Marshaler interface.
 // This is used to only marshal the body of the response.
 func (resp *Response) MarshalXML(e *xml.Encoder, start xml.StartElement) error {
-	return e.Encode(resp.body)
+	return e.Encode(resp.Body)
 }
 
 // ServerInterface represents all server handlers.
 type ServerInterface interface {
 
 	// (GET /contentObject/{param})
-	GetContentObject(w http.ResponseWriter, r *http.Request, param ComplexObject) *Response
+	GetContentObject(w http.ResponseWriter, r *http.Request, param ComplexObject) Responser
 
 	// (GET /cookie)
-	GetCookie(w http.ResponseWriter, r *http.Request, params GetCookieParams) *Response
+	GetCookie(w http.ResponseWriter, r *http.Request, params GetCookieParams) Responser
 
 	// (GET /header)
-	GetHeader(w http.ResponseWriter, r *http.Request, params GetHeaderParams) *Response
+	GetHeader(w http.ResponseWriter, r *http.Request, params GetHeaderParams) Responser
 
 	// (GET /labelExplodeArray/{.param*})
-	GetLabelExplodeArray(w http.ResponseWriter, r *http.Request, param []int32) *Response
+	GetLabelExplodeArray(w http.ResponseWriter, r *http.Request, param []int32) Responser
 
 	// (GET /labelExplodeObject/{.param*})
-	GetLabelExplodeObject(w http.ResponseWriter, r *http.Request, param Object) *Response
+	GetLabelExplodeObject(w http.ResponseWriter, r *http.Request, param Object) Responser
 
 	// (GET /labelNoExplodeArray/{.param})
-	GetLabelNoExplodeArray(w http.ResponseWriter, r *http.Request, param []int32) *Response
+	GetLabelNoExplodeArray(w http.ResponseWriter, r *http.Request, param []int32) Responser
 
 	// (GET /labelNoExplodeObject/{.param})
-	GetLabelNoExplodeObject(w http.ResponseWriter, r *http.Request, param Object) *Response
+	GetLabelNoExplodeObject(w http.ResponseWriter, r *http.Request, param Object) Responser
 
 	// (GET /matrixExplodeArray/{.id*})
-	GetMatrixExplodeArray(w http.ResponseWriter, r *http.Request, id []int32) *Response
+	GetMatrixExplodeArray(w http.ResponseWriter, r *http.Request, id []int32) Responser
 
 	// (GET /matrixExplodeObject/{.id*})
-	GetMatrixExplodeObject(w http.ResponseWriter, r *http.Request, id Object) *Response
+	GetMatrixExplodeObject(w http.ResponseWriter, r *http.Request, id Object) Responser
 
 	// (GET /matrixNoExplodeArray/{.id})
-	GetMatrixNoExplodeArray(w http.ResponseWriter, r *http.Request, id []int32) *Response
+	GetMatrixNoExplodeArray(w http.ResponseWriter, r *http.Request, id []int32) Responser
 
 	// (GET /matrixNoExplodeObject/{.id})
-	GetMatrixNoExplodeObject(w http.ResponseWriter, r *http.Request, id Object) *Response
+	GetMatrixNoExplodeObject(w http.ResponseWriter, r *http.Request, id Object) Responser
 
 	// (GET /passThrough/{param})
-	GetPassThrough(w http.ResponseWriter, r *http.Request, param string) *Response
+	GetPassThrough(w http.ResponseWriter, r *http.Request, param string) Responser
 
 	// (GET /queryDeepObject)
-	GetDeepObject(w http.ResponseWriter, r *http.Request, params GetDeepObjectParams) *Response
+	GetDeepObject(w http.ResponseWriter, r *http.Request, params GetDeepObjectParams) Responser
 
 	// (GET /queryForm)
-	GetQueryForm(w http.ResponseWriter, r *http.Request, params GetQueryFormParams) *Response
+	GetQueryForm(w http.ResponseWriter, r *http.Request, params GetQueryFormParams) Responser
 
 	// (GET /simpleExplodeArray/{param*})
-	GetSimpleExplodeArray(w http.ResponseWriter, r *http.Request, param []int32) *Response
+	GetSimpleExplodeArray(w http.ResponseWriter, r *http.Request, param []int32) Responser
 
 	// (GET /simpleExplodeObject/{param*})
-	GetSimpleExplodeObject(w http.ResponseWriter, r *http.Request, param Object) *Response
+	GetSimpleExplodeObject(w http.ResponseWriter, r *http.Request, param Object) Responser
 
 	// (GET /simpleNoExplodeArray/{param})
-	GetSimpleNoExplodeArray(w http.ResponseWriter, r *http.Request, param []int32) *Response
+	GetSimpleNoExplodeArray(w http.ResponseWriter, r *http.Request, param []int32) Responser
 
 	// (GET /simpleNoExplodeObject/{param})
-	GetSimpleNoExplodeObject(w http.ResponseWriter, r *http.Request, param Object) *Response
+	GetSimpleNoExplodeObject(w http.ResponseWriter, r *http.Request, param Object) Responser
 
 	// (GET /simplePrimitive/{param})
-	GetSimplePrimitive(w http.ResponseWriter, r *http.Request, param int32) *Response
+	GetSimplePrimitive(w http.ResponseWriter, r *http.Request, param int32) Responser
 
 	// (GET /startingWithNumber/{1param})
-	GetStartingWithNumber(w http.ResponseWriter, r *http.Request, n1param string) *Response
+	GetStartingWithNumber(w http.ResponseWriter, r *http.Request, n1param string) Responser
 }
 
 // ServerInterfaceWrapper converts contexts to parameters.
@@ -251,10 +261,11 @@ func (siw *ServerInterfaceWrapper) GetContentObject(w http.ResponseWriter, r *ht
 	var handler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		resp := siw.Handler.GetContentObject(w, r, param)
 		if resp != nil {
-			if resp.body != nil {
-				render.Render(w, r, resp)
+			rsp := resp.Response()
+			if rsp.Body != nil {
+				render.Render(w, r, rsp)
 			} else {
-				w.WriteHeader(resp.Code)
+				w.WriteHeader(rsp.Code)
 			}
 		}
 	})
@@ -361,10 +372,11 @@ func (siw *ServerInterfaceWrapper) GetCookie(w http.ResponseWriter, r *http.Requ
 	var handler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		resp := siw.Handler.GetCookie(w, r, params)
 		if resp != nil {
-			if resp.body != nil {
-				render.Render(w, r, resp)
+			rsp := resp.Response()
+			if rsp.Body != nil {
+				render.Render(w, r, rsp)
 			} else {
-				w.WriteHeader(resp.Code)
+				w.WriteHeader(rsp.Code)
 			}
 		}
 	})
@@ -528,10 +540,11 @@ func (siw *ServerInterfaceWrapper) GetHeader(w http.ResponseWriter, r *http.Requ
 	var handler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		resp := siw.Handler.GetHeader(w, r, params)
 		if resp != nil {
-			if resp.body != nil {
-				render.Render(w, r, resp)
+			rsp := resp.Response()
+			if rsp.Body != nil {
+				render.Render(w, r, rsp)
 			} else {
-				w.WriteHeader(resp.Code)
+				w.WriteHeader(rsp.Code)
 			}
 		}
 	})
@@ -554,10 +567,11 @@ func (siw *ServerInterfaceWrapper) GetLabelExplodeArray(w http.ResponseWriter, r
 	var handler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		resp := siw.Handler.GetLabelExplodeArray(w, r, param)
 		if resp != nil {
-			if resp.body != nil {
-				render.Render(w, r, resp)
+			rsp := resp.Response()
+			if rsp.Body != nil {
+				render.Render(w, r, rsp)
 			} else {
-				w.WriteHeader(resp.Code)
+				w.WriteHeader(rsp.Code)
 			}
 		}
 	})
@@ -580,10 +594,11 @@ func (siw *ServerInterfaceWrapper) GetLabelExplodeObject(w http.ResponseWriter, 
 	var handler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		resp := siw.Handler.GetLabelExplodeObject(w, r, param)
 		if resp != nil {
-			if resp.body != nil {
-				render.Render(w, r, resp)
+			rsp := resp.Response()
+			if rsp.Body != nil {
+				render.Render(w, r, rsp)
 			} else {
-				w.WriteHeader(resp.Code)
+				w.WriteHeader(rsp.Code)
 			}
 		}
 	})
@@ -606,10 +621,11 @@ func (siw *ServerInterfaceWrapper) GetLabelNoExplodeArray(w http.ResponseWriter,
 	var handler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		resp := siw.Handler.GetLabelNoExplodeArray(w, r, param)
 		if resp != nil {
-			if resp.body != nil {
-				render.Render(w, r, resp)
+			rsp := resp.Response()
+			if rsp.Body != nil {
+				render.Render(w, r, rsp)
 			} else {
-				w.WriteHeader(resp.Code)
+				w.WriteHeader(rsp.Code)
 			}
 		}
 	})
@@ -632,10 +648,11 @@ func (siw *ServerInterfaceWrapper) GetLabelNoExplodeObject(w http.ResponseWriter
 	var handler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		resp := siw.Handler.GetLabelNoExplodeObject(w, r, param)
 		if resp != nil {
-			if resp.body != nil {
-				render.Render(w, r, resp)
+			rsp := resp.Response()
+			if rsp.Body != nil {
+				render.Render(w, r, rsp)
 			} else {
-				w.WriteHeader(resp.Code)
+				w.WriteHeader(rsp.Code)
 			}
 		}
 	})
@@ -658,10 +675,11 @@ func (siw *ServerInterfaceWrapper) GetMatrixExplodeArray(w http.ResponseWriter, 
 	var handler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		resp := siw.Handler.GetMatrixExplodeArray(w, r, id)
 		if resp != nil {
-			if resp.body != nil {
-				render.Render(w, r, resp)
+			rsp := resp.Response()
+			if rsp.Body != nil {
+				render.Render(w, r, rsp)
 			} else {
-				w.WriteHeader(resp.Code)
+				w.WriteHeader(rsp.Code)
 			}
 		}
 	})
@@ -684,10 +702,11 @@ func (siw *ServerInterfaceWrapper) GetMatrixExplodeObject(w http.ResponseWriter,
 	var handler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		resp := siw.Handler.GetMatrixExplodeObject(w, r, id)
 		if resp != nil {
-			if resp.body != nil {
-				render.Render(w, r, resp)
+			rsp := resp.Response()
+			if rsp.Body != nil {
+				render.Render(w, r, rsp)
 			} else {
-				w.WriteHeader(resp.Code)
+				w.WriteHeader(rsp.Code)
 			}
 		}
 	})
@@ -710,10 +729,11 @@ func (siw *ServerInterfaceWrapper) GetMatrixNoExplodeArray(w http.ResponseWriter
 	var handler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		resp := siw.Handler.GetMatrixNoExplodeArray(w, r, id)
 		if resp != nil {
-			if resp.body != nil {
-				render.Render(w, r, resp)
+			rsp := resp.Response()
+			if rsp.Body != nil {
+				render.Render(w, r, rsp)
 			} else {
-				w.WriteHeader(resp.Code)
+				w.WriteHeader(rsp.Code)
 			}
 		}
 	})
@@ -736,10 +756,11 @@ func (siw *ServerInterfaceWrapper) GetMatrixNoExplodeObject(w http.ResponseWrite
 	var handler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		resp := siw.Handler.GetMatrixNoExplodeObject(w, r, id)
 		if resp != nil {
-			if resp.body != nil {
-				render.Render(w, r, resp)
+			rsp := resp.Response()
+			if rsp.Body != nil {
+				render.Render(w, r, rsp)
 			} else {
-				w.WriteHeader(resp.Code)
+				w.WriteHeader(rsp.Code)
 			}
 		}
 	})
@@ -759,10 +780,11 @@ func (siw *ServerInterfaceWrapper) GetPassThrough(w http.ResponseWriter, r *http
 	var handler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		resp := siw.Handler.GetPassThrough(w, r, param)
 		if resp != nil {
-			if resp.body != nil {
-				render.Render(w, r, resp)
+			rsp := resp.Response()
+			if rsp.Body != nil {
+				render.Render(w, r, rsp)
 			} else {
-				w.WriteHeader(resp.Code)
+				w.WriteHeader(rsp.Code)
 			}
 		}
 	})
@@ -788,10 +810,11 @@ func (siw *ServerInterfaceWrapper) GetDeepObject(w http.ResponseWriter, r *http.
 	var handler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		resp := siw.Handler.GetDeepObject(w, r, params)
 		if resp != nil {
-			if resp.body != nil {
-				render.Render(w, r, resp)
+			rsp := resp.Response()
+			if rsp.Body != nil {
+				render.Render(w, r, rsp)
 			} else {
-				w.WriteHeader(resp.Code)
+				w.WriteHeader(rsp.Code)
 			}
 		}
 	})
@@ -886,10 +909,11 @@ func (siw *ServerInterfaceWrapper) GetQueryForm(w http.ResponseWriter, r *http.R
 	var handler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		resp := siw.Handler.GetQueryForm(w, r, params)
 		if resp != nil {
-			if resp.body != nil {
-				render.Render(w, r, resp)
+			rsp := resp.Response()
+			if rsp.Body != nil {
+				render.Render(w, r, rsp)
 			} else {
-				w.WriteHeader(resp.Code)
+				w.WriteHeader(rsp.Code)
 			}
 		}
 	})
@@ -912,10 +936,11 @@ func (siw *ServerInterfaceWrapper) GetSimpleExplodeArray(w http.ResponseWriter, 
 	var handler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		resp := siw.Handler.GetSimpleExplodeArray(w, r, param)
 		if resp != nil {
-			if resp.body != nil {
-				render.Render(w, r, resp)
+			rsp := resp.Response()
+			if rsp.Body != nil {
+				render.Render(w, r, rsp)
 			} else {
-				w.WriteHeader(resp.Code)
+				w.WriteHeader(rsp.Code)
 			}
 		}
 	})
@@ -938,10 +963,11 @@ func (siw *ServerInterfaceWrapper) GetSimpleExplodeObject(w http.ResponseWriter,
 	var handler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		resp := siw.Handler.GetSimpleExplodeObject(w, r, param)
 		if resp != nil {
-			if resp.body != nil {
-				render.Render(w, r, resp)
+			rsp := resp.Response()
+			if rsp.Body != nil {
+				render.Render(w, r, rsp)
 			} else {
-				w.WriteHeader(resp.Code)
+				w.WriteHeader(rsp.Code)
 			}
 		}
 	})
@@ -964,10 +990,11 @@ func (siw *ServerInterfaceWrapper) GetSimpleNoExplodeArray(w http.ResponseWriter
 	var handler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		resp := siw.Handler.GetSimpleNoExplodeArray(w, r, param)
 		if resp != nil {
-			if resp.body != nil {
-				render.Render(w, r, resp)
+			rsp := resp.Response()
+			if rsp.Body != nil {
+				render.Render(w, r, rsp)
 			} else {
-				w.WriteHeader(resp.Code)
+				w.WriteHeader(rsp.Code)
 			}
 		}
 	})
@@ -990,10 +1017,11 @@ func (siw *ServerInterfaceWrapper) GetSimpleNoExplodeObject(w http.ResponseWrite
 	var handler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		resp := siw.Handler.GetSimpleNoExplodeObject(w, r, param)
 		if resp != nil {
-			if resp.body != nil {
-				render.Render(w, r, resp)
+			rsp := resp.Response()
+			if rsp.Body != nil {
+				render.Render(w, r, rsp)
 			} else {
-				w.WriteHeader(resp.Code)
+				w.WriteHeader(rsp.Code)
 			}
 		}
 	})
@@ -1016,10 +1044,11 @@ func (siw *ServerInterfaceWrapper) GetSimplePrimitive(w http.ResponseWriter, r *
 	var handler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		resp := siw.Handler.GetSimplePrimitive(w, r, param)
 		if resp != nil {
-			if resp.body != nil {
-				render.Render(w, r, resp)
+			rsp := resp.Response()
+			if rsp.Body != nil {
+				render.Render(w, r, rsp)
 			} else {
-				w.WriteHeader(resp.Code)
+				w.WriteHeader(rsp.Code)
 			}
 		}
 	})
@@ -1039,10 +1068,11 @@ func (siw *ServerInterfaceWrapper) GetStartingWithNumber(w http.ResponseWriter, 
 	var handler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		resp := siw.Handler.GetStartingWithNumber(w, r, n1param)
 		if resp != nil {
-			if resp.body != nil {
-				render.Render(w, r, resp)
+			rsp := resp.Response()
+			if rsp.Body != nil {
+				render.Render(w, r, rsp)
 			} else {
-				w.WriteHeader(resp.Code)
+				w.WriteHeader(rsp.Code)
 			}
 		}
 	})

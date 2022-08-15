@@ -25,7 +25,7 @@ type testServer struct {
 	headerParams    *GetHeaderParams
 }
 
-func (t *testServer) reset() *Response {
+func (t *testServer) reset() Responser {
 	t.array = nil
 	t.object = nil
 	t.complexObject = nil
@@ -39,110 +39,110 @@ func (t *testServer) reset() *Response {
 	return nil
 }
 
-//  (GET /contentObject/{param})
-func (t *testServer) GetContentObject(w http.ResponseWriter, r *http.Request, param ComplexObject) *Response {
+// (GET /contentObject/{param})
+func (t *testServer) GetContentObject(w http.ResponseWriter, r *http.Request, param ComplexObject) Responser {
 	t.complexObject = &param
 	return nil
 }
 
-//  (GET /labelExplodeArray/{.param*})
-func (t *testServer) GetLabelExplodeArray(w http.ResponseWriter, r *http.Request, param []int32) *Response {
+// (GET /labelExplodeArray/{.param*})
+func (t *testServer) GetLabelExplodeArray(w http.ResponseWriter, r *http.Request, param []int32) Responser {
 	t.array = param
 	return nil
 }
 
-//  (GET /labelExplodeObject/{.param*})
-func (t *testServer) GetLabelExplodeObject(w http.ResponseWriter, r *http.Request, param Object) *Response {
+// (GET /labelExplodeObject/{.param*})
+func (t *testServer) GetLabelExplodeObject(w http.ResponseWriter, r *http.Request, param Object) Responser {
 	t.object = &param
 	return nil
 }
 
-//  (GET /labelNoExplodeArray/{.param})
-func (t *testServer) GetLabelNoExplodeArray(w http.ResponseWriter, r *http.Request, param []int32) *Response {
+// (GET /labelNoExplodeArray/{.param})
+func (t *testServer) GetLabelNoExplodeArray(w http.ResponseWriter, r *http.Request, param []int32) Responser {
 	t.array = param
 	return nil
 }
 
-//  (GET /labelNoExplodeObject/{.param})
-func (t *testServer) GetLabelNoExplodeObject(w http.ResponseWriter, r *http.Request, param Object) *Response {
+// (GET /labelNoExplodeObject/{.param})
+func (t *testServer) GetLabelNoExplodeObject(w http.ResponseWriter, r *http.Request, param Object) Responser {
 	t.object = &param
 	return nil
 }
 
-//  (GET /matrixExplodeArray/{.param*})
-func (t *testServer) GetMatrixExplodeArray(w http.ResponseWriter, r *http.Request, param []int32) *Response {
+// (GET /matrixExplodeArray/{.param*})
+func (t *testServer) GetMatrixExplodeArray(w http.ResponseWriter, r *http.Request, param []int32) Responser {
 	t.array = param
 	return nil
 }
 
-//  (GET /matrixExplodeObject/{.param*})
-func (t *testServer) GetMatrixExplodeObject(w http.ResponseWriter, r *http.Request, param Object) *Response {
+// (GET /matrixExplodeObject/{.param*})
+func (t *testServer) GetMatrixExplodeObject(w http.ResponseWriter, r *http.Request, param Object) Responser {
 	t.object = &param
 	return nil
 }
 
-//  (GET /matrixNoExplodeArray/{.param})
-func (t *testServer) GetMatrixNoExplodeArray(w http.ResponseWriter, r *http.Request, param []int32) *Response {
+// (GET /matrixNoExplodeArray/{.param})
+func (t *testServer) GetMatrixNoExplodeArray(w http.ResponseWriter, r *http.Request, param []int32) Responser {
 	t.array = param
 	return nil
 }
 
-//  (GET /matrixNoExplodeObject/{.param})
-func (t *testServer) GetMatrixNoExplodeObject(w http.ResponseWriter, r *http.Request, param Object) *Response {
+// (GET /matrixNoExplodeObject/{.param})
+func (t *testServer) GetMatrixNoExplodeObject(w http.ResponseWriter, r *http.Request, param Object) Responser {
 	t.object = &param
 	return nil
 }
 
-//  (GET /simpleExplodeArray/{param*})
-func (t *testServer) GetSimpleExplodeArray(w http.ResponseWriter, r *http.Request, param []int32) *Response {
+// (GET /simpleExplodeArray/{param*})
+func (t *testServer) GetSimpleExplodeArray(w http.ResponseWriter, r *http.Request, param []int32) Responser {
 	t.array = param
 	return nil
 }
 
-//  (GET /simpleExplodeObject/{param*})
-func (t *testServer) GetSimpleExplodeObject(w http.ResponseWriter, r *http.Request, param Object) *Response {
+// (GET /simpleExplodeObject/{param*})
+func (t *testServer) GetSimpleExplodeObject(w http.ResponseWriter, r *http.Request, param Object) Responser {
 	t.object = &param
 	return nil
 }
 
-//  (GET /simpleNoExplodeArray/{param})
-func (t *testServer) GetSimpleNoExplodeArray(w http.ResponseWriter, r *http.Request, param []int32) *Response {
+// (GET /simpleNoExplodeArray/{param})
+func (t *testServer) GetSimpleNoExplodeArray(w http.ResponseWriter, r *http.Request, param []int32) Responser {
 	t.array = param
 	return nil
 }
 
-//  (GET /simpleNoExplodeObject/{param})
-func (t *testServer) GetSimpleNoExplodeObject(w http.ResponseWriter, r *http.Request, param Object) *Response {
+// (GET /simpleNoExplodeObject/{param})
+func (t *testServer) GetSimpleNoExplodeObject(w http.ResponseWriter, r *http.Request, param Object) Responser {
 	t.object = &param
 	return nil
 }
 
-//  (GET /passThrough/{param})
-func (t *testServer) GetPassThrough(w http.ResponseWriter, r *http.Request, param string) *Response {
+// (GET /passThrough/{param})
+func (t *testServer) GetPassThrough(w http.ResponseWriter, r *http.Request, param string) Responser {
 	t.passThrough = &param
 	return nil
 }
 
-//  (GET /startingWithjNumber/{param})
-func (t *testServer) GetStartingWithNumber(w http.ResponseWriter, r *http.Request, n1param string) *Response {
+// (GET /startingWithjNumber/{param})
+func (t *testServer) GetStartingWithNumber(w http.ResponseWriter, r *http.Request, n1param string) Responser {
 	t.n1param = &n1param
 	return nil
 }
 
 // (GET /queryDeepObject)
-func (t *testServer) GetDeepObject(w http.ResponseWriter, r *http.Request, params GetDeepObjectParams) *Response {
+func (t *testServer) GetDeepObject(w http.ResponseWriter, r *http.Request, params GetDeepObjectParams) Responser {
 	t.complexObject = &params.DeepObj
 	return nil
 }
 
-//  (GET /simplePrimitive/{param})
-func (t *testServer) GetSimplePrimitive(w http.ResponseWriter, r *http.Request, param int32) *Response {
+// (GET /simplePrimitive/{param})
+func (t *testServer) GetSimplePrimitive(w http.ResponseWriter, r *http.Request, param int32) Responser {
 	t.primitive = &param
 	return nil
 }
 
-//  (GET /queryForm)
-func (t *testServer) GetQueryForm(w http.ResponseWriter, r *http.Request, params GetQueryFormParams) *Response {
+// (GET /queryForm)
+func (t *testServer) GetQueryForm(w http.ResponseWriter, r *http.Request, params GetQueryFormParams) Responser {
 	t.queryParams = &params
 	if params.Ea != nil {
 		t.array = params.Ea
@@ -174,8 +174,8 @@ func (t *testServer) GetQueryForm(w http.ResponseWriter, r *http.Request, params
 	return nil
 }
 
-//  (GET /header)
-func (t *testServer) GetHeader(w http.ResponseWriter, r *http.Request, params GetHeaderParams) *Response {
+// (GET /header)
+func (t *testServer) GetHeader(w http.ResponseWriter, r *http.Request, params GetHeaderParams) Responser {
 	t.headerParams = &params
 	if params.XPrimitive != nil {
 		t.primitive = params.XPrimitive
@@ -204,8 +204,8 @@ func (t *testServer) GetHeader(w http.ResponseWriter, r *http.Request, params Ge
 	return nil
 }
 
-//  (GET /cookie)
-func (t *testServer) GetCookie(w http.ResponseWriter, r *http.Request, params GetCookieParams) *Response {
+// (GET /cookie)
+func (t *testServer) GetCookie(w http.ResponseWriter, r *http.Request, params GetCookieParams) Responser {
 	t.cookieParams = &params
 	if params.Ea != nil {
 		t.array = params.Ea
