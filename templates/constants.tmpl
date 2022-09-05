@@ -1,7 +1,15 @@
-{{- if gt (len .SecuritySchemeProviderNames) 0 }}
+{{ with .SecuritySchemeProviderNames -}}
 const (
-{{range $ProviderName := .SecuritySchemeProviderNames}}
+{{range $ProviderName := .}}
 		{{- $ProviderName | ucFirst}}Scopes = "{{$ProviderName}}.Scopes"
+{{end}}
+)
+{{end}}
+
+{{ with .Middlewares -}}
+const (
+{{- range $m := . }}
+		{{- $m | ucFirst}} = "{{$m}}"
 {{end}}
 )
 {{end}}

@@ -31,9 +31,13 @@ func Handler(si ServerInterface, opts ...ServerOption) http.Handler {
 	}
 	{{- end }}
 
-	{{ $middlewares := genTaggedMiddleware . }}
-	{{- with $middlewares }} 
-	middlewares := {{ printf "%#v" . }}
+	{{ with genTaggedMiddleware . -}}
+	// Operation specific middleware
+	middlewares := []string{
+	{{- range $m := . }}
+		{{ $m | ucFirst }},
+	{{- end }}
+	}
 	for _, m := range middlewares {
 		if _, ok := wrapper.Middlewares[m]; !ok {
 			panic("goapi-gen: could not find tagged middleware " + m)

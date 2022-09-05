@@ -107,18 +107,21 @@ type Constants struct {
 	SecuritySchemeProviderNames []string
 	// EnumDefinitions holds type and value information for all enums
 	EnumDefinitions []EnumDefinition
+
+	Middlewares []string
 }
 
 // TypeDefinition describes a Go type definition in generated code.
 //
 // Let's use this example schema:
 // components:
-//  schemas:
-//    Person:
-//      type: object
-//      properties:
-//      name:
-//        type: string
+//
+//	schemas:
+//	  Person:
+//	    type: object
+//	    properties:
+//	    name:
+//	      type: string
 type TypeDefinition struct {
 	// The name of the type, eg, type <...> Person
 	TypeName string

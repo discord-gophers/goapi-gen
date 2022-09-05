@@ -168,9 +168,8 @@ func (siw *ServerInterfaceWrapper) {{$opid}}(w http.ResponseWriter, r *http.Requ
 
 	{{ with .Middlewares -}}
 	// Operation specific middleware
-	{{- range . }}
-	{{ $tag := printf "%q" . -}}
-	handler = siw.Middlewares[{{$tag}}](handler).ServeHTTP
+	{{- range $m := . }}
+	handler = siw.Middlewares[{{- $m | ucFirst}}](handler).ServeHTTP
 	{{- end }}
 	{{- end }}
 

@@ -16,6 +16,11 @@ import (
 	"github.com/go-chi/render"
 )
 
+const (
+	OperationMiddleware = "operationMiddleware"
+	PathMiddleware      = "pathMiddleware"
+)
+
 // EveryTypeOptional defines model for EveryTypeOptional.
 type EveryTypeOptional struct {
 	ArrayInlineField     []int               `json:"array_inline_field,omitempty"`
@@ -662,7 +667,7 @@ func (siw *ServerInterfaceWrapper) GetWithTaggedMiddleware(w http.ResponseWriter
 	})
 
 	// Operation specific middleware
-	handler = siw.Middlewares["pathMiddleware"](handler).ServeHTTP
+	handler = siw.Middlewares[PathMiddleware](handler).ServeHTTP
 
 	handler(w, r.WithContext(ctx))
 }
@@ -683,8 +688,8 @@ func (siw *ServerInterfaceWrapper) PostWithTaggedMiddleware(w http.ResponseWrite
 	})
 
 	// Operation specific middleware
-	handler = siw.Middlewares["pathMiddleware"](handler).ServeHTTP
-	handler = siw.Middlewares["operationMiddleware"](handler).ServeHTTP
+	handler = siw.Middlewares[PathMiddleware](handler).ServeHTTP
+	handler = siw.Middlewares[OperationMiddleware](handler).ServeHTTP
 
 	handler(w, r.WithContext(ctx))
 }
@@ -806,7 +811,11 @@ func Handler(si ServerInterface, opts ...ServerOption) http.Handler {
 		ErrorHandlerFunc: options.ErrorHandlerFunc,
 	}
 
-	middlewares := []string{"operationMiddleware", "pathMiddleware"}
+	// Operation specific middleware
+	middlewares := []string{
+		OperationMiddleware,
+		PathMiddleware,
+	}
 	for _, m := range middlewares {
 		if _, ok := wrapper.Middlewares[m]; !ok {
 			panic("goapi-gen: could not find tagged middleware " + m)

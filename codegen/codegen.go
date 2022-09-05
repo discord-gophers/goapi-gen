@@ -303,24 +303,32 @@ func GenerateTypeDefinitions(t *template.Template, swagger *openapi3.T, ops []Op
 func GenerateConstants(t *template.Template, ops []OperationDefinition) (string, error) {
 	constants := Constants{
 		SecuritySchemeProviderNames: []string{},
+		Middlewares:                 []string{},
 	}
 
 	providerNameMap := map[string]struct{}{}
+	middlewaresMap := map[string]struct{}{}
 	for _, op := range ops {
 		for _, def := range op.SecurityDefinitions {
 			providerName := SanitizeGoIdentity(def.ProviderName)
 			providerNameMap[providerName] = struct{}{}
 		}
+
+		for _, middleware := range op.Middlewares {
+			middlewaresMap[middleware] = struct{}{}
+		}
 	}
 
-	var providerNames []string
 	for providerName := range providerNameMap {
-		providerNames = append(providerNames, providerName)
+		constants.SecuritySchemeProviderNames = append(constants.SecuritySchemeProviderNames, providerName)
 	}
 
-	sort.Strings(providerNames)
+	for middleware := range middlewaresMap {
+		constants.Middlewares = append(constants.Middlewares, middleware)
+	}
 
-	constants.SecuritySchemeProviderNames = append(constants.SecuritySchemeProviderNames, providerNames...)
+	sort.Strings(constants.SecuritySchemeProviderNames)
+	sort.Strings(constants.Middlewares)
 
 	return GenerateTemplates([]string{"constants.tmpl"}, t, constants)
 }
