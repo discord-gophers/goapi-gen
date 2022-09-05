@@ -9,7 +9,7 @@ const (
 {{ with .Middlewares -}}
 const (
 {{- range $m := . }}
-		{{- $m | ucFirst}} = "{{$m}}"
+		{{- $m | ucFirst}}Middleware = "{{$m}}.Middleware"
 {{end}}
 )
 {{end}}

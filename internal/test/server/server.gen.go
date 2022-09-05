@@ -17,8 +17,8 @@ import (
 )
 
 const (
-	OperationMiddleware = "operationMiddleware"
-	PathMiddleware      = "pathMiddleware"
+	OperationMiddleware = "operation.Middleware"
+	PathMiddleware      = "path.Middleware"
 )
 
 // EveryTypeOptional defines model for EveryTypeOptional.

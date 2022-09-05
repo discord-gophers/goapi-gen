@@ -35,7 +35,7 @@ func Handler(si ServerInterface, opts ...ServerOption) http.Handler {
 	// Operation specific middleware
 	middlewares := []string{
 	{{- range $m := . }}
-		{{ $m | ucFirst }},
+		{{ $m | ucFirst }}Middleware,
 	{{- end }}
 	}
 	for _, m := range middlewares {

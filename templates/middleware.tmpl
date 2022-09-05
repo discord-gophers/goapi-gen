@@ -169,7 +169,7 @@ func (siw *ServerInterfaceWrapper) {{$opid}}(w http.ResponseWriter, r *http.Requ
 	{{ with .Middlewares -}}
 	// Operation specific middleware
 	{{- range $m := . }}
-	handler = siw.Middlewares[{{- $m | ucFirst}}](handler).ServeHTTP
+	handler = siw.Middlewares[{{- $m | ucFirst}}Middleware](handler).ServeHTTP
 	{{- end }}
 	{{- end }}
 
