@@ -7,9 +7,12 @@ const (
 {{end}}
 
 {{ with .Middlewares -}}
+// MiddlewareKey defines a new type for middleware, to not use them intercheangeably with strings
+type MiddlewareKey string
+
 const (
 {{- range $m := . }}
-		{{- $m | ucFirst}}Middleware = "{{$m}}.Middleware"
+		{{- $m | ucFirst}}Middleware MiddlewareKey = "{{$m}}.Middleware"
 {{end}}
 )
 {{end}}

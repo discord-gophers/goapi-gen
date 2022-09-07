@@ -1,7 +1,9 @@
 type ServerOptions struct {
 	BaseURL string
 	BaseRouter chi.Router
-	Middlewares map[string]func(http.Handler) http.Handler
+	{{ with genTaggedMiddleware . -}}
+	Middlewares map[MiddlewareKey]func(http.Handler) http.Handler
+	{{ end -}}
 	ErrorHandlerFunc   func(w http.ResponseWriter, r *http.Request, err error)
 }
 
@@ -12,7 +14,9 @@ func Handler(si ServerInterface, opts ...ServerOption) http.Handler {
 	options := &ServerOptions {
 		BaseURL: "/",
 		BaseRouter: chi.NewRouter(),
-		Middlewares: make(map[string]func(http.Handler) http.Handler),
+		{{ with genTaggedMiddleware . -}}
+		Middlewares: make(map[MiddlewareKey]func(http.Handler) http.Handler),
+		{{ end -}}
 		ErrorHandlerFunc: func(w http.ResponseWriter, r *http.Request, err error) {
 			http.Error(w, err.Error(), http.StatusBadRequest)
 		},
@@ -26,14 +30,16 @@ func Handler(si ServerInterface, opts ...ServerOption) http.Handler {
 	{{if . -}}
 	wrapper := ServerInterfaceWrapper{
 		Handler: si,
+		{{ with genTaggedMiddleware . -}}
 		Middlewares: options.Middlewares,
+		{{ end -}}
 		ErrorHandlerFunc: options.ErrorHandlerFunc,
 	}
 	{{- end }}
 
 	{{ with genTaggedMiddleware . -}}
 	// Operation specific middleware
-	middlewares := []string{
+	middlewares := []MiddlewareKey{
 	{{- range $m := . }}
 		{{ $m | ucFirst }}Middleware,
 	{{- end }}
@@ -48,7 +54,7 @@ func Handler(si ServerInterface, opts ...ServerOption) http.Handler {
 	r.Route(options.BaseURL, func(r chi.Router) {
 	{{range . -}}
 		r.{{.Method | lower | title }}("{{.Path | swaggerURIToChiURI}}", wrapper.{{.OperationID}})
-	{{ end }}
+	{{ end -}}
 	})
 	return r
 }
@@ -65,13 +71,14 @@ func WithServerBaseURL(url string) ServerOption {
 	}
 }
 
-func WithMiddleware(key string, middleware func(http.Handler) http.Handler) ServerOption {
+{{ with genTaggedMiddleware . -}}
+func WithMiddleware(key MiddlewareKey, middleware func(http.Handler) http.Handler) ServerOption {
 	return func(s *ServerOptions) {
 		s.Middlewares[key] = middleware
 	}
 }
 
-func WithMiddlewares(middlewares map[string]func(http.Handler) http.Handler) ServerOption {
+func WithMiddlewares(middlewares map[MiddlewareKey]func(http.Handler) http.Handler) ServerOption {
 	return func(s *ServerOptions) {
 		s.Middlewares = middlewares
 	}
@@ -82,4 +89,4 @@ func WithErrorHandler(handler func(w http.ResponseWriter, r *http.Request, err e
 		s.ErrorHandlerFunc = handler
 	}
 }
-
+{{ end -}}

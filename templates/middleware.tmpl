@@ -1,7 +1,9 @@
 // ServerInterfaceWrapper converts contexts to parameters.
 type ServerInterfaceWrapper struct {
 	Handler ServerInterface
-	Middlewares map[string]func(http.Handler) http.Handler
+	{{range . -}}{{$opid := .OperationID}}{{ with .Middlewares -}}
+	Middlewares map[MiddlewareKey]func(http.Handler) http.Handler
+	{{break}}{{- end -}}{{ end -}}
 	ErrorHandlerFunc func(w http.ResponseWriter, r *http.Request, err error)
 }
 

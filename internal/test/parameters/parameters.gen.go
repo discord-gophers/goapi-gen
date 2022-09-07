@@ -232,7 +232,6 @@ type ServerInterface interface {
 // ServerInterfaceWrapper converts contexts to parameters.
 type ServerInterfaceWrapper struct {
 	Handler          ServerInterface
-	Middlewares      map[string]func(http.Handler) http.Handler
 	ErrorHandlerFunc func(w http.ResponseWriter, r *http.Request, err error)
 }
 
@@ -1139,7 +1138,6 @@ func (err TooManyValuesForParamError) ParamName() string { return err.paramName 
 type ServerOptions struct {
 	BaseURL          string
 	BaseRouter       chi.Router
-	Middlewares      map[string]func(http.Handler) http.Handler
 	ErrorHandlerFunc func(w http.ResponseWriter, r *http.Request, err error)
 }
 
@@ -1148,9 +1146,8 @@ type ServerOption func(*ServerOptions)
 // Handler creates http.Handler with routing matching OpenAPI spec.
 func Handler(si ServerInterface, opts ...ServerOption) http.Handler {
 	options := &ServerOptions{
-		BaseURL:     "/",
-		BaseRouter:  chi.NewRouter(),
-		Middlewares: make(map[string]func(http.Handler) http.Handler),
+		BaseURL:    "/",
+		BaseRouter: chi.NewRouter(),
 		ErrorHandlerFunc: func(w http.ResponseWriter, r *http.Request, err error) {
 			http.Error(w, err.Error(), http.StatusBadRequest)
 		},
@@ -1163,7 +1160,6 @@ func Handler(si ServerInterface, opts ...ServerOption) http.Handler {
 	r := options.BaseRouter
 	wrapper := ServerInterfaceWrapper{
 		Handler:          si,
-		Middlewares:      options.Middlewares,
 		ErrorHandlerFunc: options.ErrorHandlerFunc,
 	}
 
@@ -1188,7 +1184,6 @@ func Handler(si ServerInterface, opts ...ServerOption) http.Handler {
 		r.Get("/simpleNoExplodeObject/{param}", wrapper.GetSimpleNoExplodeObject)
 		r.Get("/simplePrimitive/{param}", wrapper.GetSimplePrimitive)
 		r.Get("/startingWithNumber/{1param}", wrapper.GetStartingWithNumber)
-
 	})
 	return r
 }
@@ -1202,24 +1197,6 @@ func WithRouter(r chi.Router) ServerOption {
 func WithServerBaseURL(url string) ServerOption {
 	return func(s *ServerOptions) {
 		s.BaseURL = url
-	}
-}
-
-func WithMiddleware(key string, middleware func(http.Handler) http.Handler) ServerOption {
-	return func(s *ServerOptions) {
-		s.Middlewares[key] = middleware
-	}
-}
-
-func WithMiddlewares(middlewares map[string]func(http.Handler) http.Handler) ServerOption {
-	return func(s *ServerOptions) {
-		s.Middlewares = middlewares
-	}
-}
-
-func WithErrorHandler(handler func(w http.ResponseWriter, r *http.Request, err error)) ServerOption {
-	return func(s *ServerOptions) {
-		s.ErrorHandlerFunc = handler
 	}
 }
 

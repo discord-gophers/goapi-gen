@@ -16,9 +16,12 @@ import (
 	"github.com/go-chi/render"
 )
 
+// MiddlewareKey defines a new type for middleware, to not use them intercheangeably with strings
+type MiddlewareKey string
+
 const (
-	OperationMiddleware = "operation.Middleware"
-	PathMiddleware      = "path.Middleware"
+	OperationMiddleware MiddlewareKey = "operation.Middleware"
+	PathMiddleware      MiddlewareKey = "path.Middleware"
 )
 
 // EveryTypeOptional defines model for EveryTypeOptional.
@@ -369,7 +372,7 @@ type ServerInterface interface {
 // ServerInterfaceWrapper converts contexts to parameters.
 type ServerInterfaceWrapper struct {
 	Handler          ServerInterface
-	Middlewares      map[string]func(http.Handler) http.Handler
+	Middlewares      map[MiddlewareKey]func(http.Handler) http.Handler
 	ErrorHandlerFunc func(w http.ResponseWriter, r *http.Request, err error)
 }
 
@@ -783,7 +786,7 @@ func (err TooManyValuesForParamError) ParamName() string { return err.paramName 
 type ServerOptions struct {
 	BaseURL          string
 	BaseRouter       chi.Router
-	Middlewares      map[string]func(http.Handler) http.Handler
+	Middlewares      map[MiddlewareKey]func(http.Handler) http.Handler
 	ErrorHandlerFunc func(w http.ResponseWriter, r *http.Request, err error)
 }
 
@@ -794,7 +797,7 @@ func Handler(si ServerInterface, opts ...ServerOption) http.Handler {
 	options := &ServerOptions{
 		BaseURL:     "/",
 		BaseRouter:  chi.NewRouter(),
-		Middlewares: make(map[string]func(http.Handler) http.Handler),
+		Middlewares: make(map[MiddlewareKey]func(http.Handler) http.Handler),
 		ErrorHandlerFunc: func(w http.ResponseWriter, r *http.Request, err error) {
 			http.Error(w, err.Error(), http.StatusBadRequest)
 		},
@@ -812,7 +815,7 @@ func Handler(si ServerInterface, opts ...ServerOption) http.Handler {
 	}
 
 	// Operation specific middleware
-	middlewares := []string{
+	middlewares := []MiddlewareKey{
 		OperationMiddleware,
 		PathMiddleware,
 	}
@@ -835,7 +838,6 @@ func Handler(si ServerInterface, opts ...ServerOption) http.Handler {
 		r.Get("/response-with-reference", wrapper.GetResponseWithReference)
 		r.Get("/with-tagged-middleware", wrapper.GetWithTaggedMiddleware)
 		r.Post("/with-tagged-middleware", wrapper.PostWithTaggedMiddleware)
-
 	})
 	return r
 }
@@ -852,13 +854,13 @@ func WithServerBaseURL(url string) ServerOption {
 	}
 }
 
-func WithMiddleware(key string, middleware func(http.Handler) http.Handler) ServerOption {
+func WithMiddleware(key MiddlewareKey, middleware func(http.Handler) http.Handler) ServerOption {
 	return func(s *ServerOptions) {
 		s.Middlewares[key] = middleware
 	}
 }
 
-func WithMiddlewares(middlewares map[string]func(http.Handler) http.Handler) ServerOption {
+func WithMiddlewares(middlewares map[MiddlewareKey]func(http.Handler) http.Handler) ServerOption {
 	return func(s *ServerOptions) {
 		s.Middlewares = middlewares
 	}
