@@ -11,9 +11,9 @@ import (
 
 // Define the required middleware. If these are not defined, the handler
 // definition will panic. However, we set the middlewares to be noops.
-var noopMiddlewares = map[MiddlewareKey]func(http.Handler) http.Handler{
-	PathMiddleware:      func(h http.Handler) http.Handler { return h },
-	OperationMiddleware: func(h http.Handler) http.Handler { return h },
+var noopMiddlewares = Middlewares{
+	Path:      func(h http.Handler) http.Handler { return h },
+	Operation: func(h http.Handler) http.Handler { return h },
 }
 
 func TestParameters(t *testing.T) {
@@ -69,12 +69,12 @@ func TestMiddlewareCalled(t *testing.T) {
 	m.GetWithTaggedMiddlewareFunc = func(w http.ResponseWriter, r *http.Request) *Response { return nil }
 
 	called := false
-	mw := map[MiddlewareKey]func(http.Handler) http.Handler{
-		PathMiddleware: func(h http.Handler) http.Handler {
+	mw := Middlewares{
+		Path: func(h http.Handler) http.Handler {
 			called = true
 			return h
 		},
-		OperationMiddleware: func(h http.Handler) http.Handler { return h },
+		Operation: func(h http.Handler) http.Handler { return h },
 	}
 
 	h := Handler(&m, WithMiddlewares(mw))
@@ -92,13 +92,13 @@ func TestMiddlewareCalledWithOrder(t *testing.T) {
 	m.PostWithTaggedMiddlewareFunc = func(w http.ResponseWriter, r *http.Request) *Response { return nil }
 
 	var order []string
-	mw := map[MiddlewareKey]func(http.Handler) http.Handler{
-		PathMiddleware: func(h http.Handler) http.Handler {
+	mw := Middlewares{
+		Path: func(h http.Handler) http.Handler {
 			t.Log("first")
 			order = append(order, "first")
 			return h
 		},
-		OperationMiddleware: func(h http.Handler) http.Handler {
+		Operation: func(h http.Handler) http.Handler {
 			t.Log("second")
 			order = append(order, "second")
 			return h

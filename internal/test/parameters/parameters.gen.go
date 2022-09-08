@@ -1200,6 +1200,12 @@ func WithServerBaseURL(url string) ServerOption {
 	}
 }
 
+func WithErrorHandler(handler func(w http.ResponseWriter, r *http.Request, err error)) ServerOption {
+	return func(s *ServerOptions) {
+		s.ErrorHandlerFunc = handler
+	}
+}
+
 // Base64 encoded, gzipped, json marshaled Swagger object
 var swaggerSpec = []string{
 

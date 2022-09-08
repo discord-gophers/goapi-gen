@@ -16,14 +16,6 @@ import (
 	"github.com/go-chi/render"
 )
 
-// MiddlewareKey defines a new type for middleware, to not use them intercheangeably with strings
-type MiddlewareKey string
-
-const (
-	OperationMiddleware MiddlewareKey = "operation.Middleware"
-	PathMiddleware      MiddlewareKey = "path.Middleware"
-)
-
 // EveryTypeOptional defines model for EveryTypeOptional.
 type EveryTypeOptional struct {
 	ArrayInlineField     []int               `json:"array_inline_field,omitempty"`
@@ -372,7 +364,7 @@ type ServerInterface interface {
 // ServerInterfaceWrapper converts contexts to parameters.
 type ServerInterfaceWrapper struct {
 	Handler          ServerInterface
-	Middlewares      map[MiddlewareKey]func(http.Handler) http.Handler
+	Middlewares      Middlewares
 	ErrorHandlerFunc func(w http.ResponseWriter, r *http.Request, err error)
 }
 
@@ -670,7 +662,7 @@ func (siw *ServerInterfaceWrapper) GetWithTaggedMiddleware(w http.ResponseWriter
 	})
 
 	// Operation specific middleware
-	handler = siw.Middlewares[PathMiddleware](handler).ServeHTTP
+	handler = siw.Middlewares.Path(handler).ServeHTTP
 
 	handler(w, r.WithContext(ctx))
 }
@@ -691,8 +683,8 @@ func (siw *ServerInterfaceWrapper) PostWithTaggedMiddleware(w http.ResponseWrite
 	})
 
 	// Operation specific middleware
-	handler = siw.Middlewares[PathMiddleware](handler).ServeHTTP
-	handler = siw.Middlewares[OperationMiddleware](handler).ServeHTTP
+	handler = siw.Middlewares.Path(handler).ServeHTTP
+	handler = siw.Middlewares.Operation(handler).ServeHTTP
 
 	handler(w, r.WithContext(ctx))
 }
@@ -783,10 +775,16 @@ func (err RequiredHeaderError) ParamName() string        { return err.paramName 
 func (err InvalidParamFormatError) ParamName() string    { return err.paramName }
 func (err TooManyValuesForParamError) ParamName() string { return err.paramName }
 
+// Middlewares holds the set of middleware for this service
+type Middlewares struct {
+	Operation func(http.Handler) http.Handler
+	Path      func(http.Handler) http.Handler
+}
+
 type ServerOptions struct {
 	BaseURL          string
 	BaseRouter       chi.Router
-	Middlewares      map[MiddlewareKey]func(http.Handler) http.Handler
+	Middlewares      Middlewares
 	ErrorHandlerFunc func(w http.ResponseWriter, r *http.Request, err error)
 }
 
@@ -797,7 +795,7 @@ func Handler(si ServerInterface, opts ...ServerOption) http.Handler {
 	options := &ServerOptions{
 		BaseURL:     "/",
 		BaseRouter:  chi.NewRouter(),
-		Middlewares: make(map[MiddlewareKey]func(http.Handler) http.Handler),
+		Middlewares: Middlewares{},
 		ErrorHandlerFunc: func(w http.ResponseWriter, r *http.Request, err error) {
 			http.Error(w, err.Error(), http.StatusBadRequest)
 		},
@@ -815,14 +813,11 @@ func Handler(si ServerInterface, opts ...ServerOption) http.Handler {
 	}
 
 	// Operation specific middleware
-	middlewares := []MiddlewareKey{
-		OperationMiddleware,
-		PathMiddleware,
+	if options.Middlewares.Operation == nil {
+		panic("goapi-gen: could not find tagged middleware operation (OperationMiddleware)")
 	}
-	for _, m := range middlewares {
-		if _, ok := wrapper.Middlewares[m]; !ok {
-			panic("goapi-gen: could not find tagged middleware " + m)
-		}
+	if options.Middlewares.Path == nil {
+		panic("goapi-gen: could not find tagged middleware path (PathMiddleware)")
 	}
 
 	r.Route(options.BaseURL, func(r chi.Router) {
@@ -854,13 +849,19 @@ func WithServerBaseURL(url string) ServerOption {
 	}
 }
 
-func WithMiddleware(key MiddlewareKey, middleware func(http.Handler) http.Handler) ServerOption {
+func WithOperationMiddleware(middleware func(http.Handler) http.Handler) ServerOption {
 	return func(s *ServerOptions) {
-		s.Middlewares[key] = middleware
+		s.Middlewares.Operation = middleware
 	}
 }
 
-func WithMiddlewares(middlewares map[MiddlewareKey]func(http.Handler) http.Handler) ServerOption {
+func WithPathMiddleware(middleware func(http.Handler) http.Handler) ServerOption {
+	return func(s *ServerOptions) {
+		s.Middlewares.Path = middleware
+	}
+}
+
+func WithMiddlewares(middlewares Middlewares) ServerOption {
 	return func(s *ServerOptions) {
 		s.Middlewares = middlewares
 	}
