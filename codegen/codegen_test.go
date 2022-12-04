@@ -358,7 +358,7 @@ type MyType struct {
 func (t *MyType) ToValue() string {
     return t.value
 }
-func (t *MyType) MarshalJSON() ([]byte, error) {
+func (t MyType) MarshalJSON() ([]byte, error) {
     return json.Marshal(t.value)
 }
 func (t *MyType) UnmarshalJSON(data []byte) error {
@@ -400,7 +400,7 @@ type MyType struct {
 func (t *MyType) ToValue() int64 {
     return t.value
 }
-func (t *MyType) MarshalJSON() ([]byte, error) {
+func (t MyType) MarshalJSON() ([]byte, error) {
     return json.Marshal(t.value)
 }
 func (t *MyType) UnmarshalJSON(data []byte) error {
