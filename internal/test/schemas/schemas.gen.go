@@ -84,7 +84,7 @@ type EnumInObjInArrayVal struct {
 func (t *EnumInObjInArrayVal) ToValue() string {
 	return t.value
 }
-func (t *EnumInObjInArrayVal) MarshalJSON() ([]byte, error) {
+func (t EnumInObjInArrayVal) MarshalJSON() ([]byte, error) {
 	return json.Marshal(t.value)
 }
 func (t *EnumInObjInArrayVal) UnmarshalJSON(data []byte) error {
