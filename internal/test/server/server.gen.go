@@ -814,10 +814,10 @@ func Handler(si ServerInterface, opts ...ServerOption) http.Handler {
 
 	// Operation specific middleware
 	if options.Middlewares.Operation == nil {
-		panic("goapi-gen: could not find tagged middleware operation (OperationMiddleware)")
+		panic("goapi-gen: could not find tagged middleware operation (Operation)")
 	}
 	if options.Middlewares.Path == nil {
-		panic("goapi-gen: could not find tagged middleware path (PathMiddleware)")
+		panic("goapi-gen: could not find tagged middleware path (Path)")
 	}
 
 	r.Route(options.BaseURL, func(r chi.Router) {

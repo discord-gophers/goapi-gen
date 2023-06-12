@@ -50,7 +50,7 @@ func Handler(si ServerInterface, opts ...ServerOption) http.Handler {
 	// Operation specific middleware
 	{{- range $m := . }}
 	if options.Middlewares.{{$m | ucFirst }} == nil {
-		panic("goapi-gen: could not find tagged middleware {{$m}} ({{$m | ucFirst }}Middleware)")
+		panic("goapi-gen: could not find tagged middleware {{$m}} ({{$m | ucFirst }})")
 	}
 	{{- end }}
 	{{end}}
