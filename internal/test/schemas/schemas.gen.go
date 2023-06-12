@@ -84,7 +84,7 @@ type EnumInObjInArrayVal struct {
 func (t *EnumInObjInArrayVal) ToValue() string {
 	return t.value
 }
-func (t *EnumInObjInArrayVal) MarshalJSON() ([]byte, error) {
+func (t EnumInObjInArrayVal) MarshalJSON() ([]byte, error) {
 	return json.Marshal(t.value)
 }
 func (t *EnumInObjInArrayVal) UnmarshalJSON(data []byte) error {
@@ -307,7 +307,6 @@ type ServerInterface interface {
 // ServerInterfaceWrapper converts contexts to parameters.
 type ServerInterfaceWrapper struct {
 	Handler          ServerInterface
-	Middlewares      map[string]func(http.Handler) http.Handler
 	ErrorHandlerFunc func(w http.ResponseWriter, r *http.Request, err error)
 }
 
@@ -657,7 +656,6 @@ func (err TooManyValuesForParamError) ParamName() string { return err.paramName 
 type ServerOptions struct {
 	BaseURL          string
 	BaseRouter       chi.Router
-	Middlewares      map[string]func(http.Handler) http.Handler
 	ErrorHandlerFunc func(w http.ResponseWriter, r *http.Request, err error)
 }
 
@@ -666,9 +664,8 @@ type ServerOption func(*ServerOptions)
 // Handler creates http.Handler with routing matching OpenAPI spec.
 func Handler(si ServerInterface, opts ...ServerOption) http.Handler {
 	options := &ServerOptions{
-		BaseURL:     "/",
-		BaseRouter:  chi.NewRouter(),
-		Middlewares: make(map[string]func(http.Handler) http.Handler),
+		BaseURL:    "/",
+		BaseRouter: chi.NewRouter(),
 		ErrorHandlerFunc: func(w http.ResponseWriter, r *http.Request, err error) {
 			http.Error(w, err.Error(), http.StatusBadRequest)
 		},
@@ -681,7 +678,6 @@ func Handler(si ServerInterface, opts ...ServerOption) http.Handler {
 	r := options.BaseRouter
 	wrapper := ServerInterfaceWrapper{
 		Handler:          si,
-		Middlewares:      options.Middlewares,
 		ErrorHandlerFunc: options.ErrorHandlerFunc,
 	}
 
@@ -696,7 +692,6 @@ func Handler(si ServerInterface, opts ...ServerOption) http.Handler {
 		r.Get("/issues/9", wrapper.Issue9)
 		r.Get("/pr/66", wrapper.GetPr66)
 		r.Post("/pr/66", wrapper.PostPr66)
-
 	})
 	return r
 }
@@ -710,18 +705,6 @@ func WithRouter(r chi.Router) ServerOption {
 func WithServerBaseURL(url string) ServerOption {
 	return func(s *ServerOptions) {
 		s.BaseURL = url
-	}
-}
-
-func WithMiddleware(key string, middleware func(http.Handler) http.Handler) ServerOption {
-	return func(s *ServerOptions) {
-		s.Middlewares[key] = middleware
-	}
-}
-
-func WithMiddlewares(middlewares map[string]func(http.Handler) http.Handler) ServerOption {
-	return func(s *ServerOptions) {
-		s.Middlewares = middlewares
 	}
 }
 

@@ -1,7 +1,18 @@
+{{ with genTaggedMiddleware . -}}
+// Middlewares holds the set of middleware for this service
+type Middlewares struct {
+	{{range $m := . -}}
+	{{$m | ucFirst }} func(http.Handler) http.Handler
+	{{ end  -}}
+}
+{{ end  }}
+
 type ServerOptions struct {
 	BaseURL string
 	BaseRouter chi.Router
-	Middlewares map[string]func(http.Handler) http.Handler
+	{{ with genTaggedMiddleware . -}}
+	Middlewares Middlewares
+	{{ end -}}
 	ErrorHandlerFunc   func(w http.ResponseWriter, r *http.Request, err error)
 }
 
@@ -12,7 +23,9 @@ func Handler(si ServerInterface, opts ...ServerOption) http.Handler {
 	options := &ServerOptions {
 		BaseURL: "/",
 		BaseRouter: chi.NewRouter(),
-		Middlewares: make(map[string]func(http.Handler) http.Handler),
+		{{ with genTaggedMiddleware . -}}
+		Middlewares: Middlewares{},
+		{{ end -}}
 		ErrorHandlerFunc: func(w http.ResponseWriter, r *http.Request, err error) {
 			http.Error(w, err.Error(), http.StatusBadRequest)
 		},
@@ -26,25 +39,26 @@ func Handler(si ServerInterface, opts ...ServerOption) http.Handler {
 	{{if . -}}
 	wrapper := ServerInterfaceWrapper{
 		Handler: si,
+		{{ with genTaggedMiddleware . -}}
 		Middlewares: options.Middlewares,
+		{{ end -}}
 		ErrorHandlerFunc: options.ErrorHandlerFunc,
 	}
 	{{- end }}
 
-	{{ $middlewares := genTaggedMiddleware . }}
-	{{- with $middlewares }} 
-	middlewares := {{ printf "%#v" . }}
-	for _, m := range middlewares {
-		if _, ok := wrapper.Middlewares[m]; !ok {
-			panic("goapi-gen: could not find tagged middleware " + m)
-		}
+	{{ with genTaggedMiddleware . -}}
+	// Operation specific middleware
+	{{- range $m := . }}
+	if options.Middlewares.{{$m | ucFirst }} == nil {
+		panic("goapi-gen: could not find tagged middleware {{$m}} ({{$m | ucFirst }})")
 	}
+	{{- end }}
 	{{end}}
 
 	r.Route(options.BaseURL, func(r chi.Router) {
 	{{range . -}}
 		r.{{.Method | lower | title }}("{{.Path | swaggerURIToChiURI}}", wrapper.{{.OperationID}})
-	{{ end }}
+	{{ end -}}
 	})
 	return r
 }
@@ -61,21 +75,25 @@ func WithServerBaseURL(url string) ServerOption {
 	}
 }
 
-func WithMiddleware(key string, middleware func(http.Handler) http.Handler) ServerOption {
+{{ with genTaggedMiddleware . -}}
+{{range $m := . -}}
+func With{{$m | ucFirst }}Middleware(middleware func(http.Handler) http.Handler) ServerOption {
 	return func(s *ServerOptions) {
-		s.Middlewares[key] = middleware
+		s.Middlewares.{{$m | ucFirst }} = middleware
 	}
 }
 
-func WithMiddlewares(middlewares map[string]func(http.Handler) http.Handler) ServerOption {
+{{ end }}
+
+func WithMiddlewares(middlewares Middlewares) ServerOption {
 	return func(s *ServerOptions) {
 		s.Middlewares = middlewares
 	}
 }
+{{ end }}
 
 func WithErrorHandler(handler func(w http.ResponseWriter, r *http.Request, err error)) ServerOption {
 	return func(s *ServerOptions) {
 		s.ErrorHandlerFunc = handler
 	}
 }
-

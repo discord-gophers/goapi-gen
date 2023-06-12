@@ -1,7 +1,9 @@
 // ServerInterfaceWrapper converts contexts to parameters.
 type ServerInterfaceWrapper struct {
 	Handler ServerInterface
-	Middlewares map[string]func(http.Handler) http.Handler
+	{{with genTaggedMiddleware . -}}
+	Middlewares Middlewares
+	{{ end  -}}
 	ErrorHandlerFunc func(w http.ResponseWriter, r *http.Request, err error)
 }
 
@@ -168,9 +170,8 @@ func (siw *ServerInterfaceWrapper) {{$opid}}(w http.ResponseWriter, r *http.Requ
 
 	{{ with .Middlewares -}}
 	// Operation specific middleware
-	{{- range . }}
-	{{ $tag := printf "%q" . -}}
-	handler = siw.Middlewares[{{$tag}}](handler).ServeHTTP
+	{{- range $m := . }}
+	handler = siw.Middlewares.{{- $m | ucFirst}}(handler).ServeHTTP
 	{{- end }}
 	{{- end }}
 
