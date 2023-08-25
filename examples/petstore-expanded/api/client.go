@@ -38,12 +38,9 @@ func (c *Client) FindPets(ctx context.Context, p FindPetsParams) (*[]Pet, *Error
 
 	// define out handlers
 	read := false // flag such that empty responses are kept nil
-	is200 := func(resp *http.Response) bool {
-		return resp.StatusCode == 200
-	}
 	var _200 *[]Pet
 	handle200 := func(resp *http.Response) error {
-		if !is200(resp) {
+		if resp.StatusCode == 200 {
 			return nil
 		}
 
@@ -64,12 +61,9 @@ func (c *Client) FindPets(ctx context.Context, p FindPetsParams) (*[]Pet, *Error
 		return err
 	}
 
-	isdefault := func(resp *http.Response) bool {
-		return resp.StatusCode != 0
-	}
 	var _default *Error
 	handledefault := func(resp *http.Response) error {
-		if !isdefault(resp) {
+		if resp.StatusCode != 0 {
 			return nil
 		}
 
@@ -123,12 +117,9 @@ func (c *Client) AddPet(ctx context.Context, body NewPet) (*Pet, *Error, error) 
 
 	// define out handlers
 	read := false // flag such that empty responses are kept nil
-	is201 := func(resp *http.Response) bool {
-		return resp.StatusCode == 201
-	}
 	var _201 *Pet
 	handle201 := func(resp *http.Response) error {
-		if !is201(resp) {
+		if resp.StatusCode == 201 {
 			return nil
 		}
 
@@ -149,12 +140,9 @@ func (c *Client) AddPet(ctx context.Context, body NewPet) (*Pet, *Error, error) 
 		return err
 	}
 
-	isdefault := func(resp *http.Response) bool {
-		return resp.StatusCode != 0
-	}
 	var _default *Error
 	handledefault := func(resp *http.Response) error {
-		if !isdefault(resp) {
+		if resp.StatusCode != 0 {
 			return nil
 		}
 
@@ -205,12 +193,9 @@ func (c *Client) DeletePet(ctx context.Context, id int64) (*Error, error) {
 
 	// define out handlers
 	read := false // flag such that empty responses are kept nil
-	isdefault := func(resp *http.Response) bool {
-		return resp.StatusCode != 0
-	}
 	var _default *Error
 	handledefault := func(resp *http.Response) error {
-		if !isdefault(resp) {
+		if resp.StatusCode != 0 {
 			return nil
 		}
 
@@ -260,12 +245,9 @@ func (c *Client) FindPetByID(ctx context.Context, id int64) (*Pet, *Error, error
 
 	// define out handlers
 	read := false // flag such that empty responses are kept nil
-	is200 := func(resp *http.Response) bool {
-		return resp.StatusCode == 200
-	}
 	var _200 *Pet
 	handle200 := func(resp *http.Response) error {
-		if !is200(resp) {
+		if resp.StatusCode == 200 {
 			return nil
 		}
 
@@ -286,12 +268,9 @@ func (c *Client) FindPetByID(ctx context.Context, id int64) (*Pet, *Error, error
 		return err
 	}
 
-	isdefault := func(resp *http.Response) bool {
-		return resp.StatusCode != 0
-	}
 	var _default *Error
 	handledefault := func(resp *http.Response) error {
-		if !isdefault(resp) {
+		if resp.StatusCode != 0 {
 			return nil
 		}
 

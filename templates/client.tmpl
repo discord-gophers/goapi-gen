@@ -137,12 +137,9 @@ func (c *Client) {{.OperationID}}(ctx context.Context
     read := false // flag such that empty responses are kept nil
     {{end -}}
     {{range .GetResponseTypeDefinitions -}}
-    is{{.ResponseName}} := func(resp *http.Response) bool {
-        return resp.StatusCode {{.ResponseName | statusCodeRange}}
-    }
     var _{{.ResponseName}} *{{.Schema.TypeDecl}}
     handle{{.ResponseName}} := func(resp *http.Response) error {
-        if !is{{.ResponseName}}(resp) {
+        if resp.StatusCode {{.ResponseName | statusCodeRange}} {
             return nil
         }
 
