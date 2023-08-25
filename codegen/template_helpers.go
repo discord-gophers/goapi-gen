@@ -101,6 +101,16 @@ func responseNameToStatusCode(responseName string) string {
 	}
 }
 
+func responseToStatusRangeString(responseName string) string {
+	switch strings.ToUpper(responseName) {
+	case "DEFAULT":
+		return "!= 0"
+	case "1XX", "2XX", "3XX", "4XX", "5XX":
+		return fmt.Sprintf(">= %s00 && < %s99", responseName[:1], responseName[:1])
+	}
+	return fmt.Sprintf("== %s", responseName)
+}
+
 // TitleWord converts a single worded string to title case.
 // This is a replacement to `strings.Title` which we used previously.
 // We didn't need strings.Title word boundary rules, and just want to Title the words directly,
@@ -123,9 +133,11 @@ var TemplateFunctions = template.FuncMap{
 
 	"swaggerURIToChiURI": SwaggerURIToChiURI,
 
-	"statusCode": responseNameToStatusCode,
+	"statusCode":      responseNameToStatusCode,
+	"statusCodeRange": responseToStatusRangeString,
 
-	"ucFirst": snaker.ForceCamelIdentifier,
-	"lower":   strings.ToLower,
-	"title":   TitleWord,
+	"hasPrefix": strings.HasPrefix,
+	"ucFirst":   snaker.ForceCamelIdentifier,
+	"lower":     strings.ToLower,
+	"title":     TitleWord,
 }

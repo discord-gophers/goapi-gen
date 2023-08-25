@@ -90,6 +90,8 @@ func run(c *cli.Context, cfg *config) error {
 			opts.SkipFmt = true
 		case "skip-prune":
 			opts.SkipPrune = true
+		case "client":
+			opts.GenerateClient = true
 		default:
 			return fmt.Errorf("unknown generation option: %s", tgt)
 		}

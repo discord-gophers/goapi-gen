@@ -1,0 +1,144 @@
+type Client struct {
+    BaseURL string
+    Client  *http.Client
+}
+
+{{define "rt" -}}
+{{if or (not (hasPrefix .Schema.GoType "*")) .Schema.SkipOptionalPointer -}}
+    p.{{.ParamName | ucFirst}}
+{{- else -}}
+    *p.{{.ParamName | ucFirst}}
+{{- end -}}
+{{- end -}}
+
+{{define "typeToString" -}}
+{{- if eq .Schema.GoType "string" -}}
+{{template "rt" .}}
+{{- else if eq .Schema.GoType "int32" -}}
+fmt.Sprint({{template "rt" .}})
+{{- else if eq .Schema.GoType "int64" -}}
+fmt.Sprint({{template "rt" .}})
+{{- else if eq .Schema.GoType "float32" -}}
+fmt.Sprint({{template "rt" .}})
+{{- else if eq .Schema.GoType "float64" -}}
+fmt.Sprint({{template "rt" .}})
+{{- else if eq .Schema.GoType "bool" -}}
+fmt.Sprint({{template "rt" .}})
+{{- else if eq .Schema.GoType "[]string" -}}
+strings.Join({{template "rt" .}}, ",")
+{{- else if eq .Schema.GoType "[]int32" -}}
+strings.Join({{template "rt" .}}, ",")
+{{- else if eq .Schema.GoType "[]int64" -}}
+strings.Join({{template "rt" .}}, ",")
+{{- else if eq .Schema.GoType "[]float32" -}}
+strings.Join({{template "rt" .}}, ",")
+{{- else if eq .Schema.GoType "[]float64" -}}
+strings.Join({{template "rt" .}}, ",")
+{{- else if eq .Schema.GoType "[]bool" -}}
+strings.Join({{template "rt" .}}, ",")
+{{- else -}}
+fmt.Sprint({{template "rt" .}})
+{{- end -}}
+{{- end}}
+
+
+{{range .Operations -}}
+
+// {{.OperationID}} {{.Summary}}
+func (c *Client) {{.OperationID}}(ctx context.Context
+    {{- if not (eq (len .Params) 0) -}}, p {{.OperationID}}Params {{- end -}}
+    {{- range .PathParams}}, {{.ParamName}} {{.Schema.TypeDecl}}{{end}}
+    {{- if not (eq (len .Bodies) 0) -}}, body {{(index .Bodies 0 ).Schema.GoType}} {{- end -}}
+    ) ({{- range .GetResponseTypeDefinitions -}}
+    *{{ .Schema.TypeDecl }},
+    {{- end -}}
+    error) {
+
+    req := &requests.Builder{}
+    req = req.Client(c.Client)
+    req = req.Method("{{.Method}}")
+    req = req.BaseURL(c.BaseURL)
+    req = req.Path(
+        {{- if not (eq (.PathParams | len) 0) -}}
+        strings.NewReplacer({{range .PathParams}} "{ {{- .ParamName -}} }", fmt.Sprint({{.ParamName}}),{{end}}).Replace("{{.Path}}")
+        {{- else -}}
+        "{{.Path}}"
+        {{- end -}}
+    )
+
+    {{range .QueryParams -}}
+    {{if .Required -}}
+    req = req.Param("{{.ParamName}}", {{- template "typeToString" . -}} )
+    {{else -}}
+    if p.{{.ParamName | ucFirst}} != nil {
+        req = req.Param("{{.ParamName}}", {{- template "typeToString" . -}} )
+    }
+    {{end -}}
+    {{end -}}
+
+    {{range .HeaderParams -}}
+    {{if .Required -}}
+    req = req.Header("{{.ParamName}}", {{- template "typeToString" . -}} )
+    {{else -}}
+    if p.{{.ParamName | ucFirst}} != nil {
+        req = req.Header("{{.ParamName}}", {{- template "typeToString" . -}} )
+    }
+    {{end -}}
+    {{end -}}
+
+    {{range .CookieParams -}}
+    {{if .Required -}}
+    req = req.Cookie("{{.ParamName}}", fmt.Sprint(p.{{.ParamName | ucFirst}}))
+    {{else -}}
+    if p.{{.ParamName | ucFirst}} != nil {
+        req = req.Cookie("{{.ParamName}}", fmt.Sprint(p.{{.ParamName | ucFirst}}))
+    }
+    {{end -}}
+    {{end -}}
+
+    {{if not (eq (len .Bodies) 0) -}}
+    req = req.BodyJSON(body)
+    req = req.ContentType({{ range .Bodies}}"{{.ContentType}}",{{end}})
+    {{end}}
+
+    // define out handlers
+    read := false // flag such that empty responses are kept nil
+    {{range .GetResponseTypeDefinitions -}}
+    is{{.ResponseName}} := func(resp *http.Response) bool {
+        return resp.StatusCode {{.ResponseName | statusCodeRange}}
+    }
+    var _{{.ResponseName}} *{{.Schema.TypeDecl}}
+    handle{{.ResponseName}} := func(resp *http.Response) error {
+        if !is{{.ResponseName}}(resp) {
+            return nil
+        }
+
+        if read {
+            return nil
+        }
+        read = true
+
+        _{{.ResponseName}} = new({{.Schema.TypeDecl}})        
+        err := json.NewDecoder(resp.Body).Decode(_{{.ResponseName}})
+        switch err {
+        case nil:
+            return nil
+        case io.EOF:
+            _{{.ResponseName}} = nil
+            return nil
+        }
+        return err
+    }
+
+    {{end -}}
+
+    req = req.Handle(requests.ChainHandlers( {{- range .GetResponseTypeDefinitions -}} handle{{.ResponseName}}, {{- end -}}))
+    err := req.Fetch(ctx)
+    if err != nil {
+        return {{range .GetResponseTypeDefinitions }}nil, {{ end }} err
+    }
+
+    return {{range .GetResponseTypeDefinitions }}_{{.ResponseName}}, {{ end }} nil
+}
+
+{{ end -}}
