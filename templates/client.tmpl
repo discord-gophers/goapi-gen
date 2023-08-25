@@ -1,13 +1,15 @@
 type Client struct {
     BaseURL string
     Client  *http.Client
+    ResponseInterceptor func(*http.Response) error
+	RequestOptions func(*requests.Builder) *requests.Builder
 }
 
 {{define "rt" -}}
-{{if or (not (hasPrefix .Schema.GoType "*")) .Schema.SkipOptionalPointer -}}
-    p.{{.ParamName | ucFirst}}
-{{- else -}}
+{{if .IndirectOptional -}}
     *p.{{.ParamName | ucFirst}}
+{{- else -}}
+    p.{{.ParamName | ucFirst}}
 {{- end -}}
 {{- end -}}
 
@@ -83,14 +85,13 @@ func (c *Client) {{.OperationID}}(ctx context.Context
     *{{ .Schema.TypeDecl }},
     {{- end -}}
     error) {
-
     req := &requests.Builder{}
     req = req.Client(c.Client)
-    req = req.Method("{{.Method}}")
+    req = req.Method(http.Method{{.Method | lower | title}})
     req = req.BaseURL(c.BaseURL)
     req = req.Path(
         {{- if not (eq (.PathParams | len) 0) -}}
-        strings.NewReplacer({{range .PathParams}} "{ {{- .ParamName -}} }", fmt.Sprint({{.ParamName}}),{{end}}).Replace("{{.Path}}")
+        strings.NewReplacer({{range .PathParams}} "{ {{- .ParamName -}} }", {{if eq .Schema.GoType "string"}}{{.ParamName}}, {{else}}fmt.Sprint({{.ParamName}}),{{- end -}}{{end}}).Replace("{{.Path}}")
         {{- else -}}
         "{{.Path}}"
         {{- end -}}
@@ -98,30 +99,30 @@ func (c *Client) {{.OperationID}}(ctx context.Context
 
     {{range .QueryParams -}}
     {{if .Required -}}
-    req = req.Param("{{.ParamName}}", {{- template "typeToString" . -}} )
+    req = req.Param("{{.ParamName}}", {{- template "typeToString" . -}})
     {{else -}}
     if p.{{.ParamName | ucFirst}} != nil {
-        req = req.Param("{{.ParamName}}", {{- template "typeToString" . -}} )
+        req = req.Param("{{.ParamName}}", {{- template "typeToString" . -}})
     }
     {{end -}}
     {{end -}}
 
     {{range .HeaderParams -}}
     {{if .Required -}}
-    req = req.Header("{{.ParamName}}", {{- template "typeToString" . -}} )
+    req = req.Header("{{.ParamName}}", {{- template "typeToString" . -}})
     {{else -}}
     if p.{{.ParamName | ucFirst}} != nil {
-        req = req.Header("{{.ParamName}}", {{- template "typeToString" . -}} )
+        req = req.Header("{{.ParamName}}", {{- template "typeToString" . -}})
     }
     {{end -}}
     {{end -}}
 
     {{range .CookieParams -}}
     {{if .Required -}}
-    req = req.Cookie("{{.ParamName}}", fmt.Sprint(p.{{.ParamName | ucFirst}}))
+    req = req.Cookie("{{.ParamName}}", {{- template "typeToString" . -}})
     {{else -}}
     if p.{{.ParamName | ucFirst}} != nil {
-        req = req.Cookie("{{.ParamName}}", fmt.Sprint(p.{{.ParamName | ucFirst}}))
+        req = req.Cookie("{{.ParamName}}", {{- template "typeToString" . -}}))
     }
     {{end -}}
     {{end -}}
@@ -132,7 +133,9 @@ func (c *Client) {{.OperationID}}(ctx context.Context
     {{end}}
 
     // define out handlers
+    {{if not (eq (len .GetResponseTypeDefinitions) 0) -}}
     read := false // flag such that empty responses are kept nil
+    {{end -}}
     {{range .GetResponseTypeDefinitions -}}
     is{{.ResponseName}} := func(resp *http.Response) bool {
         return resp.StatusCode {{.ResponseName | statusCodeRange}}
@@ -162,7 +165,20 @@ func (c *Client) {{.OperationID}}(ctx context.Context
 
     {{end -}}
 
-    req = req.Handle(requests.ChainHandlers( {{- range .GetResponseTypeDefinitions -}} handle{{.ResponseName}}, {{- end -}}))
+    handlers := []func(*http.Response) error{}
+    if c.ResponseInterceptor != nil {
+        handlers = append(handlers, c.ResponseInterceptor)
+    }
+
+    {{if not (eq (len .GetResponseTypeDefinitions) 0) -}}
+    {{range .GetResponseTypeDefinitions -}} handlers = append(handlers, handle{{.ResponseName}})
+    {{ end -}}
+    {{end -}}
+    req = req.Handle(requests.ChainHandlers(handlers...))
+
+	if c.RequestOptions != nil {
+		req = c.RequestOptions(req)
+	}
     err := req.Fetch(ctx)
     if err != nil {
         return {{range .GetResponseTypeDefinitions }}nil, {{ end }} err

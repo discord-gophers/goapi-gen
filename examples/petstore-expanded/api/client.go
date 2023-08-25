@@ -15,16 +15,17 @@ import (
 )
 
 type Client struct {
-	BaseURL string
-	Client  *http.Client
+	BaseURL             string
+	Client              *http.Client
+	ResponseInterceptor func(*http.Response) error
+	RequestOptions      func(*requests.Builder) *requests.Builder
 }
 
 // FindPets Returns all pets
 func (c *Client) FindPets(ctx context.Context, p FindPetsParams) (*[]Pet, *Error, error) {
-
 	req := &requests.Builder{}
 	req = req.Client(c.Client)
-	req = req.Method("GET")
+	req = req.Method(http.MethodGet)
 	req = req.BaseURL(c.BaseURL)
 	req = req.Path("/pets")
 
@@ -32,7 +33,7 @@ func (c *Client) FindPets(ctx context.Context, p FindPetsParams) (*[]Pet, *Error
 		req = req.Param("tags", strings.Join(p.Tags, ","))
 	}
 	if p.Limit != nil {
-		req = req.Param("limit", fmt.Sprint(p.Limit))
+		req = req.Param("limit", fmt.Sprint(*p.Limit))
 	}
 
 	// define out handlers
@@ -89,7 +90,18 @@ func (c *Client) FindPets(ctx context.Context, p FindPetsParams) (*[]Pet, *Error
 		return err
 	}
 
-	req = req.Handle(requests.ChainHandlers(handle200, handledefault))
+	handlers := []func(*http.Response) error{}
+	if c.ResponseInterceptor != nil {
+		handlers = append(handlers, c.ResponseInterceptor)
+	}
+
+	handlers = append(handlers, handle200)
+	handlers = append(handlers, handledefault)
+	req = req.Handle(requests.ChainHandlers(handlers...))
+
+	if c.RequestOptions != nil {
+		req = c.RequestOptions(req)
+	}
 	err := req.Fetch(ctx)
 	if err != nil {
 		return nil, nil, err
@@ -100,10 +112,9 @@ func (c *Client) FindPets(ctx context.Context, p FindPetsParams) (*[]Pet, *Error
 
 // AddPet Creates a new pet
 func (c *Client) AddPet(ctx context.Context, body NewPet) (*Pet, *Error, error) {
-
 	req := &requests.Builder{}
 	req = req.Client(c.Client)
-	req = req.Method("POST")
+	req = req.Method(http.MethodPost)
 	req = req.BaseURL(c.BaseURL)
 	req = req.Path("/pets")
 
@@ -164,7 +175,18 @@ func (c *Client) AddPet(ctx context.Context, body NewPet) (*Pet, *Error, error) 
 		return err
 	}
 
-	req = req.Handle(requests.ChainHandlers(handle201, handledefault))
+	handlers := []func(*http.Response) error{}
+	if c.ResponseInterceptor != nil {
+		handlers = append(handlers, c.ResponseInterceptor)
+	}
+
+	handlers = append(handlers, handle201)
+	handlers = append(handlers, handledefault)
+	req = req.Handle(requests.ChainHandlers(handlers...))
+
+	if c.RequestOptions != nil {
+		req = c.RequestOptions(req)
+	}
 	err := req.Fetch(ctx)
 	if err != nil {
 		return nil, nil, err
@@ -175,10 +197,9 @@ func (c *Client) AddPet(ctx context.Context, body NewPet) (*Pet, *Error, error) 
 
 // DeletePet Deletes a pet by ID
 func (c *Client) DeletePet(ctx context.Context, id int64) (*Error, error) {
-
 	req := &requests.Builder{}
 	req = req.Client(c.Client)
-	req = req.Method("DELETE")
+	req = req.Method(http.MethodDelete)
 	req = req.BaseURL(c.BaseURL)
 	req = req.Path(strings.NewReplacer("{id}", fmt.Sprint(id)).Replace("/pets/{id}"))
 
@@ -210,7 +231,17 @@ func (c *Client) DeletePet(ctx context.Context, id int64) (*Error, error) {
 		return err
 	}
 
-	req = req.Handle(requests.ChainHandlers(handledefault))
+	handlers := []func(*http.Response) error{}
+	if c.ResponseInterceptor != nil {
+		handlers = append(handlers, c.ResponseInterceptor)
+	}
+
+	handlers = append(handlers, handledefault)
+	req = req.Handle(requests.ChainHandlers(handlers...))
+
+	if c.RequestOptions != nil {
+		req = c.RequestOptions(req)
+	}
 	err := req.Fetch(ctx)
 	if err != nil {
 		return nil, err
@@ -221,10 +252,9 @@ func (c *Client) DeletePet(ctx context.Context, id int64) (*Error, error) {
 
 // FindPetByID Returns a pet by ID
 func (c *Client) FindPetByID(ctx context.Context, id int64) (*Pet, *Error, error) {
-
 	req := &requests.Builder{}
 	req = req.Client(c.Client)
-	req = req.Method("GET")
+	req = req.Method(http.MethodGet)
 	req = req.BaseURL(c.BaseURL)
 	req = req.Path(strings.NewReplacer("{id}", fmt.Sprint(id)).Replace("/pets/{id}"))
 
@@ -282,7 +312,18 @@ func (c *Client) FindPetByID(ctx context.Context, id int64) (*Pet, *Error, error
 		return err
 	}
 
-	req = req.Handle(requests.ChainHandlers(handle200, handledefault))
+	handlers := []func(*http.Response) error{}
+	if c.ResponseInterceptor != nil {
+		handlers = append(handlers, c.ResponseInterceptor)
+	}
+
+	handlers = append(handlers, handle200)
+	handlers = append(handlers, handledefault)
+	req = req.Handle(requests.ChainHandlers(handlers...))
+
+	if c.RequestOptions != nil {
+		req = c.RequestOptions(req)
+	}
 	err := req.Fetch(ctx)
 	if err != nil {
 		return nil, nil, err
