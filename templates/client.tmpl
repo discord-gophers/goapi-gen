@@ -27,15 +27,45 @@ fmt.Sprint({{template "rt" .}})
 {{- else if eq .Schema.GoType "[]string" -}}
 strings.Join({{template "rt" .}}, ",")
 {{- else if eq .Schema.GoType "[]int32" -}}
-strings.Join({{template "rt" .}}, ",")
+func() string {
+    var s []string
+    for _, v := range {{template "rt" .}} {
+        s = append(s, fmt.Sprint(v))
+    }
+    return strings.Join(s, ",")
+}()
 {{- else if eq .Schema.GoType "[]int64" -}}
-strings.Join({{template "rt" .}}, ",")
+func() string {
+    var s []string
+    for _, v := range {{template "rt" .}} {
+        s = append(s, fmt.Sprint(v))
+    }
+    return strings.Join(s, ",")
+}()
 {{- else if eq .Schema.GoType "[]float32" -}}
-strings.Join({{template "rt" .}}, ",")
+func() string {
+    var s []string
+    for _, v := range {{template "rt" .}} {
+        s = append(s, fmt.Sprint(v))
+    }
+    return strings.Join(s, ",")
+}()
 {{- else if eq .Schema.GoType "[]float64" -}}
-strings.Join({{template "rt" .}}, ",")
+func() string {
+    var s []string
+    for _, v := range {{template "rt" .}} {
+        s = append(s, fmt.Sprint(v))
+    }
+    return strings.Join(s, ",")
+}()
 {{- else if eq .Schema.GoType "[]bool" -}}
-strings.Join({{template "rt" .}}, ",")
+func() string {
+    var s []string
+    for _, v := range {{template "rt" .}} {
+        s = append(s, fmt.Sprint(v))
+    }
+    return strings.Join(s, ",")
+}()
 {{- else -}}
 fmt.Sprint({{template "rt" .}})
 {{- end -}}
