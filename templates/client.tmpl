@@ -139,7 +139,7 @@ func (c *Client) {{.OperationID}}(ctx context.Context
     {{range .GetResponseTypeDefinitions -}}
     var _{{.ResponseName}} *{{.Schema.TypeDecl}}
     handle{{.ResponseName}} := func(resp *http.Response) error {
-        if resp.StatusCode {{.ResponseName | statusCodeRange}} {
+        if {{.ResponseName | statusCodeRange}} {
             return nil
         }
 

@@ -104,11 +104,11 @@ func responseNameToStatusCode(responseName string) string {
 func responseToStatusRangeString(responseName string) string {
 	switch strings.ToUpper(responseName) {
 	case "DEFAULT":
-		return "!= 0"
+		return "resp.StatusCode != 0"
 	case "1XX", "2XX", "3XX", "4XX", "5XX":
-		return fmt.Sprintf(">= %s00 && < %s99", responseName[:1], responseName[:1])
+		return fmt.Sprintf("resp.StatusCode >= %s00 && resp.StatusCode <= %s99", responseName[:1], responseName[:1])
 	}
-	return fmt.Sprintf("== %s", responseName)
+	return fmt.Sprintf("resp.StatusCode == %s", responseName)
 }
 
 // TitleWord converts a single worded string to title case.
@@ -136,8 +136,7 @@ var TemplateFunctions = template.FuncMap{
 	"statusCode":      responseNameToStatusCode,
 	"statusCodeRange": responseToStatusRangeString,
 
-	"hasPrefix": strings.HasPrefix,
-	"ucFirst":   snaker.ForceCamelIdentifier,
-	"lower":     strings.ToLower,
-	"title":     TitleWord,
+	"ucFirst": snaker.ForceCamelIdentifier,
+	"lower":   strings.ToLower,
+	"title":   TitleWord,
 }
