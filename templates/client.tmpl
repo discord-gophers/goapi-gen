@@ -1,7 +1,20 @@
+// Client is an auto-generated client
 type Client struct {
+    // BaseURL is the base URL of the API (e.g. https://api.example.com/v1)
     BaseURL string
+
+    // Client is an http client used to communicate with the API
+    // If nil, http.DefaultClient will be used
+    // To handle authorization to a remote API, use an http client with a custom transport.
+    // See https://pkg.go.dev/net/http#RoundTripper and https://pkg.go.dev/golang.org/x/oauth2#NewClient
     Client  *http.Client
+
+    // ResponseInterceptor is a function that will be called on every response made by this client
+    // in the case where the API implicitly returns an error not defined in the spec, you can handle it here.
     ResponseInterceptor func(*http.Response) error
+
+    // RequestOptions allows you to set custom options on each http request before it's sent.
+    // This is another way to set authorization headers, for example.
 	RequestOptions func(*requests.Builder) *requests.Builder
 }
 
@@ -76,13 +89,18 @@ fmt.Sprint({{template "rt" .}})
 
 {{range .Operations -}}
 
-// {{.OperationID}} {{.Summary}}
+{{.OperationID | toComment}}
+{{.Spec.Description | toComment}}
+{{-  if .Spec.Deprecated }}
+// Deprectated: this route is marked deprecated.{{end}}
 func (c *Client) {{.OperationID}}(ctx context.Context
-    {{- if not (eq (len .Params) 0) -}}, p {{.OperationID}}Params {{- end -}}
     {{- range .PathParams}}, {{.ParamName}} {{.Schema.TypeDecl}}{{end}}
     {{- if not (eq (len .Bodies) 0) -}}, body {{(index .Bodies 0 ).Schema.GoType}} {{- end -}}
+    {{- if not (eq (len .Params) 0) -}}, p {{.OperationID}}Params {{- end -}}
     ) ({{- range .GetResponseTypeDefinitions -}}
+    {{- if eq .ContentTypeName "application/json" -}}
     *{{ .Schema.TypeDecl }},
+    {{- end -}}
     {{- end -}}
     error) {
     req := &requests.Builder{}
@@ -129,17 +147,21 @@ func (c *Client) {{.OperationID}}(ctx context.Context
 
     {{if not (eq (len .Bodies) 0) -}}
     req = req.BodyJSON(body)
-    req = req.ContentType({{ range .Bodies}}"{{.ContentType}}",{{end}})
+    req = req.ContentType("application/json")
     {{end}}
 
     // define out handlers
     {{if not (eq (len .GetResponseTypeDefinitions) 0) -}}
+    req = req.Accept("application/json")
+
     read := false // flag such that empty responses are kept nil
     {{end -}}
-    {{range $i, $s := .GetResponseTypeDefinitions -}}
-    var _{{$s.ResponseName}}_{{$i}} *{{$s.Schema.TypeDecl}}
-    handle{{$s.ResponseName}}_{{$i}} := func(resp *http.Response) error {
-        if {{$s.ResponseName | statusCodeRange}} {
+    {{range .GetResponseTypeDefinitions -}}
+    {{- if eq .ContentTypeName "application/json" -}}
+    var _{{.ResponseName}} *{{.Schema.TypeDecl}}
+    handle{{.ResponseName}} := func(resp *http.Response) error {
+        if {{.ResponseName | statusCodeRange}} ||
+            !strings.Contains(resp.Header.Get("Content-Type"), "{{.ContentTypeName}}") {
             return nil
         }
 
@@ -148,18 +170,18 @@ func (c *Client) {{.OperationID}}(ctx context.Context
         }
         read = true
 
-        _{{$s.ResponseName}}_{{$i}} = new({{$s.Schema.TypeDecl}})        
-        err := json.NewDecoder(resp.Body).Decode(_{{$s.ResponseName}}_{{$i}})
+        _{{.ResponseName}} = new({{.Schema.TypeDecl}})        
+        err := json.NewDecoder(resp.Body).Decode(_{{.ResponseName}})
         switch err {
         case nil:
             return nil
         case io.EOF:
-            _{{$s.ResponseName}}_{{$i}} = nil
+            _{{.ResponseName}} = nil
             return nil
         }
         return err
     }
-
+    {{end -}}
     {{end -}}
 
     handlers := []func(*http.Response) error{}
@@ -168,20 +190,28 @@ func (c *Client) {{.OperationID}}(ctx context.Context
     }
 
     {{if not (eq (len .GetResponseTypeDefinitions) 0) -}}
-    {{range $i, $s := .GetResponseTypeDefinitions -}} handlers = append(handlers, handle{{$s.ResponseName}}_{{$i}})
+    {{range .GetResponseTypeDefinitions -}}
+    {{- if eq .ContentTypeName "application/json" -}}
+    handlers = append(handlers, handle{{.ResponseName}})
     {{ end -}}
     {{end -}}
-    req = req.Handle(requests.ChainHandlers(handlers...))
+    {{end}}
 
+    req = req.Handle(requests.ChainHandlers(handlers...))
 	if c.RequestOptions != nil {
 		req = c.RequestOptions(req)
 	}
+
     err := req.Fetch(ctx)
     if err != nil {
-        return {{range .GetResponseTypeDefinitions }}nil, {{ end }} err
+        return {{range .GetResponseTypeDefinitions }}
+        {{- if eq .ContentTypeName "application/json" -}}
+        _{{.ResponseName}},{{end}}{{ end }} err
     }
 
-    return {{range $i, $s := .GetResponseTypeDefinitions }}_{{.ResponseName}}_{{$i}}, {{ end }} nil
+    return {{range .GetResponseTypeDefinitions }}
+        {{- if eq .ContentTypeName "application/json" -}}
+        _{{.ResponseName}},{{end}}{{ end }} nil
 }
 
 {{ end -}}

@@ -6,15 +6,18 @@ package api
 import (
 	"bytes"
 	"compress/gzip"
+	"context"
 	"encoding/base64"
 	"encoding/json"
 	"encoding/xml"
 	"fmt"
+	"io"
 	"net/http"
 	"net/url"
 	"path"
 	"strings"
 
+	"github.com/carlmjohnson/requests"
 	"github.com/discord-gophers/goapi-gen/runtime"
 	"github.com/getkin/kin-openapi/openapi3"
 	"github.com/go-chi/chi/v5"
@@ -444,6 +447,335 @@ func WithErrorHandler(handler func(w http.ResponseWriter, r *http.Request, err e
 	return func(s *ServerOptions) {
 		s.ErrorHandlerFunc = handler
 	}
+}
+
+// Client is an auto-generated client
+type Client struct {
+	// BaseURL is the base URL of the API (e.g. https://api.example.com/v1)
+	BaseURL string
+
+	// Client is an http client used to communicate with the API
+	// If nil, http.DefaultClient will be used
+	// To handle authorization to a remote API, use an http client with a custom transport.
+	// See https://pkg.go.dev/net/http#RoundTripper and https://pkg.go.dev/golang.org/x/oauth2#NewClient
+	Client *http.Client
+
+	// ResponseInterceptor is a function that will be called on every response made by this client
+	// in the case where the API implicitly returns an error not defined in the spec, you can handle it here.
+	ResponseInterceptor func(*http.Response) error
+
+	// RequestOptions allows you to set custom options on each http request before it's sent.
+	// This is another way to set authorization headers, for example.
+	RequestOptions func(*requests.Builder) *requests.Builder
+}
+
+// FindPets
+// Returns all pets from the system that the user has access to
+// Nam sed condimentum est. Maecenas tempor sagittis sapien, nec rhoncus sem sagittis sit amet. Aenean at gravida augue, ac iaculis sem. Curabitur odio lorem, ornare eget elementum nec, cursus id lectus. Duis mi turpis, pulvinar ac eros ac, tincidunt varius justo. In hac habitasse platea dictumst. Integer at adipiscing ante, a sagittis ligula. Aenean pharetra tempor ante molestie imperdiet. Vivamus id aliquam diam. Cras quis velit non tortor eleifend sagittis. Praesent at enim pharetra urna volutpat venenatis eget eget mauris. In eleifend fermentum facilisis. Praesent enim enim, gravida ac sodales sed, placerat id erat. Suspendisse lacus dolor, consectetur non augue vel, vehicula interdum libero. Morbi euismod sagittis libero sed lacinia.
+//
+// Sed tempus felis lobortis leo pulvinar rutrum. Nam mattis velit nisl, eu condimentum ligula luctus nec. Phasellus semper velit eget aliquet faucibus. In a mattis elit. Phasellus vel urna viverra, condimentum lorem id, rhoncus nibh. Ut pellentesque posuere elementum. Sed a varius odio. Morbi rhoncus ligula libero, vel eleifend nunc tristique vitae. Fusce et sem dui. Aenean nec scelerisque tortor. Fusce malesuada accumsan magna vel tempus. Quisque mollis felis eu dolor tristique, sit amet auctor felis gravida. Sed libero lorem, molestie sed nisl in, accumsan tempor nisi. Fusce sollicitudin massa ut lacinia mattis. Sed vel eleifend lorem. Pellentesque vitae felis pretium, pulvinar elit eu, euismod sapien.
+func (c *Client) FindPets(ctx context.Context, p FindPetsParams) (*[]Pet, *Error, error) {
+	req := &requests.Builder{}
+	req = req.Client(c.Client)
+	req = req.Method(http.MethodGet)
+	req = req.BaseURL(c.BaseURL)
+	req = req.Path("/pets")
+
+	if p.Tags != nil {
+		req = req.Param("tags", strings.Join(p.Tags, ","))
+	}
+	if p.Limit != nil {
+		req = req.Param("limit", fmt.Sprint(*p.Limit))
+	}
+
+	// define out handlers
+	req = req.Accept("application/json")
+
+	read := false // flag such that empty responses are kept nil
+	var _200 *[]Pet
+	handle200 := func(resp *http.Response) error {
+		if resp.StatusCode != 200 ||
+			!strings.Contains(resp.Header.Get("Content-Type"), "application/json") {
+			return nil
+		}
+
+		if read {
+			return nil
+		}
+		read = true
+
+		_200 = new([]Pet)
+		err := json.NewDecoder(resp.Body).Decode(_200)
+		switch err {
+		case nil:
+			return nil
+		case io.EOF:
+			_200 = nil
+			return nil
+		}
+		return err
+	}
+	var _default *Error
+	handledefault := func(resp *http.Response) error {
+		if resp.StatusCode != 0 ||
+			!strings.Contains(resp.Header.Get("Content-Type"), "application/json") {
+			return nil
+		}
+
+		if read {
+			return nil
+		}
+		read = true
+
+		_default = new(Error)
+		err := json.NewDecoder(resp.Body).Decode(_default)
+		switch err {
+		case nil:
+			return nil
+		case io.EOF:
+			_default = nil
+			return nil
+		}
+		return err
+	}
+	handlers := []func(*http.Response) error{}
+	if c.ResponseInterceptor != nil {
+		handlers = append(handlers, c.ResponseInterceptor)
+	}
+
+	handlers = append(handlers, handle200)
+	handlers = append(handlers, handledefault)
+
+	req = req.Handle(requests.ChainHandlers(handlers...))
+	if c.RequestOptions != nil {
+		req = c.RequestOptions(req)
+	}
+
+	err := req.Fetch(ctx)
+	if err != nil {
+		return _200, _default, err
+	}
+
+	return _200, _default, nil
+}
+
+// AddPet
+// Creates a new pet in the store. Duplicates are allowed
+func (c *Client) AddPet(ctx context.Context, body NewPet) (*Pet, *Error, error) {
+	req := &requests.Builder{}
+	req = req.Client(c.Client)
+	req = req.Method(http.MethodPost)
+	req = req.BaseURL(c.BaseURL)
+	req = req.Path("/pets")
+
+	req = req.BodyJSON(body)
+	req = req.ContentType("application/json")
+
+	// define out handlers
+	req = req.Accept("application/json")
+
+	read := false // flag such that empty responses are kept nil
+	var _201 *Pet
+	handle201 := func(resp *http.Response) error {
+		if resp.StatusCode != 201 ||
+			!strings.Contains(resp.Header.Get("Content-Type"), "application/json") {
+			return nil
+		}
+
+		if read {
+			return nil
+		}
+		read = true
+
+		_201 = new(Pet)
+		err := json.NewDecoder(resp.Body).Decode(_201)
+		switch err {
+		case nil:
+			return nil
+		case io.EOF:
+			_201 = nil
+			return nil
+		}
+		return err
+	}
+	var _default *Error
+	handledefault := func(resp *http.Response) error {
+		if resp.StatusCode != 0 ||
+			!strings.Contains(resp.Header.Get("Content-Type"), "application/json") {
+			return nil
+		}
+
+		if read {
+			return nil
+		}
+		read = true
+
+		_default = new(Error)
+		err := json.NewDecoder(resp.Body).Decode(_default)
+		switch err {
+		case nil:
+			return nil
+		case io.EOF:
+			_default = nil
+			return nil
+		}
+		return err
+	}
+	handlers := []func(*http.Response) error{}
+	if c.ResponseInterceptor != nil {
+		handlers = append(handlers, c.ResponseInterceptor)
+	}
+
+	handlers = append(handlers, handle201)
+	handlers = append(handlers, handledefault)
+
+	req = req.Handle(requests.ChainHandlers(handlers...))
+	if c.RequestOptions != nil {
+		req = c.RequestOptions(req)
+	}
+
+	err := req.Fetch(ctx)
+	if err != nil {
+		return _201, _default, err
+	}
+
+	return _201, _default, nil
+}
+
+// DeletePet
+// deletes a single pet based on the ID supplied
+func (c *Client) DeletePet(ctx context.Context, id int64) (*Error, error) {
+	req := &requests.Builder{}
+	req = req.Client(c.Client)
+	req = req.Method(http.MethodDelete)
+	req = req.BaseURL(c.BaseURL)
+	req = req.Path(strings.NewReplacer("{id}", fmt.Sprint(id)).Replace("/pets/{id}"))
+
+	// define out handlers
+	req = req.Accept("application/json")
+
+	read := false // flag such that empty responses are kept nil
+	var _default *Error
+	handledefault := func(resp *http.Response) error {
+		if resp.StatusCode != 0 ||
+			!strings.Contains(resp.Header.Get("Content-Type"), "application/json") {
+			return nil
+		}
+
+		if read {
+			return nil
+		}
+		read = true
+
+		_default = new(Error)
+		err := json.NewDecoder(resp.Body).Decode(_default)
+		switch err {
+		case nil:
+			return nil
+		case io.EOF:
+			_default = nil
+			return nil
+		}
+		return err
+	}
+	handlers := []func(*http.Response) error{}
+	if c.ResponseInterceptor != nil {
+		handlers = append(handlers, c.ResponseInterceptor)
+	}
+
+	handlers = append(handlers, handledefault)
+
+	req = req.Handle(requests.ChainHandlers(handlers...))
+	if c.RequestOptions != nil {
+		req = c.RequestOptions(req)
+	}
+
+	err := req.Fetch(ctx)
+	if err != nil {
+		return _default, err
+	}
+
+	return _default, nil
+}
+
+// FindPetByID
+// Returns a pet based on a single ID
+func (c *Client) FindPetByID(ctx context.Context, id int64) (*Pet, *Error, error) {
+	req := &requests.Builder{}
+	req = req.Client(c.Client)
+	req = req.Method(http.MethodGet)
+	req = req.BaseURL(c.BaseURL)
+	req = req.Path(strings.NewReplacer("{id}", fmt.Sprint(id)).Replace("/pets/{id}"))
+
+	// define out handlers
+	req = req.Accept("application/json")
+
+	read := false // flag such that empty responses are kept nil
+	var _200 *Pet
+	handle200 := func(resp *http.Response) error {
+		if resp.StatusCode != 200 ||
+			!strings.Contains(resp.Header.Get("Content-Type"), "application/json") {
+			return nil
+		}
+
+		if read {
+			return nil
+		}
+		read = true
+
+		_200 = new(Pet)
+		err := json.NewDecoder(resp.Body).Decode(_200)
+		switch err {
+		case nil:
+			return nil
+		case io.EOF:
+			_200 = nil
+			return nil
+		}
+		return err
+	}
+	var _default *Error
+	handledefault := func(resp *http.Response) error {
+		if resp.StatusCode != 0 ||
+			!strings.Contains(resp.Header.Get("Content-Type"), "application/json") {
+			return nil
+		}
+
+		if read {
+			return nil
+		}
+		read = true
+
+		_default = new(Error)
+		err := json.NewDecoder(resp.Body).Decode(_default)
+		switch err {
+		case nil:
+			return nil
+		case io.EOF:
+			_default = nil
+			return nil
+		}
+		return err
+	}
+	handlers := []func(*http.Response) error{}
+	if c.ResponseInterceptor != nil {
+		handlers = append(handlers, c.ResponseInterceptor)
+	}
+
+	handlers = append(handlers, handle200)
+	handlers = append(handlers, handledefault)
+
+	req = req.Handle(requests.ChainHandlers(handlers...))
+	if c.RequestOptions != nil {
+		req = c.RequestOptions(req)
+	}
+
+	err := req.Fetch(ctx)
+	if err != nil {
+		return _200, _default, err
+	}
+
+	return _200, _default, nil
 }
 
 // Base64 encoded, gzipped, json marshaled Swagger object

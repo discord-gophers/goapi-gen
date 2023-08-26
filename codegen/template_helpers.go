@@ -106,9 +106,9 @@ func responseToStatusRangeString(responseName string) string {
 	case "DEFAULT":
 		return "resp.StatusCode != 0"
 	case "1XX", "2XX", "3XX", "4XX", "5XX":
-		return fmt.Sprintf("resp.StatusCode >= %s00 && resp.StatusCode <= %s99", responseName[:1], responseName[:1])
+		return fmt.Sprintf("resp.StatusCode < %s00 && resp.StatusCode > %s99", responseName[:1], responseName[:1])
 	}
-	return fmt.Sprintf("resp.StatusCode == %s", responseName)
+	return fmt.Sprintf("resp.StatusCode != %s", responseName)
 }
 
 // TitleWord converts a single worded string to title case.
@@ -122,6 +122,11 @@ func TitleWord(s string) string {
 	return string(r)
 }
 
+// ToComment converts a string to a comment.
+func ToComment(s string) string {
+	return "// " + strings.ReplaceAll(s, "\n", "\n// ")
+}
+
 // TemplateFunctions generates the list of utlity and helpfer functions used by
 // the templates.
 var TemplateFunctions = template.FuncMap{
@@ -130,6 +135,7 @@ var TemplateFunctions = template.FuncMap{
 	"getResponseTypeDefinitions": getResponseTypeDefinitions,
 	"genTaggedMiddleware":        getTaggedMiddlewares,
 	"toStringArray":              toStringArray,
+	"toComment":                  ToComment,
 
 	"swaggerURIToChiURI": SwaggerURIToChiURI,
 

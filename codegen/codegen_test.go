@@ -497,6 +497,9 @@ func TestGenerateK8sClient(t *testing.T) {
 		GenerateClient: true,
 		GenerateTypes:  true,
 	})
+	if of := os.Getenv("OUT_FILE"); of != "" {
+		assert.NoError(t, os.WriteFile(of, []byte(code), 0644))
+	}
 
 	assert.NoError(t, err)
 	assert.NotEmpty(t, code)
@@ -525,8 +528,4 @@ func TestGenerateK8sClient(t *testing.T) {
 
 	assert.True(t, client.Exported())
 	assert.Equal(t, client.Type().Underlying().(*types.Struct).NumFields(), 4)
-
-	if of := os.Getenv("OUT_FILE"); of != "" {
-		assert.NoError(t, os.WriteFile(of, []byte(code), 0644))
-	}
 }
