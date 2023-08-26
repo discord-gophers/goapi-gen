@@ -2,10 +2,14 @@ package codegen
 
 import (
 	"go/format"
+	"go/types"
+	"net/url"
+	"os"
 	"testing"
 	"text/template"
 
 	examplePetstore "github.com/discord-gophers/goapi-gen/examples/petstore-expanded/api"
+	"golang.org/x/tools/go/loader"
 
 	"github.com/discord-gophers/goapi-gen/templates"
 	"github.com/getkin/kin-openapi/openapi3"
@@ -438,4 +442,95 @@ func (t *MyType) FromValue(value int64) error {
 			assert.Equal(t, tt.want, got)
 		})
 	}
+}
+
+func TestGenerateClientFormat(t *testing.T) {
+	// Input vars for code generation:
+	opts := Options{
+		GenerateClient: true,
+		GenerateTypes:  true,
+	}
+
+	// Get a spec from the example PetStore definition:
+	swagger, err := examplePetstore.GetSwagger()
+	assert.NoError(t, err)
+
+	// Run our code generation:
+	code, err := Generate(swagger, "petstore", opts)
+	assert.NoError(t, err)
+	assert.NotEmpty(t, code)
+
+	// Check that we have valid (formattable) code:
+	// Check that we have valid (formattable) code:
+	_, err = format.Source([]byte(code))
+	assert.NoError(t, err)
+
+	// Check that we have a package:
+	assert.Contains(t, code, "package petstore")
+	assert.Contains(t, code, `"github.com/carlmjohnson/requests"`)
+	assert.Contains(t, code, "type Client struct")
+
+	c := loader.Config{}
+	as, err := c.ParseFile("petstore.gen.go", code)
+	assert.NoError(t, err)
+	c.CreateFromFiles("petstore", as)
+
+	p, err := c.Load()
+	assert.NoError(t, err)
+
+	pkg := p.Package("petstore")
+	assert.NotNil(t, pkg)
+
+	client := pkg.Pkg.Scope().Lookup("Client")
+	assert.NotNil(t, client)
+
+	assert.True(t, client.Exported())
+	assert.Equal(t, client.Type().Underlying().(*types.Struct).NumFields(), 4)
+}
+
+func TestGenerateK8sClient(t *testing.T) {
+	uri, err := url.Parse("https://raw.githubusercontent.com/kubernetes/kubernetes/master/api/openapi-spec/v3/api__v1_openapi.json")
+	assert.NoError(t, err)
+	swagger, err := openapi3.NewLoader().LoadFromURI(uri)
+	assert.NoError(t, err)
+
+	// Run our code generation:
+	code, err := Generate(swagger, "k8s", Options{
+		GenerateClient: true,
+		GenerateTypes:  true,
+	})
+
+	assert.NoError(t, err)
+	assert.NotEmpty(t, code)
+
+	// Check that we have valid (formattable) code:
+	_, err = format.Source([]byte(code))
+	assert.NoError(t, err)
+
+	// Check that we have a package:
+	assert.Contains(t, code, "package k8s")
+	assert.Contains(t, code, `"github.com/carlmjohnson/requests"`)
+	assert.Contains(t, code, "type Client struct")
+
+	c := loader.Config{}
+	as, err := c.ParseFile("k8s.gen.go", code)
+	assert.NoError(t, err)
+	c.CreateFromFiles("k8s", as)
+
+	p, err := c.Load()
+	assert.NoError(t, err)
+
+	pkg := p.Package("k8s")
+	assert.NotNil(t, pkg)
+
+	client := pkg.Pkg.Scope().Lookup("Client")
+	assert.NotNil(t, client)
+
+	assert.True(t, client.Exported())
+	assert.Equal(t, client.Type().Underlying().(*types.Struct).NumFields(), 4)
+
+	if of := os.Getenv("OUT_FILE"); of != "" {
+		assert.NoError(t, os.WriteFile(of, []byte(code), 0644))
+	}
+
 }

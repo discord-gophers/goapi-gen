@@ -136,10 +136,10 @@ func (c *Client) {{.OperationID}}(ctx context.Context
     {{if not (eq (len .GetResponseTypeDefinitions) 0) -}}
     read := false // flag such that empty responses are kept nil
     {{end -}}
-    {{range .GetResponseTypeDefinitions -}}
-    var _{{.ResponseName}} *{{.Schema.TypeDecl}}
-    handle{{.ResponseName}} := func(resp *http.Response) error {
-        if {{.ResponseName | statusCodeRange}} {
+    {{range $i, $s := .GetResponseTypeDefinitions -}}
+    var _{{$s.ResponseName}}_{{$i}} *{{$s.Schema.TypeDecl}}
+    handle{{$s.ResponseName}}_{{$i}} := func(resp *http.Response) error {
+        if {{$s.ResponseName | statusCodeRange}} {
             return nil
         }
 
@@ -148,13 +148,13 @@ func (c *Client) {{.OperationID}}(ctx context.Context
         }
         read = true
 
-        _{{.ResponseName}} = new({{.Schema.TypeDecl}})        
-        err := json.NewDecoder(resp.Body).Decode(_{{.ResponseName}})
+        _{{$s.ResponseName}}_{{$i}} = new({{$s.Schema.TypeDecl}})        
+        err := json.NewDecoder(resp.Body).Decode(_{{$s.ResponseName}}_{{$i}})
         switch err {
         case nil:
             return nil
         case io.EOF:
-            _{{.ResponseName}} = nil
+            _{{$s.ResponseName}}_{{$i}} = nil
             return nil
         }
         return err
@@ -168,7 +168,7 @@ func (c *Client) {{.OperationID}}(ctx context.Context
     }
 
     {{if not (eq (len .GetResponseTypeDefinitions) 0) -}}
-    {{range .GetResponseTypeDefinitions -}} handlers = append(handlers, handle{{.ResponseName}})
+    {{range $i, $s := .GetResponseTypeDefinitions -}} handlers = append(handlers, handle{{$s.ResponseName}}_{{$i}})
     {{ end -}}
     {{end -}}
     req = req.Handle(requests.ChainHandlers(handlers...))
@@ -181,7 +181,7 @@ func (c *Client) {{.OperationID}}(ctx context.Context
         return {{range .GetResponseTypeDefinitions }}nil, {{ end }} err
     }
 
-    return {{range .GetResponseTypeDefinitions }}_{{.ResponseName}}, {{ end }} nil
+    return {{range $i, $s := .GetResponseTypeDefinitions }}_{{.ResponseName}}_{{$i}}, {{ end }} nil
 }
 
 {{ end -}}
