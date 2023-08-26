@@ -1,0 +1,217 @@
+// Client is an auto-generated client
+type Client struct {
+    // BaseURL is the base URL of the API (e.g. https://api.example.com/v1)
+    BaseURL string
+
+    // Client is an http client used to communicate with the API
+    // If nil, http.DefaultClient will be used
+    // To handle authorization to a remote API, use an http client with a custom transport.
+    // See https://pkg.go.dev/net/http#RoundTripper and https://pkg.go.dev/golang.org/x/oauth2#NewClient
+    Client  *http.Client
+
+    // ResponseInterceptor is a function that will be called on every response made by this client
+    // in the case where the API implicitly returns an error not defined in the spec, you can handle it here.
+    ResponseInterceptor func(*http.Response) error
+
+    // RequestOptions allows you to set custom options on each http request before it's sent.
+    // This is another way to set authorization headers, for example.
+	RequestOptions func(*requests.Builder) *requests.Builder
+}
+
+{{define "rt" -}}
+{{if .IndirectOptional -}}
+    *p.{{.ParamName | ucFirst}}
+{{- else -}}
+    p.{{.ParamName | ucFirst}}
+{{- end -}}
+{{- end -}}
+
+{{define "typeToString" -}}
+{{- if eq .Schema.GoType "string" -}}
+{{template "rt" .}}
+{{- else if eq .Schema.GoType "int32" -}}
+fmt.Sprint({{template "rt" .}})
+{{- else if eq .Schema.GoType "int64" -}}
+fmt.Sprint({{template "rt" .}})
+{{- else if eq .Schema.GoType "float32" -}}
+fmt.Sprint({{template "rt" .}})
+{{- else if eq .Schema.GoType "float64" -}}
+fmt.Sprint({{template "rt" .}})
+{{- else if eq .Schema.GoType "bool" -}}
+fmt.Sprint({{template "rt" .}})
+{{- else if eq .Schema.GoType "[]string" -}}
+strings.Join({{template "rt" .}}, ",")
+{{- else if eq .Schema.GoType "[]int32" -}}
+func() string {
+    var s []string
+    for _, v := range {{template "rt" .}} {
+        s = append(s, fmt.Sprint(v))
+    }
+    return strings.Join(s, ",")
+}()
+{{- else if eq .Schema.GoType "[]int64" -}}
+func() string {
+    var s []string
+    for _, v := range {{template "rt" .}} {
+        s = append(s, fmt.Sprint(v))
+    }
+    return strings.Join(s, ",")
+}()
+{{- else if eq .Schema.GoType "[]float32" -}}
+func() string {
+    var s []string
+    for _, v := range {{template "rt" .}} {
+        s = append(s, fmt.Sprint(v))
+    }
+    return strings.Join(s, ",")
+}()
+{{- else if eq .Schema.GoType "[]float64" -}}
+func() string {
+    var s []string
+    for _, v := range {{template "rt" .}} {
+        s = append(s, fmt.Sprint(v))
+    }
+    return strings.Join(s, ",")
+}()
+{{- else if eq .Schema.GoType "[]bool" -}}
+func() string {
+    var s []string
+    for _, v := range {{template "rt" .}} {
+        s = append(s, fmt.Sprint(v))
+    }
+    return strings.Join(s, ",")
+}()
+{{- else -}}
+fmt.Sprint({{template "rt" .}})
+{{- end -}}
+{{- end}}
+
+
+{{range .Operations -}}
+
+{{.OperationID | toComment}}
+{{.Spec.Description | toComment}}
+{{-  if .Spec.Deprecated }}
+// Deprectated: this route is marked deprecated.{{end}}
+func (c *Client) {{.OperationID}}(ctx context.Context
+    {{- range .PathParams}}, {{.ParamName}} {{.Schema.TypeDecl}}{{end}}
+    {{- if not (eq (len .Bodies) 0) -}}, body {{(index .Bodies 0 ).Schema.GoType}} {{- end -}}
+    {{- if not (eq (len .Params) 0) -}}, p {{.OperationID}}Params {{- end -}}
+    ) ({{- range .GetResponseTypeDefinitions -}}
+    {{- if eq .ContentTypeName "application/json" -}}
+    *{{ .Schema.TypeDecl }},
+    {{- end -}}
+    {{- end -}}
+    error) {
+    req := &requests.Builder{}
+    req = req.Client(c.Client)
+    req = req.Method(http.Method{{.Method | lower | title}})
+    req = req.BaseURL(c.BaseURL)
+    req = req.Path(
+        {{- if not (eq (.PathParams | len) 0) -}}
+        strings.NewReplacer({{range .PathParams}} "{ {{- .ParamName -}} }", {{if eq .Schema.GoType "string"}}{{.ParamName}}, {{else}}fmt.Sprint({{.ParamName}}),{{- end -}}{{end}}).Replace("{{.Path}}")
+        {{- else -}}
+        "{{.Path}}"
+        {{- end -}}
+    )
+
+    {{range .QueryParams -}}
+    {{if .Required -}}
+    req = req.Param("{{.ParamName}}", {{- template "typeToString" . -}})
+    {{else -}}
+    if p.{{.ParamName | ucFirst}} != nil {
+        req = req.Param("{{.ParamName}}", {{- template "typeToString" . -}})
+    }
+    {{end -}}
+    {{end -}}
+
+    {{range .HeaderParams -}}
+    {{if .Required -}}
+    req = req.Header("{{.ParamName}}", {{- template "typeToString" . -}})
+    {{else -}}
+    if p.{{.ParamName | ucFirst}} != nil {
+        req = req.Header("{{.ParamName}}", {{- template "typeToString" . -}})
+    }
+    {{end -}}
+    {{end -}}
+
+    {{range .CookieParams -}}
+    {{if .Required -}}
+    req = req.Cookie("{{.ParamName}}", {{- template "typeToString" . -}})
+    {{else -}}
+    if p.{{.ParamName | ucFirst}} != nil {
+        req = req.Cookie("{{.ParamName}}", {{- template "typeToString" . -}}))
+    }
+    {{end -}}
+    {{end -}}
+
+    {{if not (eq (len .Bodies) 0) -}}
+    req = req.BodyJSON(body)
+    req = req.ContentType("application/json")
+    {{end}}
+
+    // define out handlers
+    {{if not (eq (len .GetResponseTypeDefinitions) 0) -}}
+    req = req.Accept("application/json")
+
+    read := false // flag such that empty responses are kept nil
+    {{end -}}
+    {{range .GetResponseTypeDefinitions -}}
+    {{- if eq .ContentTypeName "application/json" -}}
+    var _{{.ResponseName}} *{{.Schema.TypeDecl}}
+    handle{{.ResponseName}} := func(resp *http.Response) error {
+        if {{.ResponseName | statusCodeRange}} ||
+            !strings.Contains(resp.Header.Get("Content-Type"), "{{.ContentTypeName}}") {
+            return nil
+        }
+
+        if read {
+            return nil
+        }
+        read = true
+
+        _{{.ResponseName}} = new({{.Schema.TypeDecl}})        
+        err := json.NewDecoder(resp.Body).Decode(_{{.ResponseName}})
+        switch err {
+        case nil:
+            return nil
+        case io.EOF:
+            _{{.ResponseName}} = nil
+            return nil
+        }
+        return err
+    }
+    {{end -}}
+    {{end -}}
+
+    handlers := []func(*http.Response) error{}
+    if c.ResponseInterceptor != nil {
+        handlers = append(handlers, c.ResponseInterceptor)
+    }
+
+    {{if not (eq (len .GetResponseTypeDefinitions) 0) -}}
+    {{range .GetResponseTypeDefinitions -}}
+    {{- if eq .ContentTypeName "application/json" -}}
+    handlers = append(handlers, handle{{.ResponseName}})
+    {{ end -}}
+    {{end -}}
+    {{end}}
+
+    req = req.Handle(requests.ChainHandlers(handlers...))
+	if c.RequestOptions != nil {
+		req = c.RequestOptions(req)
+	}
+
+    err := req.Fetch(ctx)
+    if err != nil {
+        return {{range .GetResponseTypeDefinitions }}
+        {{- if eq .ContentTypeName "application/json" -}}
+        _{{.ResponseName}},{{end}}{{ end }} err
+    }
+
+    return {{range .GetResponseTypeDefinitions }}
+        {{- if eq .ContentTypeName "application/json" -}}
+        _{{.ResponseName}},{{end}}{{ end }} nil
+}
+
+{{ end -}}

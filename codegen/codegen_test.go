@@ -2,10 +2,15 @@ package codegen
 
 import (
 	"go/format"
+	"go/token"
+	"go/types"
+	"net/url"
+	"os"
 	"testing"
 	"text/template"
 
 	examplePetstore "github.com/discord-gophers/goapi-gen/examples/petstore-expanded/api"
+	"golang.org/x/tools/go/packages"
 
 	"github.com/discord-gophers/goapi-gen/templates"
 	"github.com/getkin/kin-openapi/openapi3"
@@ -438,4 +443,89 @@ func (t *MyType) FromValue(value int64) error {
 			assert.Equal(t, tt.want, got)
 		})
 	}
+}
+
+func TestGenerateClientFormat(t *testing.T) {
+	// Input vars for code generation:
+	opts := Options{
+		GenerateClient: true,
+		GenerateTypes:  true,
+	}
+
+	// Get a spec from the example PetStore definition:
+	swagger, err := examplePetstore.GetSwagger()
+	assert.NoError(t, err)
+
+	// Run our code generation:
+	code, err := Generate(swagger, "petstore", opts)
+	assert.NoError(t, err)
+
+	tfs := token.NewFileSet()
+	tfs.AddFile("petstore.gen.go", tfs.Base(), len(code))
+	cwd, _ := os.Getwd()
+	pkgs, err := packages.Load(&packages.Config{
+		Mode: packages.NeedSyntax | packages.NeedTypes | packages.NeedImports,
+		Fset: tfs,
+		Overlay: map[string][]byte{
+			cwd + "/petstore/petstore.gen.go": []byte(code),
+		},
+	}, "./petstore")
+	assert.NoError(t, err)
+	assert.Len(t, pkgs, 1)
+	pkg := pkgs[0]
+	assert.Empty(t, pkg.Errors)
+
+	// check we import the requests package
+	_, ok := pkg.Imports["github.com/carlmjohnson/requests"]
+	assert.True(t, ok)
+
+	client := pkg.Types.Scope().Lookup("Client")
+	assert.NotNil(t, client)
+
+	assert.True(t, client.Exported())
+	assert.Equal(t, 4, client.Type().Underlying().(*types.Struct).NumFields())
+}
+
+func TestGenerateK8sClient(t *testing.T) {
+	uri, err := url.Parse("https://raw.githubusercontent.com/kubernetes/kubernetes/master/api/openapi-spec/v3/api__v1_openapi.json")
+	assert.NoError(t, err)
+	swagger, err := openapi3.NewLoader().LoadFromURI(uri)
+	assert.NoError(t, err)
+
+	// Run our code generation:
+	code, err := Generate(swagger, "k8s", Options{
+		GenerateClient: true,
+		GenerateTypes:  true,
+	})
+	if of := os.Getenv("OUT_FILE"); of != "" {
+		assert.NoError(t, os.WriteFile(of, []byte(code), 0644))
+	}
+
+	assert.NoError(t, err)
+	assert.NotEmpty(t, code)
+
+	tfs := token.NewFileSet()
+	tfs.AddFile("petstore.gen.go", tfs.Base(), len(code))
+	cwd, _ := os.Getwd()
+	pkgs, err := packages.Load(&packages.Config{
+		Mode: packages.NeedSyntax | packages.NeedTypes | packages.NeedImports,
+		Fset: tfs,
+		Overlay: map[string][]byte{
+			cwd + "/petstore/petstore.gen.go": []byte(code),
+		},
+	}, "./petstore")
+	assert.NoError(t, err)
+	assert.Len(t, pkgs, 1)
+	pkg := pkgs[0]
+	assert.Empty(t, pkg.Errors)
+
+	// check we import the requests package
+	_, ok := pkg.Imports["github.com/carlmjohnson/requests"]
+	assert.True(t, ok)
+
+	client := pkg.Types.Scope().Lookup("Client")
+	assert.NotNil(t, client)
+
+	assert.True(t, client.Exported())
+	assert.Equal(t, client.Type().Underlying().(*types.Struct).NumFields(), 4)
 }

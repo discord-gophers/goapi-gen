@@ -36,6 +36,7 @@ import (
 // Most callers to this package will use Generate.
 type Options struct {
 	GenerateServer bool              // GenerateChiServer specifies whether to generate chi server boilerplate
+	GenerateClient bool              // GenerateClient specifies whether to generate client boilerplate
 	GenerateTypes  bool              // GenerateTypes specifies whether to generate type definitions
 	EmbedSpec      bool              // Whether to embed the swagger spec in the generated code
 	SkipFmt        bool              // Whether to skip go imports on the generated code
@@ -204,6 +205,18 @@ func Generate(swagger *openapi3.T, packageName string, opts Options) (string, er
 		_, err = w.WriteString(serverOut)
 		if err != nil {
 			return "", fmt.Errorf("error writing server path handlers: %w", err)
+		}
+	}
+
+	if opts.GenerateClient {
+		clientOut, err := GenerateClient(t, ops)
+		if err != nil {
+			return "", fmt.Errorf("error writing client: %w", err)
+		}
+
+		_, err = w.WriteString(clientOut)
+		if err != nil {
+			return "", fmt.Errorf("error writing client: %w", err)
 		}
 	}
 
@@ -608,6 +621,19 @@ func GenerateAdditionalPropertyBoilerplate(t *template.Template, typeDefs []Type
 	}
 
 	return GenerateTemplates([]string{"additional-properties.tmpl"}, t, context)
+}
+
+func GenerateClient(
+	t *template.Template,
+	ops []OperationDefinition,
+) (string, error) {
+	context := struct {
+		Operations []OperationDefinition
+	}{
+		Operations: ops,
+	}
+
+	return GenerateTemplates([]string{"client.tmpl"}, t, context)
 }
 
 // SanitizeCode runs sanitizers across the generated Go code to ensure the
