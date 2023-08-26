@@ -2,6 +2,7 @@ package codegen
 
 import (
 	"go/format"
+	"go/token"
 	"go/types"
 	"net/url"
 	"os"
@@ -9,7 +10,7 @@ import (
 	"text/template"
 
 	examplePetstore "github.com/discord-gophers/goapi-gen/examples/petstore-expanded/api"
-	"golang.org/x/tools/go/loader"
+	"golang.org/x/tools/go/packages"
 
 	"github.com/discord-gophers/goapi-gen/templates"
 	"github.com/getkin/kin-openapi/openapi3"
@@ -458,34 +459,31 @@ func TestGenerateClientFormat(t *testing.T) {
 	// Run our code generation:
 	code, err := Generate(swagger, "petstore", opts)
 	assert.NoError(t, err)
-	assert.NotEmpty(t, code)
 
-	// Check that we have valid (formattable) code:
-	// Check that we have valid (formattable) code:
-	_, err = format.Source([]byte(code))
+	tfs := token.NewFileSet()
+	tfs.AddFile("petstore.gen.go", tfs.Base(), len(code))
+	cwd, _ := os.Getwd()
+	pkgs, err := packages.Load(&packages.Config{
+		Mode: packages.NeedSyntax | packages.NeedTypes | packages.NeedImports,
+		Fset: tfs,
+		Overlay: map[string][]byte{
+			cwd + "/petstore/petstore.gen.go": []byte(code),
+		},
+	}, "./petstore")
 	assert.NoError(t, err)
+	assert.Len(t, pkgs, 1)
+	pkg := pkgs[0]
+	assert.Empty(t, pkg.Errors)
 
-	// Check that we have a package:
-	assert.Contains(t, code, "package petstore")
-	assert.Contains(t, code, `"github.com/carlmjohnson/requests"`)
-	assert.Contains(t, code, "type Client struct")
+	// check we import the requests package
+	_, ok := pkg.Imports["github.com/carlmjohnson/requests"]
+	assert.True(t, ok)
 
-	c := loader.Config{}
-	as, err := c.ParseFile("petstore.gen.go", code)
-	assert.NoError(t, err)
-	c.CreateFromFiles("petstore", as)
-
-	p, err := c.Load()
-	assert.NoError(t, err)
-
-	pkg := p.Package("petstore")
-	assert.NotNil(t, pkg)
-
-	client := pkg.Pkg.Scope().Lookup("Client")
+	client := pkg.Types.Scope().Lookup("Client")
 	assert.NotNil(t, client)
 
 	assert.True(t, client.Exported())
-	assert.Equal(t, client.Type().Underlying().(*types.Struct).NumFields(), 4)
+	assert.Equal(t, 4, client.Type().Underlying().(*types.Struct).NumFields())
 }
 
 func TestGenerateK8sClient(t *testing.T) {
@@ -503,27 +501,26 @@ func TestGenerateK8sClient(t *testing.T) {
 	assert.NoError(t, err)
 	assert.NotEmpty(t, code)
 
-	// Check that we have valid (formattable) code:
-	_, err = format.Source([]byte(code))
+	tfs := token.NewFileSet()
+	tfs.AddFile("petstore.gen.go", tfs.Base(), len(code))
+	cwd, _ := os.Getwd()
+	pkgs, err := packages.Load(&packages.Config{
+		Mode: packages.NeedSyntax | packages.NeedTypes | packages.NeedImports,
+		Fset: tfs,
+		Overlay: map[string][]byte{
+			cwd + "/petstore/petstore.gen.go": []byte(code),
+		},
+	}, "./petstore")
 	assert.NoError(t, err)
+	assert.Len(t, pkgs, 1)
+	pkg := pkgs[0]
+	assert.Empty(t, pkg.Errors)
 
-	// Check that we have a package:
-	assert.Contains(t, code, "package k8s")
-	assert.Contains(t, code, `"github.com/carlmjohnson/requests"`)
-	assert.Contains(t, code, "type Client struct")
+	// check we import the requests package
+	_, ok := pkg.Imports["github.com/carlmjohnson/requests"]
+	assert.True(t, ok)
 
-	c := loader.Config{}
-	as, err := c.ParseFile("k8s.gen.go", code)
-	assert.NoError(t, err)
-	c.CreateFromFiles("k8s", as)
-
-	p, err := c.Load()
-	assert.NoError(t, err)
-
-	pkg := p.Package("k8s")
-	assert.NotNil(t, pkg)
-
-	client := pkg.Pkg.Scope().Lookup("Client")
+	client := pkg.Types.Scope().Lookup("Client")
 	assert.NotNil(t, client)
 
 	assert.True(t, client.Exported())
@@ -532,5 +529,4 @@ func TestGenerateK8sClient(t *testing.T) {
 	if of := os.Getenv("OUT_FILE"); of != "" {
 		assert.NoError(t, os.WriteFile(of, []byte(code), 0644))
 	}
-
 }
