@@ -253,14 +253,15 @@ func IsWholeDocumentReference(ref string) bool {
 // It replaces all swagger parameters with {param}.
 //
 // Valid input parameters are:
-//   {param}
-//   {param*}
-//   {.param}
-//   {.param*}
-//   {;param}
-//   {;param*}
-//   {?param}
-//   {?param*}
+//
+//	{param}
+//	{param*}
+//	{.param}
+//	{.param*}
+//	{;param}
+//	{;param*}
+//	{?param}
+//	{?param*}
 func SwaggerURIToChiURI(uri string) string {
 	return pathParamRE.ReplaceAllString(uri, "{$1}")
 }

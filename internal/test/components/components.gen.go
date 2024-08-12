@@ -23,16 +23,16 @@ import (
 
 // Has additional properties of type int
 type AdditionalPropertiesObject1 struct {
-	ID                   int            `json:"id"`
 	Name                 string         `json:"name"`
+	ID                   int            `json:"id"`
 	Optional             *string        `json:"optional,omitempty"`
 	AdditionalProperties map[string]int `json:"-"`
 }
 
 // Does not allow additional properties
 type AdditionalPropertiesObject2 struct {
-	ID   int    `json:"id"`
 	Name string `json:"name"`
+	ID   int    `json:"id"`
 }
 
 // Allows any additional property
@@ -43,8 +43,8 @@ type AdditionalPropertiesObject3 struct {
 
 // Has anonymous field which has additional properties
 type AdditionalPropertiesObject4 struct {
-	Inner                AdditionalPropertiesObject4_Inner `json:"inner"`
 	Name                 string                            `json:"name"`
+	Inner                AdditionalPropertiesObject4_Inner `json:"inner"`
 	AdditionalProperties map[string]interface{}            `json:"-"`
 }
 
@@ -61,8 +61,8 @@ type AdditionalPropertiesObject5 struct {
 
 // Tests x-go-string
 type GoStringTag struct {
-	ID   int    `json:"id,string"`
 	Name string `json:"name"`
+	ID   int    `json:"id,string"`
 }
 
 // ObjectWithJSONField defines model for ObjectWithJsonField.
@@ -196,30 +196,30 @@ func (resp *Response) MarshalXML(e *xml.Encoder, start xml.StartElement) error {
 // EnsureEverythingIsReferencedJSON200Response is a constructor method for a EnsureEverythingIsReferenced response.
 // A *Response is returned with the configured status code and content type from the spec.
 func EnsureEverythingIsReferencedJSON200Response(body struct {
-	// Has additional properties with schema for dictionaries
-	Five *AdditionalPropertiesObject5 `json:"five,omitempty"`
-
-	// Has anonymous field which has additional properties
-	Four *AdditionalPropertiesObject4 `json:"four,omitempty"`
-
-	// Tests x-go-string
-	GoStringTag *GoStringTag         `json:"goStringTag,omitempty"`
-	JSONField   *ObjectWithJSONField `json:"jsonField,omitempty"`
-
 	// Has additional properties of type int
 	One *AdditionalPropertiesObject1 `json:"one,omitempty"`
 
-	// Tests x-go-optional-value on the whole object
-	OptionalObject OptionalObject `json:"optionalObject,omitempty"`
-
-	// Tests x-go-optional-value
-	OptionalValue *OptionalValue `json:"optionalValue,omitempty"`
+	// Does not allow additional properties
+	Two *AdditionalPropertiesObject2 `json:"two,omitempty"`
 
 	// Allows any additional property
 	Three *AdditionalPropertiesObject3 `json:"three,omitempty"`
 
-	// Does not allow additional properties
-	Two *AdditionalPropertiesObject2 `json:"two,omitempty"`
+	// Has anonymous field which has additional properties
+	Four *AdditionalPropertiesObject4 `json:"four,omitempty"`
+
+	// Has additional properties with schema for dictionaries
+	Five      *AdditionalPropertiesObject5 `json:"five,omitempty"`
+	JSONField *ObjectWithJSONField         `json:"jsonField,omitempty"`
+
+	// Tests x-go-string
+	GoStringTag *GoStringTag `json:"goStringTag,omitempty"`
+
+	// Tests x-go-optional-value
+	OptionalValue *OptionalValue `json:"optionalValue,omitempty"`
+
+	// Tests x-go-optional-value on the whole object
+	OptionalObject OptionalObject `json:"optionalObject,omitempty"`
 }) *Response {
 	return &Response{
 		body:        body,
@@ -503,20 +503,20 @@ func (a *AdditionalPropertiesObject1) UnmarshalJSON(b []byte) error {
 		return err
 	}
 
-	if raw, found := object["id"]; found {
-		err = json.Unmarshal(raw, &a.ID)
-		if err != nil {
-			return fmt.Errorf("error reading 'id': %w", err)
-		}
-		delete(object, "id")
-	}
-
 	if raw, found := object["name"]; found {
 		err = json.Unmarshal(raw, &a.Name)
 		if err != nil {
 			return fmt.Errorf("error reading 'name': %w", err)
 		}
 		delete(object, "name")
+	}
+
+	if raw, found := object["id"]; found {
+		err = json.Unmarshal(raw, &a.ID)
+		if err != nil {
+			return fmt.Errorf("error reading 'id': %w", err)
+		}
+		delete(object, "id")
 	}
 
 	if raw, found := object["optional"]; found {
@@ -546,14 +546,14 @@ func (a AdditionalPropertiesObject1) MarshalJSON() ([]byte, error) {
 	var err error
 	object := make(map[string]json.RawMessage)
 
-	object["id"], err = json.Marshal(a.ID)
-	if err != nil {
-		return nil, fmt.Errorf("error marshaling 'id': %w", err)
-	}
-
 	object["name"], err = json.Marshal(a.Name)
 	if err != nil {
 		return nil, fmt.Errorf("error marshaling 'name': %w", err)
+	}
+
+	object["id"], err = json.Marshal(a.ID)
+	if err != nil {
+		return nil, fmt.Errorf("error marshaling 'id': %w", err)
 	}
 
 	if a.Optional != nil {
@@ -663,20 +663,20 @@ func (a *AdditionalPropertiesObject4) UnmarshalJSON(b []byte) error {
 		return err
 	}
 
-	if raw, found := object["inner"]; found {
-		err = json.Unmarshal(raw, &a.Inner)
-		if err != nil {
-			return fmt.Errorf("error reading 'inner': %w", err)
-		}
-		delete(object, "inner")
-	}
-
 	if raw, found := object["name"]; found {
 		err = json.Unmarshal(raw, &a.Name)
 		if err != nil {
 			return fmt.Errorf("error reading 'name': %w", err)
 		}
 		delete(object, "name")
+	}
+
+	if raw, found := object["inner"]; found {
+		err = json.Unmarshal(raw, &a.Inner)
+		if err != nil {
+			return fmt.Errorf("error reading 'inner': %w", err)
+		}
+		delete(object, "inner")
 	}
 
 	if len(object) != 0 {
@@ -698,14 +698,14 @@ func (a AdditionalPropertiesObject4) MarshalJSON() ([]byte, error) {
 	var err error
 	object := make(map[string]json.RawMessage)
 
-	object["inner"], err = json.Marshal(a.Inner)
-	if err != nil {
-		return nil, fmt.Errorf("error marshaling 'inner': %w", err)
-	}
-
 	object["name"], err = json.Marshal(a.Name)
 	if err != nil {
 		return nil, fmt.Errorf("error marshaling 'name': %w", err)
+	}
+
+	object["inner"], err = json.Marshal(a.Inner)
+	if err != nil {
+		return nil, fmt.Errorf("error marshaling 'inner': %w", err)
 	}
 
 	for fieldName, field := range a.AdditionalProperties {
